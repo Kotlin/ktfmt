@@ -1,0 +1,5 @@
+@Magic public final class Foo
+
+@Magic(1) public final class Foo
+
+@Magic(1) public final class Foo
