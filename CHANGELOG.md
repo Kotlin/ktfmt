@@ -4,11 +4,6 @@ All notable changes to the ktfmt project (starting on v0.51) should be documente
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [1.0.0 Unreleased]
-
-### Changed
-- All styles managing trailing commas now (https://github.com/facebook/ktfmt/issues/216, https://github.com/facebook/ktfmt/issues/442)
-
 
 ## [Unreleased]
 
