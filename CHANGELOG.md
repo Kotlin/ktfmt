@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 * Fix non-idempotent formatting when a managed trailing comma pushes a line over MAX_WIDTH (e.g. a long qualified expression as the last argument of a call). The comma is now accounted for by re-running the layout, so the line is broken correctly on the first pass. (https://github.com/facebook/ktfmt/pull/636)
+* Fix non-idempotent formatting when max width breaks a scoping-function lambda with a chained call (e.g. `runCatching { ... }.getOrNull()`): the chained call now breaks onto its own line together with the lambda on the first pass. (https://github.com/Kotlin/ktfmt/issues/640)
 
 
 ## [0.64]

@@ -1455,14 +1455,16 @@ open class KotlinInputAstVisitor(
 
     visitLambdaOrScopingFunction(root, emitLeadingBreak = emitLeadingBreak)
 
-    builder.block(expressionBreakIndent) {
-      for (i in 1 until parts.size) {
-        val part = parts[i] as KtQualifiedExpression
-        if (forceBreakBeforeChain) {
-          builder.forcedBreak()
-        } else {
-          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
-        }
+    // The break before each selector must stay outside the block below, at the same level as
+    // the lambda, so that it is taken exactly when the lambda breaks. Inside the block it
+    // would fire only when the selector itself is too long, so a lambda broken by max width
+    // would keep its selector on the closing brace's line — and the next format pass, seeing
+    // a multiline lambda in the source, would force the selector onto its own line (#640).
+    val fillMode = if (forceBreakBeforeChain) Doc.FillMode.FORCED else Doc.FillMode.UNIFIED
+    for (i in 1 until parts.size) {
+      val part = parts[i] as KtQualifiedExpression
+      builder.breakOp(fillMode, "", expressionBreakIndent)
+      builder.block(expressionBreakIndent) {
         builder.token(part.operationSign.value)
         val selectorExpression = part.selectorExpression
         if (selectorExpression is KtCallExpression) {
