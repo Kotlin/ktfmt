@@ -21,14 +21,11 @@ import com.facebook.ktfmt.testutil.assertFormatted
 import com.facebook.ktfmt.testutil.assertThatFormatting
 import com.facebook.ktfmt.testutil.defaultTestFormattingOptions
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assert.fail
-import org.junit.BeforeClass
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.Assertions.fail
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 
 @Suppress("FunctionNaming")
-@RunWith(JUnit4::class)
 class FormatterTest {
 
   @Test
@@ -9699,7 +9696,7 @@ class FormatterTest {
     private const val TQ = "\"\"\""
 
     @JvmStatic
-    @BeforeClass
+    @BeforeAll
     fun setUp(): Unit {
       defaultTestFormattingOptions =
           META_FORMAT.copy(trailingCommaManagementStrategy = TrailingCommaManagementStrategy.NONE)

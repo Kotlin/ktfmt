@@ -19,13 +19,10 @@ package com.facebook.ktfmt.format
 import com.facebook.ktfmt.testutil.assertFormatted
 import com.facebook.ktfmt.testutil.assertThatFormatting
 import com.facebook.ktfmt.testutil.defaultTestFormattingOptions
-import org.junit.BeforeClass
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 
 @Suppress("FunctionNaming")
-@RunWith(JUnit4::class)
 class GoogleStyleFormatterKtTest {
 
   @Test
@@ -1866,7 +1863,7 @@ class GoogleStyleFormatterKtTest {
     private const val TQ = "\"\"\""
 
     @JvmStatic
-    @BeforeClass
+    @BeforeAll
     fun setUp(): Unit {
       defaultTestFormattingOptions = Formatter.GOOGLE_FORMAT
     }

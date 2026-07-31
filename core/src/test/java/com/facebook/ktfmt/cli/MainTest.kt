@@ -25,14 +25,11 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.util.concurrent.ForkJoinPool
 import kotlin.io.path.createTempDirectory
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 @Suppress("FunctionNaming")
-@RunWith(JUnit4::class)
 class MainTest {
 
   private val root = createTempDirectory().toFile()
@@ -43,12 +40,12 @@ class MainTest {
 
   private val testCharset = StandardCharsets.UTF_16
 
-  @Before
+  @BeforeEach
   fun setUp() {
     assertThat(Charset.defaultCharset()).isEqualTo(testCharset) // Verify the test JVM flags
   }
 
-  @After
+  @AfterEach
   fun tearDown() {
     root.deleteRecursively()
   }

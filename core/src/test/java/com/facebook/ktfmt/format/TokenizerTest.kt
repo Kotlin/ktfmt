@@ -17,12 +17,9 @@
 package com.facebook.ktfmt.format
 
 import com.google.common.truth.Truth.assertThat
-import kotlin.test.assertFailsWith
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
-@RunWith(JUnit4::class)
 class TokenizerTest {
   @Test
   fun `PsiWhiteSpace are split to newlines and maximal-length whitespaces`() {
@@ -741,7 +738,7 @@ class TokenizerTest {
     if (message == null) {
       file.accept(tokenizer)
     } else {
-      val e = assertFailsWith<ParseError> { file.accept(tokenizer) }
+      val e = assertThrows<ParseError> { file.accept(tokenizer) }
       assertThat(e).hasMessageThat().isEqualTo(message)
     }
   }

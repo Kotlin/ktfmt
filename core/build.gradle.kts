@@ -41,9 +41,10 @@ dependencies {
   api(libs.kotlin.stdlib)
   api(libs.kotlin.compilerEmbeddable)
   implementation(libs.ec4j)
-  testImplementation(libs.kotlin.test.junit4)
+  testImplementation(platform(libs.junit.bom))
   testImplementation(libs.googleTruth)
-  testImplementation(libs.junit)
+  testImplementation(libs.junit.jupiter)
+  testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 val generateSources by tasks.registering {
@@ -53,7 +54,10 @@ val generateSources by tasks.registering {
 
 tasks {
   // Run tests with UTF-16 encoding
-  test { jvmArgs("-Dfile.encoding=UTF-16") }
+  test {
+    useJUnitPlatform()
+    jvmArgs("-Dfile.encoding=UTF-16")
+  }
 
   // Handle multiple versions of Kotlin here
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

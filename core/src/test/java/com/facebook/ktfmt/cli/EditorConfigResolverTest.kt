@@ -24,24 +24,21 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import kotlin.io.path.createTempDirectory
 import kotlin.text.Charsets.UTF_8
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 @Suppress("FunctionNaming")
-@RunWith(JUnit4::class)
 class EditorConfigResolverTest {
   private val root = createTempDirectory().toFile()
   private val testCharset = StandardCharsets.UTF_16
 
-  @Before
+  @BeforeEach
   fun setUp() {
     assertThat(Charset.defaultCharset()).isEqualTo(testCharset) // Verify the test JVM flags
   }
 
-  @After
+  @AfterEach
   fun tearDown() {
     root.deleteRecursively()
   }

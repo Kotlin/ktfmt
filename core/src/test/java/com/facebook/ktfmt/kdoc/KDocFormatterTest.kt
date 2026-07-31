@@ -35,11 +35,8 @@ package com.facebook.ktfmt.kdoc
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.io.path.createTempDirectory
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.Test
 
-@RunWith(JUnit4::class)
 class KDocFormatterTest {
   private val tempDir = createTempDirectory().toFile()
 

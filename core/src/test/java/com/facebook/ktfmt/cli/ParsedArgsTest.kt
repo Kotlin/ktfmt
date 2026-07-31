@@ -24,19 +24,16 @@ import com.google.common.collect.TreeRangeSet
 import com.google.common.truth.Truth.assertThat
 import java.io.FileNotFoundException
 import kotlin.io.path.createTempDirectory
-import kotlin.test.assertFailsWith
-import org.junit.After
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 @Suppress("FunctionNaming")
-@RunWith(JUnit4::class)
 class ParsedArgsTest {
 
   private val root = createTempDirectory().toFile()
 
-  @After
+  @AfterEach
   fun tearDown() {
     root.deleteRecursively()
   }
@@ -284,7 +281,7 @@ class ParsedArgsTest {
   @Test
   fun `processArgs use the @file option with non existing file`() {
     val e =
-        assertFailsWith<FileNotFoundException> {
+        assertThrows<FileNotFoundException> {
           ParsedArgs.processArgs(arrayOf("@non-existing-file"))
         }
     assertThat(e.message).contains("non-existing-file")

@@ -17,7 +17,7 @@
 package com.facebook.ktfmt.format
 
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class KotlinInputTest {
   @Test

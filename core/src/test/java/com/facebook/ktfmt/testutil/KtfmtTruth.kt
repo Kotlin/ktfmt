@@ -24,7 +24,7 @@ import com.google.common.truth.FailureMetadata
 import com.google.common.truth.Subject
 import com.google.common.truth.Truth
 import org.intellij.lang.annotations.Language
-import org.junit.Assert
+import org.junit.jupiter.api.Assertions
 
 var defaultTestFormattingOptions: FormattingOptions = Formatter.META_FORMAT
 
@@ -130,7 +130,7 @@ class FormattedCodeSubject(metadata: FailureMetadata, private val code: String) 
       reportError(code)
       throw e
     }
-    Assert.assertEquals(expectedFormatting, actualFormatting)
+    Assertions.assertEquals(expectedFormatting, actualFormatting)
   }
 
   private fun reportError(code: String) {

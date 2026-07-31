@@ -18,9 +18,7 @@ package com.facebook.ktfmt.nativeImage
 
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.Test
 
 /**
  * Guards the GraalVM `@Substitute` in `core/src/main/native-image` that replaces
@@ -30,7 +28,6 @@ import org.junit.runners.JUnit4
  * so a Kotlin compiler upgrade that changes the signature fails here first, before the native image
  * breaks.
  */
-@RunWith(JUnit4::class)
 class NativeImageSubstitutionTest {
   @Test
   fun `substituted Kotlin compiler method still exists with expected signature`() {

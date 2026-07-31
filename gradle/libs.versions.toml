@@ -4,9 +4,9 @@ kotlin = "2.3.20"
 com-google-googlejavaformat-google-java-format = "1.23.0"
 com-google-guava-guava = "33.5.0-jre"
 com-google-truth-truth = "1.0"
-junit-junit = "4.13.1"
 net-java-dev-jna-jna = "4.2.2"
 org-ec4j-core = "1.2.0"
+org-junit-junit-bom = "6.1.2"
 
 # plugins
 gradlePlugin-dokka = "2.2.0"
@@ -19,11 +19,12 @@ ec4j = { module = "org.ec4j.core:ec4j-core", version.ref = "org-ec4j-core" }
 googleJavaformat = { module = "com.google.googlejavaformat:google-java-format", version.ref = "com-google-googlejavaformat-google-java-format" }
 googleTruth = { module = "com.google.truth:truth", version.ref = "com-google-truth-truth" }
 guava = { module = "com.google.guava:guava", version.ref = "com-google-guava-guava" }
-junit = { module = "junit:junit", version.ref = "junit-junit" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "org-junit-junit-bom" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "net-java-dev-jna-jna" }
 kotlin-compilerEmbeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
-kotlin-test-junit4 = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 
 [plugins]
 dokka = { id = "org.jetbrains.dokka", version.ref = "gradlePlugin-dokka" }

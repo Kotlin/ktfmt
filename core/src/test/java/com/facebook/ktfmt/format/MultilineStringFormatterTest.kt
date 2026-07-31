@@ -18,7 +18,7 @@ package com.facebook.ktfmt.format
 
 import com.google.common.truth.Truth.assertThat
 import org.intellij.lang.annotations.Language
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class MultilineStringFormatterTest {
   private val TQ = "\"\"\""
