@@ -42,7 +42,9 @@ dependencies {
   api(libs.kotlin.compilerEmbeddable)
   implementation(libs.ec4j)
   testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.googleTruth)
+  testImplementation(libs.googleTruth) {
+    exclude(group = "junit", module = "junit")
+  }
   testImplementation(libs.junit.jupiter)
   testRuntimeOnly(libs.junit.platform.launcher)
 }
