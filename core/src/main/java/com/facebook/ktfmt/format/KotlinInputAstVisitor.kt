@@ -139,10 +139,12 @@ import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 import org.jetbrains.kotlin.psi.stubs.impl.KotlinPlaceHolderStubImpl
 
 /** An AST visitor that builds a stream of {@link Op}s to format. */
-class KotlinInputAstVisitor(
+open class KotlinInputAstVisitor(
     private val options: FormattingOptions,
     private val builder: OpsBuilder,
 ) : KtTreeVisitorVoid() {
+
+  internal open val forceAnnotationBreaks: Boolean = false
 
   /** Standard indentation for a block */
   private val blockIndent: Indent.Const = Indent.Const.make(options.blockIndent, 1)
@@ -2144,7 +2146,9 @@ class KotlinInputAstVisitor(
         visit(psi)
       }
 
-      if (onlyAnnotationsSoFar) {
+      if (onlyAnnotationsSoFar && forceAnnotationBreaks && psi is KtAnnotationEntry) {
+        builder.forcedBreak()
+      } else if (onlyAnnotationsSoFar) {
         builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
       } else {
         builder.space()

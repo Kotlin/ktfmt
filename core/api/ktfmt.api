@@ -129,8 +129,8 @@ public final class com/facebook/ktfmt/format/FormattingOptions {
 	public static final field DEFAULT_CONTINUATION_INDENT I
 	public static final field DEFAULT_MAX_WIDTH I
 	public fun <init> (IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZ)V
-	public fun <init> (IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZ)V
-	public synthetic fun <init> (IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZZ)V
+	public synthetic fun <init> (IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (IIIZZZ)V
 	public synthetic fun <init> (IIIZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
@@ -140,8 +140,8 @@ public final class com/facebook/ktfmt/format/FormattingOptions {
 	public final fun component5 ()Z
 	public final fun component6 ()Z
 	public final fun component7 ()Z
-	public final fun copy (IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZ)Lcom/facebook/ktfmt/format/FormattingOptions;
-	public static synthetic fun copy$default (Lcom/facebook/ktfmt/format/FormattingOptions;IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZILjava/lang/Object;)Lcom/facebook/ktfmt/format/FormattingOptions;
+	public final fun copy (IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZZ)Lcom/facebook/ktfmt/format/FormattingOptions;
+	public static synthetic fun copy$default (Lcom/facebook/ktfmt/format/FormattingOptions;IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZZILjava/lang/Object;)Lcom/facebook/ktfmt/format/FormattingOptions;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBlockIndent ()I
 	public final fun getContinuationIndent ()I
@@ -183,7 +183,7 @@ public final class com/facebook/ktfmt/format/KotlinInput : com/google/googlejava
 	public fun getkN ()I
 }
 
-public final class com/facebook/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/kotlin/psi/KtTreeVisitorVoid {
+public class com/facebook/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/kotlin/psi/KtTreeVisitorVoid {
 	public fun <init> (Lcom/facebook/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/OpsBuilder;)V
 	public fun visitAnnotatedExpression (Lorg/jetbrains/kotlin/psi/KtAnnotatedExpression;)V
 	public fun visitAnnotation (Lorg/jetbrains/kotlin/psi/KtAnnotation;)V

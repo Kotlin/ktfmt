@@ -85,6 +85,9 @@ data class FormattingOptions(
      * newline) decisions
      */
     val debuggingPrintOpsAfterFormatting: Boolean = false,
+
+    // Development only, kotlinlang codestyle experiments
+    private val experimentalEngine: Boolean = false,
 ) {
   companion object {
     const val DEFAULT_MAX_WIDTH: Int = 100
@@ -134,6 +137,9 @@ data class FormattingOptions(
 
   internal val manageTrailingCommas: Boolean
     get() = trailingCommaManagementStrategy != NONE
+
+  internal val useExperimentalEngine: Boolean
+    get() = experimentalEngine
 
   /**
    * Returns a [Builder] pre-populated with this instance's values.

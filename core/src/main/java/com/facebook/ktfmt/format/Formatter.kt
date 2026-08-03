@@ -284,7 +284,11 @@ object Formatter {
     if (KotlinVersion.CURRENT < MINIMUM_KOTLIN_VERSION) {
       throw RuntimeException("Unsupported runtime Kotlin version: " + KotlinVersion.CURRENT)
     }
-    return KotlinInputAstVisitor(options, builder)
+    return if (options.useExperimentalEngine) {
+      KotlinLangInputAstVisitor(options, builder)
+    } else {
+      KotlinInputAstVisitor(options, builder)
+    }
   }
 
   private fun checkEscapeSequences(code: String) {

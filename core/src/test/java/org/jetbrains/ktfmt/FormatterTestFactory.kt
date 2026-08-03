@@ -26,7 +26,7 @@ import org.junit.jupiter.api.TestFactory
  * 1) Create a folder with the test group in resources, e.g. "cases/enums/"
  * 2) Populate it with tests: `Foo.input` is an input for the formatter, `Foo.output` is an expected
  *    output. If an .output is not present, it is assumed that formatting `.input` is an idempotent
- *    op
+ *    op. A `Foo.new.output` file additionally runs the case with [NEW_FORMAT]
  * 3) Create a test class in Tests.kt:
  * ```
  * class EnumsTest() : FormatterTestFactory()
@@ -59,8 +59,16 @@ abstract class FormatterTestFactory(
             trailingCommaManagementStrategy = TrailingCommaManagementStrategy.NONE,
         )
 
+    val NEW_FORMAT =
+        Formatter.KOTLINLANG_FORMAT.copy(
+            experimentalEngine = true,
+        )
+
+    // Add other formats if needed for extensibility
+    val FORMAT_VARIANTS = mapOf("new" to NEW_FORMAT)
+
     // Without this, neither 'overwrite' nor navigation in IJ will work
-    val root = run {
+    val ROOT = run {
       val location = javaClass.protectionDomain?.codeSource?.location!!
       val root = URI(location.toURI().toString().substringBefore("build/classes/kotlin/test"))
       Path.of(root).resolve("src/test/resources/cases")
@@ -72,7 +80,7 @@ abstract class FormatterTestFactory(
     // Loads e.g. cases/enums/, all cases from the folder at once
     val cases = load(group)
     check(cases.isNotEmpty()) {
-      "No '.input' files in ${root.resolve(group)}"
+      "No '.input' files in ${ROOT.resolve(group)}"
     }
 
     return cases.map { case ->
@@ -85,7 +93,7 @@ abstract class FormatterTestFactory(
   }
 
   private fun load(group: String): List<TestDescription> {
-    val directory = root.resolve(group)
+    val directory = ROOT.resolve(group)
     require(directory.isDirectory()) { "No such directory: $directory" }
 
     return directory
@@ -106,17 +114,20 @@ abstract class FormatterTestFactory(
   }
 
   private fun tests(expectation: TestCase): List<DynamicTest> {
-    val uri = expectation.description.inputPath.toUri()
+    val uri = (expectation.output ?: expectation.description.inputPath).toUri()
     // format(expected) == actual
     val checks = mutableListOf(
-        DynamicTest.dynamicTest("Formats as expected${expectation.label}", uri) {
+        DynamicTest.dynamicTest(
+            "${expectation.label} Formats as expected",
+            uri,
+        ) {
           formatsAsExpected(expectation)
         },
     )
     // format(format(expected)) == format(expected)
     if (expectation.output != null) {
       checks +=
-          DynamicTest.dynamicTest("Format is idempotent${expectation.label}", uri) {
+          DynamicTest.dynamicTest("${expectation.label} Format is idempotent", uri) {
             outputIsIdempotent(expectation)
           }
     }
@@ -157,8 +168,8 @@ abstract class FormatterTestFactory(
 
   private fun failureMessage(expectation: TestCase, actual: String): String = buildString {
     append(
-        expectation.description.displayName,
         expectation.label,
+        expectation.description.displayName,
         " is not formatted as expected.\n",
     )
     append(
@@ -191,14 +202,27 @@ abstract class FormatterTestFactory(
     val displayName: String
       get() = "$group/$name"
 
-    fun expectations(groupOptions: FormattingOptions): List<TestCase> = listOf(
-        TestCase(
-            description = this,
-            variant = null,
-            output = output,
-            expected = output?.readText(Charsets.UTF_8) ?: input, // No .output, idempotency
-            options = groupOptions,
-        ),
+    fun expectations(groupOptions: FormattingOptions): List<TestCase> = buildList {
+      add(testCase(variant = null, output = output, options = groupOptions))
+
+      FORMAT_VARIANTS.forEach { (variant, options) ->
+        val variantOutput = expectation(variant).takeIf { it.isRegularFile() }
+        if (variantOutput != null) {
+          add(testCase(variant = variant, output = variantOutput, options = options))
+        }
+      }
+    }
+
+    private fun testCase(
+        variant: String?,
+        output: Path?,
+        options: FormattingOptions,
+    ): TestCase = TestCase(
+        description = this,
+        variant = variant,
+        output = output,
+        expected = output?.readText(Charsets.UTF_8) ?: input, // No .output, idempotency
+        options = options,
     )
 
     fun expectation(variant: String?): Path {

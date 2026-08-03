@@ -1,0 +1,5 @@
+class Holder private constructor(val conf: Configuration) {
+
+  var someProperty: Boolean = conf.someProperty
+    @Deprecated("Deprecateion message") @TestOnly set
+}
