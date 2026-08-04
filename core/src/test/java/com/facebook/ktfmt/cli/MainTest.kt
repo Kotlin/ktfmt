@@ -349,7 +349,7 @@ class MainTest {
         .run()
 
     assertThat(out.toString(UTF_8)).doesNotContain("hello, world")
-    assertThat(out.toString(testCharset)).isEqualTo("<stdin>\n")
+    assertThat(out.toString(testCharset)).isEqualTo("<stdin>${System.lineSeparator()}")
   }
 
   @Test
@@ -460,7 +460,7 @@ class MainTest {
         .run()
 
     assertThat(out.toString(UTF_8)).doesNotContain("hello, world")
-    assertThat(out.toString(testCharset)).isEqualTo("<stdin>\n")
+    assertThat(out.toString(testCharset)).isEqualTo("<stdin>${System.lineSeparator()}")
     assertThat(exitCode).isEqualTo(1)
   }
 

@@ -287,7 +287,7 @@ class ParsedArgsTest {
         assertFailsWith<FileNotFoundException> {
           ParsedArgs.processArgs(arrayOf("@non-existing-file"))
         }
-    assertThat(e.message).contains("non-existing-file (No such file or directory)")
+    assertThat(e.message).contains("non-existing-file")
   }
 
   @Test
