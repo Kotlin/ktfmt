@@ -1,0 +1,4 @@
+val pair = orgInfo.id to OverrideOrganizations.Override(
+    fullName = substituteRaw(fullName),
+    displayName = substituteRaw(displayName),
+)

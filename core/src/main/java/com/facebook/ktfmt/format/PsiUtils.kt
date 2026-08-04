@@ -22,7 +22,9 @@ import kotlin.contracts.contract
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
+import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
+import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtLabeledExpression
@@ -108,6 +110,25 @@ internal val KtExpression?.isBlockLikeCall: Boolean
           argumentExpression != null &&
               (argumentExpression.isBlockLikeCall || argumentExpression.isChainedBlockLikeCall)
         }
+  }
+
+/**
+ * Returns true when [KtExpression] is an infix function call -- `a to b`, `x and y` -- whose
+ * right-hand operand ends in a [isBlockLikeCall]
+ */
+@OptIn(ExperimentalContracts::class)
+internal val KtExpression?.isInfixBlockLikeCall: Boolean
+  get() {
+    contract { returns(true) implies (this@isInfixBlockLikeCall is KtBinaryExpression) }
+
+    if (this !is KtBinaryExpression) return false
+    if (hasLeadingComment) return false
+    // An identifier as the operator is what distinguishes `a to b` from `a + b`.
+    if (operationToken != KtTokens.IDENTIFIER) return false
+    val right = right ?: return false
+    if (right.hasLeadingComment) return false
+    val call = right.callExpression ?: return false
+    return call.isBlockLikeCall && call.lambdaArguments.isEmpty()
   }
 
 /** Returns true when [KtExpression] is a chain whose innermost receiver is a [isBlockLikeCall]. */

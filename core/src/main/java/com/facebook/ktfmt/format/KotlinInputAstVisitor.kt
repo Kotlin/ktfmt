@@ -144,6 +144,11 @@ open class KotlinInputAstVisitor(
   internal open val forceAnnotationBreaks: Boolean = false
   internal open val forceLineBreakAfterAssignment: Boolean = true
 
+  /**
+   * Whether an [isInfixBlockLikeCall] hugs the operator it follows, see [emitInfixBlockLikeCall].
+   */
+  internal open val hugBlockLikeInfixCalls: Boolean = false
+
   /** Standard indentation for a block */
   private val blockIndent: Indent.Const = Indent.Const.make(options.blockIndent, 1)
 
@@ -1589,6 +1594,8 @@ open class KotlinInputAstVisitor(
       visit(initializer)
     } else if (initializer.isChainedBlockLikeCall) {
       visitChainedBlockLikeCall(initializer, emitLeadingBreak = true)
+    } else if (hugBlockLikeInfixCalls && initializer.isInfixBlockLikeCall) {
+      emitInfixBlockLikeCall(initializer)
     } else {
       // A chain gets to keep its receiver on the `=` line when it fits there; everything else
       // breaks after the `=` and is laid out one level in.
@@ -1652,6 +1659,43 @@ open class KotlinInputAstVisitor(
 
       override fun getRightParenthesis(): PsiElement? {
         return accessor.parameterList?.rightParenthesis
+      }
+    }
+  }
+
+  /**
+   * Emit an `a to Foo(\n ...,\n)` style infix call that follows an operator such as `=`, deciding
+   * whether to break after that operator from the width of the head alone.
+   */
+  private fun emitInfixBlockLikeCall(expression: KtBinaryExpression) {
+    builder.sync(expression)
+    val right = checkNotNull(expression.right)
+    val call = checkNotNull(right.callExpression)
+    val brokeAfterOperator = BreakTag()
+    val callIndent = Indent.If.make(brokeAfterOperator, expressionBreakIndent, ZERO)
+
+    builder.block(expressionBreakIndent) {
+      builder.breakOp(" ", ZERO, Optional.of(brokeAfterOperator))
+      builder.block(callIndent) {
+        builder.fenceComments()
+        visit(expression.left)
+        builder.spaceThenToken(expression.operationReference.text)
+        builder.space()
+        // The call may be the selector of a qualifier, as in `a to Organizations.Override(...)`.
+        if (right is KtQualifiedExpression) {
+          visit(right.receiverExpression)
+          builder.token(right.operationSign.value)
+        }
+        builder.sync(call)
+        visit(call.calleeExpression)
+        builder.block(ZERO) { visit(call.typeArgumentList) }
+      }
+    }
+    // Emitted after the level above closed, so that its forced breaks are not part of the split the
+    // break after the operator is decided by. The extra level carries the head's indent over.
+    builder.block(callIndent) {
+      builder.block(expressionBreakIndent) {
+        visitValueArgumentListInternal(checkNotNull(call.valueArgumentList))
       }
     }
   }
