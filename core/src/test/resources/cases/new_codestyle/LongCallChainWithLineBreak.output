@@ -1,0 +1,11 @@
+fun f() {
+  val testDataDir: Path =
+      Path.ofAVeryVeryVeryLongCallNameHereSoThatWeHaveToBreakAfterAssignment("")
+          .absolute()
+          .parent
+          .parent
+          .resolve("tests")
+          .resolve("testData")
+          .resolve("loaders")
+          .relativeTo(Path.of("").absolute())
+}

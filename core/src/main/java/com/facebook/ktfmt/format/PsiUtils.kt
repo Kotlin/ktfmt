@@ -31,7 +31,9 @@ import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtPostfixExpression
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
+import org.jetbrains.kotlin.psi.KtStringTemplateExpression
 import org.jetbrains.kotlin.psi.KtValueArgumentList
+import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.kotlin.psi.psiUtil.getNextSiblingIgnoringWhitespace
 import org.jetbrains.kotlin.psi.psiUtil.getPrevSiblingIgnoringWhitespace
@@ -72,6 +74,16 @@ internal val KtExpression.chainRoot: KtExpression
   }
 
 /**
+ * Whether a comment precedes this element.
+ *
+ * A leading comment brings its own forced break with it, which throws off any layout that decides
+ * indentation from whether the break before the element was taken. Such layouts fall back to the
+ * default one when this is true.
+ */
+internal val PsiElement.hasLeadingComment: Boolean
+  get() = getPrevSiblingIgnoringWhitespace() is PsiComment
+
+/**
  * Returns true when [KtExpression] is a call that is forced onto multiple lines regardless of the
  * line width, either because its value argument list has a trailing comma (e.g. `foo(\n 1,\n
  * 2,\n)`) or because one of its arguments is itself a block-like multiline call.
@@ -86,10 +98,7 @@ internal val KtExpression?.isBlockLikeCall: Boolean
     contract { returns(true) implies (this@isBlockLikeCall is KtCallExpression) }
 
     if (this == null) return false
-    val prev = getPrevSiblingIgnoringWhitespace()
-    if (prev is PsiComment) {
-      return false // Leading comments cause weird indentation; keep the default layout.
-    }
+    if (hasLeadingComment) return false
 
     if (this !is KtCallExpression) return false
     val valueArgumentList = valueArgumentList ?: return false
@@ -108,6 +117,24 @@ internal val KtExpression.isChainedBlockLikeCall: Boolean
     contract { returns(true) implies (this@isChainedBlockLikeCall is KtQualifiedExpression) }
 
     return this is KtQualifiedExpression && this.chainRoot.isBlockLikeCall
+  }
+
+/**
+ * Returns true when [KtExpression] is a chain of dotted parts that gets the regular chain layout,
+ * e.g. `a[5].b!!.c()[4].f()`.
+ *
+ * Chains whose receiver is special-cased elsewhere -- a string template (`"a".trim()`) or a `when`
+ * -- are excluded, as are the block-like and scoping-function chains that have their own layout.
+ */
+@OptIn(ExperimentalContracts::class)
+internal val KtExpression.isPlainQualifiedChain: Boolean
+  get() {
+    contract { returns(true) implies (this@isPlainQualifiedChain is KtQualifiedExpression) }
+
+    if (this !is KtQualifiedExpression) return false
+    if (receiverExpression is KtStringTemplateExpression) return false
+    if (receiverExpression is KtWhenExpression) return false
+    return !isChainedBlockLikeCall && !isChainedScopingFunction
   }
 
 /**

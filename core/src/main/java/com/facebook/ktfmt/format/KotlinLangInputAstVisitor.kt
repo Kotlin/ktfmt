@@ -7,4 +7,5 @@ internal class KotlinLangInputAstVisitor(
     builder: OpsBuilder,
 ) : KotlinInputAstVisitor(options, builder) {
   override val forceAnnotationBreaks: Boolean = true
+  override val forceLineBreakAfterAssignment: Boolean = false
 }

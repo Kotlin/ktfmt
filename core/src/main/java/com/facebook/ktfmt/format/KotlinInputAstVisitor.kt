@@ -142,6 +142,7 @@ open class KotlinInputAstVisitor(
 ) : KtTreeVisitorVoid() {
 
   internal open val forceAnnotationBreaks: Boolean = false
+  internal open val forceLineBreakAfterAssignment: Boolean = true
 
   /** Standard indentation for a block */
   private val blockIndent: Indent.Const = Indent.Const.make(options.blockIndent, 1)
@@ -539,71 +540,176 @@ open class KotlinInputAstVisitor(
     val useBlockLikeLambdaStyle = parts.last().isLambda() && parts.count { it.isLambda() } == 1
     val groupingInfos = computeGroupingInfo(parts, useBlockLikeLambdaStyle)
     builder.block(expressionBreakIndent) {
-      val nameTag = BreakTag() // allows adjusting arguments indentation if a break will be made
-      for ((index, ktExpression) in parts.withIndex()) {
-        if (ktExpression is KtQualifiedExpression) {
-          builder.breakOp("", ZERO, Optional.of(nameTag))
-        }
-        repeat(groupingInfos[index].groupOpenCount) { builder.open(ZERO) }
-        when (ktExpression) {
-          is KtQualifiedExpression -> {
-            builder.token(ktExpression.operationSign.value)
-            val selectorExpression = ktExpression.selectorExpression
-            if (selectorExpression !is KtCallExpression) {
-              // selector is a simple field access
-              visit(selectorExpression)
-              if (groupingInfos[index].shouldCloseGroup) {
-                builder.close()
-              }
-            } else {
-              // selector is a function call, we may close a group after its name
-              // emit `doIt` from `doIt(1, 2) { it }`
-              visit(selectorExpression.calleeExpression)
-              // close groups according to instructions
-              if (groupingInfos[index].shouldCloseGroup) {
-                builder.close()
-              }
-              // close group due to last lambda to allow block-like style in `as.forEach { ... }`
-              val isTrailingLambda = useBlockLikeLambdaStyle && index == parts.size - 1
-              if (isTrailingLambda) {
-                builder.close()
-              }
-              // A block-like (exploded) selector call is laid out like the last part: its
-              // arguments are indented once relative to the call itself, and its closing paren
-              // returns to the call's indent, even when chained selectors follow it. This only
-              // applies when trailing commas are preserved (the block-like style); when ktfmt
-              // manages trailing commas, exploded chained calls keep the regular extra indent.
-              val isLastPartOrBlockLikeCall =
-                  index == parts.size - 1 ||
-                      !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
-              val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
-              val lambdaIndentElse = if (isTrailingLambda) expressionBreakNegativeIndent else ZERO
-              val negativeLambdaIndentElse = if (isTrailingLambda) expressionBreakIndent else ZERO
+      emitQualifiedExpressionParts(
+          parts,
+          groupingInfos,
+          useBlockLikeLambdaStyle,
+          range = parts.indices,
+          nameTag = BreakTag(),
+      )
+    }
+  }
 
-              // emit `(1, 2) { it }` from `doIt(1, 2) { it }`
-              visitCallElement(
-                  null,
-                  selectorExpression.typeArgumentList,
-                  selectorExpression.valueArgumentList,
-                  selectorExpression.lambdaArguments,
-                  argumentsIndent = Indent.If.make(nameTag, expressionBreakIndent, argsIndentElse),
-                  lambdaIndent = Indent.If.make(nameTag, ZERO, lambdaIndentElse),
-                  negativeLambdaIndent = Indent.If.make(nameTag, ZERO, negativeLambdaIndentElse),
-              )
+  /**
+   * Lays out a chain of qualified expressions that follows an operator such as `=`, deciding
+   * whether to break after that operator from the width of the chain's receiver alone.
+   *
+   * [emitQualifiedExpression] puts the whole chain into a single level, so a break in front of it
+   * is taken whenever the *entire* chain doesn't fit -- even when only the selectors need to break.
+   * Here the receiver goes into a level of its own instead, so the break competes with the receiver
+   * and nothing else:
+   * ```
+   * val testDataDir: Path = Path.of("")     // receiver fits: it stays on the `=` line
+   *     .resolve("tests")
+   *
+   * val testDataDir: Path =                 // receiver doesn't: the break is taken, and the
+   *     Path.ofAVeryVeryLongName("")        // selectors indent relative to the receiver
+   *         .resolve("tests")
+   * ```
+   *
+   * Returns false, having emitted nothing, when the chain's grouping spans the receiver and the
+   * selectors, so the two can't be put into separate levels. Callers fall back to breaking first
+   * and calling [emitQualifiedExpression].
+   */
+  private fun emitQualifiedExpressionAfterOperator(expression: KtExpression): Boolean {
+    val parts = breakIntoParts(expression)
+    val useBlockLikeLambdaStyle = parts.last().isLambda() && parts.count { it.isLambda() } == 1
+    val groupingInfos = computeGroupingInfo(parts, useBlockLikeLambdaStyle)
+    val receiverEnd =
+        receiverSegmentEnd(parts, groupingInfos, useBlockLikeLambdaStyle) ?: return false
+
+    val nameTag = BreakTag() // allows adjusting arguments indentation if a break will be made
+    val brokeAfterOperator = BreakTag()
+    // The receiver, preceded by the only break in this level: it is taken exactly when the
+    // receiver doesn't fit on the current line. The receiver's own contents indent one more level
+    // when that happens, since the receiver then starts a line of its own.
+    builder.block(expressionBreakIndent) {
+      builder.breakOp(" ", ZERO, Optional.of(brokeAfterOperator))
+      builder.block(Indent.If.make(brokeAfterOperator, expressionBreakIndent, ZERO)) {
+        emitQualifiedExpressionParts(
+            parts,
+            groupingInfos,
+            useBlockLikeLambdaStyle,
+            range = 0..receiverEnd,
+            nameTag = nameTag,
+        )
+      }
+    }
+    // The selectors, in a level of their own so that they can still share a line with the receiver
+    // when they fit. This level is entered after the break above was decided, so its indent can
+    // depend on it.
+    if (receiverEnd < parts.lastIndex) {
+      val selectorsIndent =
+          Indent.If.make(brokeAfterOperator, doubleExpressionBreakIndent, expressionBreakIndent)
+      builder.block(selectorsIndent) {
+        emitQualifiedExpressionParts(
+            parts,
+            groupingInfos,
+            useBlockLikeLambdaStyle,
+            range = receiverEnd + 1..parts.lastIndex,
+            nameTag = nameTag,
+        )
+      }
+    }
+    return true
+  }
+
+  /**
+   * The index of the last part of the chain's receiver -- the head that is kept together, such as
+   * `a.b[2]` in `a.b[2].c.d()` -- or null when every group opened in the chain is still open by the
+   * time the last part is emitted, so there is no point at which the chain can be split in two.
+   */
+  private fun receiverSegmentEnd(
+      parts: List<KtExpression>,
+      groupingInfos: List<GroupingInfo>,
+      useBlockLikeLambdaStyle: Boolean,
+  ): Int? {
+    // The group of a block-like trailing lambda is opened at the root and closed at the very last
+    // part, so it always spans the whole chain.
+    if (useBlockLikeLambdaStyle) return null
+
+    var openGroups = 0
+    for ((index, part) in parts.withIndex()) {
+      openGroups += groupingInfos[index].groupOpenCount
+      if (groupingInfos[index].shouldCloseGroup) openGroups--
+      if (part is KtArrayAccessExpression || part is KtPostfixExpression) openGroups--
+      if (openGroups == 0) return index
+    }
+    return null
+  }
+
+  /** Emits [range] of the parts of a chain, see [emitQualifiedExpression]. */
+  private fun emitQualifiedExpressionParts(
+      parts: List<KtExpression>,
+      groupingInfos: List<GroupingInfo>,
+      useBlockLikeLambdaStyle: Boolean,
+      range: IntRange,
+      nameTag: BreakTag,
+  ) {
+    for (index in range) {
+      val ktExpression = parts[index]
+      if (ktExpression is KtQualifiedExpression) {
+        builder.breakOp("", ZERO, Optional.of(nameTag))
+      }
+      repeat(groupingInfos[index].groupOpenCount) { builder.open(ZERO) }
+      when (ktExpression) {
+        is KtQualifiedExpression -> {
+          builder.token(ktExpression.operationSign.value)
+          val selectorExpression = ktExpression.selectorExpression
+          if (selectorExpression !is KtCallExpression) {
+            // selector is a simple field access
+            visit(selectorExpression)
+            if (groupingInfos[index].shouldCloseGroup) {
+              builder.close()
             }
+          } else {
+            // selector is a function call, we may close a group after its name
+            // emit `doIt` from `doIt(1, 2) { it }`
+            visit(selectorExpression.calleeExpression)
+            // close groups according to instructions
+            if (groupingInfos[index].shouldCloseGroup) {
+              builder.close()
+            }
+            // close group due to last lambda to allow block-like style in `as.forEach { ... }`
+            val isTrailingLambda = useBlockLikeLambdaStyle && index == parts.size - 1
+            if (isTrailingLambda) {
+              builder.close()
+            }
+            // A block-like (exploded) selector call is laid out like the last part: its
+            // arguments are indented once relative to the call itself, and its closing paren
+            // returns to the call's indent, even when chained selectors follow it. This only
+            // applies when trailing commas are preserved (the block-like style); when ktfmt
+            // manages trailing commas, exploded chained calls keep the regular extra indent.
+            val isLastPartOrBlockLikeCall =
+                index == parts.size - 1 ||
+                    !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
+            val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
+            val lambdaIndentElse = if (isTrailingLambda) expressionBreakNegativeIndent else ZERO
+            val negativeLambdaIndentElse = if (isTrailingLambda) expressionBreakIndent else ZERO
+
+            // emit `(1, 2) { it }` from `doIt(1, 2) { it }`
+            visitCallElement(
+                null,
+                selectorExpression.typeArgumentList,
+                selectorExpression.valueArgumentList,
+                selectorExpression.lambdaArguments,
+                argumentsIndent = Indent.If.make(nameTag, expressionBreakIndent, argsIndentElse),
+                lambdaIndent = Indent.If.make(nameTag, ZERO, lambdaIndentElse),
+                negativeLambdaIndent = Indent.If.make(nameTag, ZERO, negativeLambdaIndentElse),
+            )
           }
-          is KtArrayAccessExpression -> {
-            visitArrayAccessBrackets(ktExpression)
-            builder.close()
-          }
-          is KtPostfixExpression -> {
-            builder.token(ktExpression.operationReference.text)
-            builder.close()
-          }
-          else -> {
-            check(index == 0)
-            visit(ktExpression)
-          }
+        }
+        is KtArrayAccessExpression -> {
+          visitArrayAccessBrackets(ktExpression)
+          builder.close()
+        }
+        is KtPostfixExpression -> {
+          builder.token(ktExpression.operationReference.text)
+          builder.close()
+        }
+        else -> {
+          check(index == 0)
+          visit(ktExpression)
         }
       }
     }
@@ -1484,9 +1590,18 @@ open class KotlinInputAstVisitor(
     } else if (initializer.isChainedBlockLikeCall) {
       visitChainedBlockLikeCall(initializer, emitLeadingBreak = true)
     } else {
-      builder.breakOpThenBlock(" ", expressionBreakIndent) {
-        builder.fenceComments()
-        visit(initializer)
+      // A chain gets to keep its receiver on the `=` line when it fits there; everything else
+      // breaks after the `=` and is laid out one level in.
+      val laidOutAsChain =
+          !forceLineBreakAfterAssignment &&
+              initializer.isPlainQualifiedChain &&
+              !initializer.hasLeadingComment &&
+              emitQualifiedExpressionAfterOperator(initializer)
+      if (!laidOutAsChain) {
+        builder.breakOpThenBlock(" ", expressionBreakIndent) {
+          builder.fenceComments()
+          visit(initializer)
+        }
       }
     }
   }
