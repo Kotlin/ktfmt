@@ -25,13 +25,10 @@ rootProject.name = "ktfmt-parent"
 
 include(
     ":ktfmt",
-    ":lambda",
     ":idea_plugin",
 )
 
 project(":ktfmt").projectDir = file("core")
-
-project(":lambda").projectDir = file("online_formatter")
 
 project(":idea_plugin").projectDir = file("ktfmt_idea_plugin")
 
