@@ -18,11 +18,6 @@ IntelliJ:
 | ------ | --------|
 | ![ktlint](docs/images/ktlint.png) | ![IntelliJ](docs/images/intellij.png) |
 
-## Playground
-
-We have a [live playground](https://kotlin.github.io/ktfmt/) where you can easily see how ktfmt
-would format your code.
-Give it a try! https://kotlin.github.io/ktfmt/
 
 ## Using the formatter
 

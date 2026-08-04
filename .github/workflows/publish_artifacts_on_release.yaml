@@ -82,35 +82,3 @@ jobs:
             core/build/libs/ktfmt-*.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy_website:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
-
-      - uses: actions/setup-node@v4
-
-      - name: Deploy website
-        run: |
-          KTFMT_TMP_DIR=$(mktemp -d)
-
-          pushd website
-          npm install .
-          KTFMT_WEBSITE_OUTPUT_DIR="$KTFMT_TMP_DIR" gulp build-website
-          popd
-
-          git fetch
-          git checkout gh-pages
-          git config user.email ktfmt@facebook.com
-          git config user.name ktfmt
-
-          rm -rf *
-          cp -R "$KTFMT_TMP_DIR"/* .
-
-          git add .
-          git commit -m "Publish website"
-          git push --force
-
-          rm -rf "$KTFMT_TMP_DIR"

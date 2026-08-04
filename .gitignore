@@ -13,12 +13,7 @@ out/
 .DS_Store
 classes/
 
-online_formatter/out.yml
-
 .intellijPlatform/
-
-website/node_modules
-release-ktfmt-website/
 
 ### Gradle ###
 .gradle
