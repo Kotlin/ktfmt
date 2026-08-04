@@ -66,7 +66,6 @@ class KtfmtArgumentsProvider(
     @get:Input val check: Boolean,
 ) : CommandLineArgumentProvider {
   override fun asArguments(): Iterable<String> = buildList {
-    add("--quiet")
     if (check) {
       add("--dry-run")
       add("--set-exit-if-changed")
