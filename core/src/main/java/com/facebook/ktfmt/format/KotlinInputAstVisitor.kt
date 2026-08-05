@@ -86,6 +86,7 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtModifierList
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtNullableType
+import org.jetbrains.kotlin.psi.KtObjectLiteralExpression
 import org.jetbrains.kotlin.psi.KtPackageDirective
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtParameterList
@@ -1740,6 +1741,7 @@ open class KotlinInputAstVisitor(
       expression.isBlockLikeCall -> emitHugged()
       expression.isChainedBlockLikeCall ->
           visitChainedBlockLikeCall(expression, emitLeadingBreak = true)
+      expression is KtObjectLiteralExpression -> emitHugged()
       hugBlockLikeInfixCalls && expression.isInfixBlockLikeCall ->
           emitInfixBlockLikeCall(expression)
       hugWhenExpressions && expression is KtWhenExpression && !expression.hasLeadingComment ->
