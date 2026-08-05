@@ -149,6 +149,12 @@ open class KotlinInputAstVisitor(
    */
   internal open val hugBlockLikeInfixCalls: Boolean = false
 
+  /**
+   * Whether a `when` expression hugs the operator it follows, see
+   * [emitWhenExpressionAfterOperator].
+   */
+  internal open val hugWhenExpressions: Boolean = false
+
   /** Standard indentation for a block */
   private val blockIndent: Indent.Const = Indent.Const.make(options.blockIndent, 1)
 
@@ -1596,6 +1602,10 @@ open class KotlinInputAstVisitor(
       visitChainedBlockLikeCall(initializer, emitLeadingBreak = true)
     } else if (hugBlockLikeInfixCalls && initializer.isInfixBlockLikeCall) {
       emitInfixBlockLikeCall(initializer)
+    } else if (
+        hugWhenExpressions && initializer is KtWhenExpression && !initializer.hasLeadingComment
+    ) {
+      emitWhenExpressionAfterOperator(initializer)
     } else {
       // A chain gets to keep its receiver on the `=` line when it fits there; everything else
       // breaks after the `=` and is laid out one level in.
@@ -1698,6 +1708,38 @@ open class KotlinInputAstVisitor(
         visitValueArgumentListInternal(checkNotNull(call.valueArgumentList))
       }
     }
+  }
+
+  /**
+   * Emit a `when (...) { ... }` that follows an operator such as `=`, deciding whether to break
+   * after that operator from the width of the `when (...) {` head alone:
+   * ```
+   * val affected = when (event) {          // the head fits: it stays on the `=` line
+   *     is Update -> emptyList()
+   * }
+   *
+   * val affected: List<TeamId> =           // the head doesn't: the break is taken, and the body
+   *     when (event) {                     // indents relative to the `when`
+   *         is Update -> emptyList()
+   *     }
+   * ```
+   *
+   * The mechanics are the same as in [emitInfixBlockLikeCall], with the body of the `when` playing
+   * the part of the argument list there.
+   */
+  private fun emitWhenExpressionAfterOperator(expression: KtWhenExpression) {
+    builder.sync(expression)
+    val brokeAfterOperator = BreakTag()
+    val bodyIndent = Indent.If.make(brokeAfterOperator, expressionBreakIndent, ZERO)
+
+    builder.block(expressionBreakIndent) {
+      builder.breakOp(" ", ZERO, Optional.of(brokeAfterOperator))
+      builder.block(bodyIndent) {
+        builder.fenceComments()
+        emitWhenHead(expression)
+      }
+    }
+    builder.block(bodyIndent) { emitWhenBody(expression) }
   }
 
   /**
@@ -2206,62 +2248,71 @@ open class KotlinInputAstVisitor(
   override fun visitWhenExpression(expression: KtWhenExpression) {
     builder.sync(expression)
     builder.block(ZERO) {
-      emitKeywordWithCondition("when", expression.subjectExpression)
+      emitWhenHead(expression)
+      emitWhenBody(expression)
+    }
+  }
 
-      builder.space()
-      builder.token("{", Doc.Token.RealOrImaginary.REAL, blockIndent, Optional.of(blockIndent))
+  /** Emits `when (subject) {`, the part of a `when` expression that opens its body. */
+  private fun emitWhenHead(expression: KtWhenExpression) {
+    emitKeywordWithCondition("when", expression.subjectExpression)
 
-      expression.entries.forEachIndexed { index, whenEntry ->
-        builder.block(blockIndent) {
-          if (index != 0) {
-            // preserve new line if there's one
-            builder.blankLineWanted(BlankLineWanted.PRESERVE)
-          }
-          builder.forcedBreak()
-          builder.block(ZERO) {
-            if (whenEntry.elseKeyword != null) {
-              builder.token("else")
-            } else {
-              val conditions = whenEntry.conditions
-              for ((index, condition) in conditions.withIndex()) {
-                visit(condition)
-                builder.guessToken(",")
-                if (index != conditions.lastIndex) {
-                  builder.forcedBreak()
-                }
-              }
-            }
-            whenEntry.guard?.let { guard ->
-              builder.space()
-              emitKeywordWithCondition(
-                  "if",
-                  guard.getExpression(),
-                  surroundConditionWithParens = false,
-              )
-            }
-          }
-          val whenExpression = whenEntry.expression
-          if (whenEntry.trailingComma != null) {
-            builder.forcedBreak()
-          } else {
-            builder.space()
-          }
-          builder.token("->")
-          if (whenExpression is KtBlockExpression || whenExpression is KtLambdaExpression) {
-            builder.space()
-            visit(whenExpression)
-          } else {
-            builder.block(expressionBreakIndent) {
-              builder.breakToFill(" ")
-              visit(whenExpression)
-            }
-          }
-          builder.guessSemicolon()
+    builder.space()
+    builder.token("{", Doc.Token.RealOrImaginary.REAL, blockIndent, Optional.of(blockIndent))
+  }
+
+  /** Emits the entries of a `when` expression and the `}` closing its body. */
+  private fun emitWhenBody(expression: KtWhenExpression) {
+    expression.entries.forEachIndexed { index, whenEntry ->
+      builder.block(blockIndent) {
+        if (index != 0) {
+          // preserve new line if there's one
+          builder.blankLineWanted(BlankLineWanted.PRESERVE)
         }
         builder.forcedBreak()
+        builder.block(ZERO) {
+          if (whenEntry.elseKeyword != null) {
+            builder.token("else")
+          } else {
+            val conditions = whenEntry.conditions
+            for ((index, condition) in conditions.withIndex()) {
+              visit(condition)
+              builder.guessToken(",")
+              if (index != conditions.lastIndex) {
+                builder.forcedBreak()
+              }
+            }
+          }
+          whenEntry.guard?.let { guard ->
+            builder.space()
+            emitKeywordWithCondition(
+                "if",
+                guard.getExpression(),
+                surroundConditionWithParens = false,
+            )
+          }
+        }
+        val whenExpression = whenEntry.expression
+        if (whenEntry.trailingComma != null) {
+          builder.forcedBreak()
+        } else {
+          builder.space()
+        }
+        builder.token("->")
+        if (whenExpression is KtBlockExpression || whenExpression is KtLambdaExpression) {
+          builder.space()
+          visit(whenExpression)
+        } else {
+          builder.block(expressionBreakIndent) {
+            builder.breakToFill(" ")
+            visit(whenExpression)
+          }
+        }
+        builder.guessSemicolon()
       }
-      builder.token("}")
+      builder.forcedBreak()
     }
+    builder.token("}")
   }
 
   override fun visitClassBody(body: KtClassBody) {

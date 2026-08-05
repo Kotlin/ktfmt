@@ -9,4 +9,5 @@ internal class KotlinLangInputAstVisitor(
   override val forceAnnotationBreaks: Boolean = true
   override val forceLineBreakAfterAssignment: Boolean = false
   override val hugBlockLikeInfixCalls: Boolean = true
+  override val hugWhenExpressions: Boolean = true
 }
