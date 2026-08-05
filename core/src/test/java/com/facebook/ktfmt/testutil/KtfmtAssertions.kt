@@ -20,11 +20,8 @@ import com.facebook.ktfmt.debughelpers.PrintAstVisitor
 import com.facebook.ktfmt.format.Formatter
 import com.facebook.ktfmt.format.FormattingOptions
 import com.facebook.ktfmt.format.Parser
-import com.google.common.truth.FailureMetadata
-import com.google.common.truth.Subject
-import com.google.common.truth.Truth
 import org.intellij.lang.annotations.Language
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 
 var defaultTestFormattingOptions: FormattingOptions = Formatter.META_FORMAT
 
@@ -75,17 +72,11 @@ fun assertFormatted(
 }
 
 fun assertThatFormatting(@Language("kts") code: String): FormattedCodeSubject {
-  fun codes(): Subject.Factory<FormattedCodeSubject, String> {
-    return Subject.Factory { metadata, subject ->
-      FormattedCodeSubject(metadata, checkNotNull(subject))
-    }
-  }
-  return Truth.assertAbout(codes()).that(code)
+  return FormattedCodeSubject(code)
 }
 
 @Suppress("ClassNameDoesNotMatchFileName")
-class FormattedCodeSubject(metadata: FailureMetadata, private val code: String) :
-    Subject(metadata, code) {
+class FormattedCodeSubject(private val code: String) {
   private var options: FormattingOptions = defaultTestFormattingOptions
   private var allowTrailingWhitespace = false
 
@@ -130,7 +121,7 @@ class FormattedCodeSubject(metadata: FailureMetadata, private val code: String) 
       reportError(code)
       throw e
     }
-    Assertions.assertEquals(expectedFormatting, actualFormatting)
+    assertEquals(expectedFormatting, actualFormatting)
   }
 
   private fun reportError(code: String) {

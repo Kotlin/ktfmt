@@ -16,7 +16,9 @@
 
 package com.facebook.ktfmt.cli
 
-import com.google.common.truth.Truth.assertThat
+import com.facebook.ktfmt.testutil.assertContains
+import com.facebook.ktfmt.testutil.assertDoesNotContain
+import com.facebook.ktfmt.testutil.assertStartsWith
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.charset.Charset
@@ -26,6 +28,8 @@ import java.nio.file.Files
 import java.util.concurrent.ForkJoinPool
 import kotlin.io.path.createTempDirectory
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -42,7 +46,7 @@ class MainTest {
 
   @BeforeEach
   fun setUp() {
-    assertThat(Charset.defaultCharset()).isEqualTo(testCharset) // Verify the test JVM flags
+    assertEquals(testCharset, Charset.defaultCharset()) // Verify the test JVM flags
   }
 
   @AfterEach
@@ -58,13 +62,13 @@ class MainTest {
   fun `expandArgsToFileNames - single file arg is used as is`() {
     val fooBar = root.resolve("foo.bar")
     fooBar.writeText("hi", UTF_8)
-    assertThat(Main.expandArgsToFileNames(listOf(fooBar.toString()))).containsExactly(fooBar)
+    assertEquals(listOf(fooBar), Main.expandArgsToFileNames(listOf(fooBar.toString())))
   }
 
   @Test
   fun `expandArgsToFileNames - single arg which is not a file is not returned`() {
     val fooBar = root.resolve("foo.bar")
-    assertThat(Main.expandArgsToFileNames(listOf(fooBar.toString()))).isEmpty()
+    assertTrue(Main.expandArgsToFileNames(listOf(fooBar.toString())).isEmpty())
   }
 
   @Test
@@ -75,7 +79,7 @@ class MainTest {
     foo.writeText("", UTF_8)
     val bar = dir.resolve("bar.kt")
     bar.writeText("", UTF_8)
-    assertThat(Main.expandArgsToFileNames(listOf(dir.toString()))).containsExactly(foo, bar)
+    assertEquals(setOf(foo, bar), Main.expandArgsToFileNames(listOf(dir.toString())).toSet())
   }
 
   @Test
@@ -94,8 +98,10 @@ class MainTest {
     val bar2 = dir1.resolve("bar2.kt")
     bar2.writeText("", UTF_8)
 
-    assertThat(Main.expandArgsToFileNames(listOf(dir1.toString(), dir2.toString())))
-        .containsExactly(foo1, bar1, foo2, bar2)
+    assertEquals(
+        setOf(foo1, bar1, foo2, bar2),
+        Main.expandArgsToFileNames(listOf(dir1.toString(), dir2.toString())).toSet(),
+    )
   }
 
   @Test
@@ -104,7 +110,7 @@ class MainTest {
     Main(code.byteInputStream(), PrintStream(out), PrintStream(err), arrayOf("-")).run()
 
     val expected = "fun f1(): Int = 0\n"
-    assertThat(out.toString(UTF_8)).isEqualTo(expected)
+    assertEquals(expected, out.toString(UTF_8))
   }
 
   @Test
@@ -113,8 +119,8 @@ class MainTest {
     val returnValue =
         Main(code.byteInputStream(), PrintStream(out), PrintStream(err), arrayOf("-")).run()
 
-    assertThat(returnValue).isEqualTo(1)
-    assertThat(err.toString(testCharset)).startsWith("<stdin>:1:14: error: ")
+    assertEquals(1, returnValue)
+    assertStartsWith(err.toString(testCharset), "<stdin>:1:14: error: ")
   }
 
   @Test
@@ -128,8 +134,8 @@ class MainTest {
     )
         .run()
 
-    assertThat(returnValue).isEqualTo(1)
-    assertThat(err.toString(testCharset)).startsWith("file/Foo.kt:1:14: error: ")
+    assertEquals(1, returnValue)
+    assertStartsWith(err.toString(testCharset), "file/Foo.kt:1:14: error: ")
   }
 
   @Test
@@ -139,8 +145,8 @@ class MainTest {
     val returnValue =
         Main(emptyInput, PrintStream(out), PrintStream(err), arrayOf(fooBar.toString())).run()
 
-    assertThat(returnValue).isEqualTo(1)
-    assertThat(err.toString(testCharset)).contains("foo.kt:1:14: error: ")
+    assertEquals(1, returnValue)
+    assertContains(err.toString(testCharset), "foo.kt:1:14: error: ")
   }
 
   @Test
@@ -150,9 +156,11 @@ class MainTest {
     val returnValue =
         Main(emptyInput, PrintStream(out), PrintStream(err), arrayOf(fooBar.toString())).run()
 
-    assertThat(returnValue).isEqualTo(1)
-    assertThat(err.toString(testCharset))
-        .contains("foo.kt:1:21: error: Maximum one trailing lambda is allowed")
+    assertEquals(1, returnValue)
+    assertContains(
+        err.toString(testCharset),
+        "foo.kt:1:21: error: Maximum one trailing lambda is allowed",
+    )
   }
 
   @Test
@@ -180,10 +188,10 @@ class MainTest {
             }
             .get()
 
-    assertThat(returnValue).isEqualTo(1)
-    assertThat(err.toString(testCharset)).contains("Done formatting $file1")
-    assertThat(err.toString(testCharset)).contains("file2.kt:1:14: error: ")
-    assertThat(err.toString(testCharset)).contains("Done formatting $file3")
+    assertEquals(1, returnValue)
+    assertContains(err.toString(testCharset), "Done formatting $file1")
+    assertContains(err.toString(testCharset), "file2.kt:1:14: error: ")
+    assertContains(err.toString(testCharset), "Done formatting $file3")
   }
 
   @Test
@@ -199,8 +207,7 @@ class MainTest {
     val lastModifiedTimeAfterRunningFormatter =
         Files.getLastModifiedTime(formattedFilePath).toMillis()
 
-    assertThat(lastModifiedTimeBeforeRunningFormatter)
-        .isEqualTo(lastModifiedTimeAfterRunningFormatter)
+    assertEquals(lastModifiedTimeAfterRunningFormatter, lastModifiedTimeBeforeRunningFormatter)
   }
 
   @Test
@@ -218,8 +225,7 @@ class MainTest {
     val lastModifiedTimeAfterRunningFormatter =
         Files.getLastModifiedTime(unformattedFilePath).toMillis()
 
-    assertThat(lastModifiedTimeBeforeRunningFormatter)
-        .isLessThan(lastModifiedTimeAfterRunningFormatter)
+    assertTrue(lastModifiedTimeBeforeRunningFormatter < lastModifiedTimeAfterRunningFormatter)
   }
 
   @Test
@@ -243,7 +249,7 @@ class MainTest {
     )
         .run()
 
-    assertThat(fooBar.readText()).isEqualTo(code)
+    assertEquals(code, fooBar.readText())
   }
 
   @Test
@@ -276,7 +282,7 @@ class MainTest {
     )
         .run()
 
-    assertThat(out.toString(UTF_8)).isEqualTo(formatted)
+    assertEquals(formatted, out.toString(UTF_8))
   }
 
   @Test
@@ -296,8 +302,10 @@ class MainTest {
     for (f in files) {
       f.createNewFile()
     }
-    assertThat(Main.expandArgsToFileNames(files.map { it.toString() }))
-        .containsExactly(f1, f2, f5, f6, f7)
+    assertEquals(
+        setOf(f1, f2, f5, f6, f7),
+        Main.expandArgsToFileNames(files.map { it.toString() }).toSet(),
+    )
   }
 
   @Test
@@ -311,7 +319,7 @@ class MainTest {
         arrayOf("-"),
     )
         .run()
-    assertThat(out.toString(UTF_8)).isEqualTo(expected)
+    assertEquals(expected, out.toString(UTF_8))
 
     out.reset()
 
@@ -322,7 +330,7 @@ class MainTest {
         arrayOf("-"),
     )
         .run()
-    assertThat(out.toString(UTF_8)).isEqualTo(expected)
+    assertEquals(expected, out.toString(UTF_8))
   }
 
   @Test
@@ -334,8 +342,8 @@ class MainTest {
     Main(emptyInput, PrintStream(out), PrintStream(err), arrayOf("--dry-run", file.toString()))
         .run()
 
-    assertThat(file.readText()).isEqualTo(code)
-    assertThat(out.toString(testCharset)).contains(file.toString())
+    assertEquals(code, file.readText())
+    assertContains(out.toString(testCharset), file.toString())
   }
 
   @Test
@@ -345,8 +353,8 @@ class MainTest {
     Main(code.byteInputStream(), PrintStream(out), PrintStream(err), arrayOf("--dry-run", "-"))
         .run()
 
-    assertThat(out.toString(UTF_8)).doesNotContain("hello, world")
-    assertThat(out.toString(testCharset)).isEqualTo("<stdin>${System.lineSeparator()}")
+    assertDoesNotContain(out.toString(UTF_8), "hello, world")
+    assertEquals("<stdin>${System.lineSeparator()}", out.toString(testCharset))
   }
 
   @Test
@@ -358,7 +366,7 @@ class MainTest {
     Main(emptyInput, PrintStream(out), PrintStream(err), arrayOf("--dry-run", file.toString()))
         .run()
 
-    assertThat(out.toString(UTF_8)).isEmpty()
+    assertEquals("", out.toString(UTF_8))
   }
 
   @Test
@@ -368,7 +376,7 @@ class MainTest {
     Main(code.byteInputStream(), PrintStream(out), PrintStream(err), arrayOf("--dry-run", "-"))
         .run()
 
-    assertThat(out.toString(UTF_8)).isEmpty()
+    assertEquals("", out.toString(UTF_8))
   }
 
   @Test
@@ -380,7 +388,7 @@ class MainTest {
     val exitCode =
         Main(emptyInput, PrintStream(out), PrintStream(err), arrayOf(file.toString())).run()
 
-    assertThat(exitCode).isEqualTo(0)
+    assertEquals(0, exitCode)
   }
 
   @Test
@@ -390,7 +398,7 @@ class MainTest {
     val exitCode =
         Main(code.byteInputStream(), PrintStream(out), PrintStream(err), arrayOf("-")).run()
 
-    assertThat(exitCode).isEqualTo(0)
+    assertEquals(0, exitCode)
   }
 
   @Test
@@ -407,7 +415,7 @@ class MainTest {
     )
         .run()
 
-    assertThat(exitCode).isEqualTo(1)
+    assertEquals(1, exitCode)
   }
 
   @Test
@@ -422,7 +430,7 @@ class MainTest {
     )
         .run()
 
-    assertThat(exitCode).isEqualTo(1)
+    assertEquals(1, exitCode)
   }
 
   @Test
@@ -439,9 +447,9 @@ class MainTest {
     )
         .run()
 
-    assertThat(file.readText()).isEqualTo(code)
-    assertThat(out.toString(testCharset)).contains(file.toString())
-    assertThat(exitCode).isEqualTo(1)
+    assertEquals(code, file.readText())
+    assertContains(out.toString(testCharset), file.toString())
+    assertEquals(1, exitCode)
   }
 
   @Test
@@ -456,9 +464,9 @@ class MainTest {
     )
         .run()
 
-    assertThat(out.toString(UTF_8)).doesNotContain("hello, world")
-    assertThat(out.toString(testCharset)).isEqualTo("<stdin>${System.lineSeparator()}")
-    assertThat(exitCode).isEqualTo(1)
+    assertDoesNotContain(out.toString(UTF_8), "hello, world")
+    assertEquals("<stdin>${System.lineSeparator()}", out.toString(testCharset))
+    assertEquals(1, exitCode)
   }
 
   @Test
@@ -474,8 +482,8 @@ class MainTest {
     )
         .run()
 
-    assertThat(exitCode).isEqualTo(0)
-    assertThat(out.toString(UTF_8)).isEqualTo(expected)
+    assertEquals(0, exitCode)
+    assertEquals(expected, out.toString(UTF_8))
   }
 
   @Test
@@ -492,8 +500,8 @@ class MainTest {
     )
         .run()
 
-    assertThat(exitCode).isEqualTo(0)
-    assertThat(file.readText(UTF_8)).isEqualTo("""fun f() = println("hello, world")""" + "\n")
+    assertEquals(0, exitCode)
+    assertEquals("""fun f() = println("hello, world")""" + "\n", file.readText(UTF_8))
   }
 
   @Test
@@ -510,8 +518,8 @@ class MainTest {
     )
         .run()
 
-    assertThat(exitCode).isEqualTo(0)
-    assertThat(file.readText(UTF_8)).isEqualTo("""fun f() = println("hello, world")""" + "\n")
+    assertEquals(0, exitCode)
+    assertEquals("""fun f() = println("hello, world")""" + "\n", file.readText(UTF_8))
   }
 
   @Test
@@ -524,7 +532,7 @@ class MainTest {
     )
         .run()
 
-    assertThat(exitCode).isEqualTo(0)
+    assertEquals(0, exitCode)
   }
 
   @Test
@@ -535,7 +543,7 @@ class MainTest {
 
     Main(emptyInput, PrintStream(out), PrintStream(err), arrayOf("--quiet", file.toString())).run()
 
-    assertThat(err.toString(testCharset)).doesNotContain("Done formatting")
+    assertDoesNotContain(err.toString(testCharset), "Done formatting")
   }
 
   @Test
@@ -546,8 +554,8 @@ class MainTest {
         Main(emptyInput, PrintStream(out), PrintStream(err), arrayOf("--quiet", fooBar.toString()))
             .run()
 
-    assertThat(returnValue).isEqualTo(1)
-    assertThat(err.toString(testCharset)).contains("foo.kt:1:14: error: ")
+    assertEquals(1, returnValue)
+    assertContains(err.toString(testCharset), "foo.kt:1:14: error: ")
   }
 
   @Test
@@ -569,19 +577,19 @@ class MainTest {
         Main(emptyInput, PrintStream(out), PrintStream(err), arrayOf("--lines=4", file.toString()))
             .run()
 
-    assertThat(exitCode).isEqualTo(0)
-    assertThat(file.readText(UTF_8))
-        .isEqualTo(
-            """
-            |fun untouched ( ) =   1
-            |
-            |fun test() {
-            |  val selected = 2
-            |  val adjacent    =   3
-            |}
-            |"""
-                .trimMargin(),
-        )
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
   }
 
   @Test
@@ -601,19 +609,19 @@ class MainTest {
         Main(code.byteInputStream(), PrintStream(out), PrintStream(err), arrayOf("--lines=4", "-"))
             .run()
 
-    assertThat(exitCode).isEqualTo(0)
-    assertThat(out.toString(UTF_8))
-        .isEqualTo(
-            """
-            |fun untouched ( ) =   1
-            |
-            |fun test() {
-            |  val selected = 2
-            |  val adjacent    =   3
-            |}
-            |"""
-                .trimMargin(),
-        )
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin(),
+        out.toString(UTF_8),
+    )
   }
 
   @Test
@@ -635,21 +643,21 @@ class MainTest {
         Main(code.byteInputStream(), PrintStream(out), PrintStream(err), arrayOf("--lines=5", "-"))
             .run()
 
-    assertThat(exitCode).isEqualTo(0)
-    assertThat(out.toString(UTF_8))
-        .isEqualTo(
-            """
-            |class Sample {
-            |  fun untouched ( ) =   1
-            |
-            |  fun test() {
-            |    val selected = 2
-            |    val adjacent    =   3
-            |  }
-            |}
-            |"""
-                .trimMargin(),
-        )
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |class Sample {
+        |  fun untouched ( ) =   1
+        |
+        |  fun test() {
+        |    val selected = 2
+        |    val adjacent    =   3
+        |  }
+        |}
+        |"""
+            .trimMargin(),
+        out.toString(UTF_8),
+    )
   }
 
   @Test
@@ -673,22 +681,22 @@ class MainTest {
         Main(code.byteInputStream(), PrintStream(out), PrintStream(err), arrayOf("--lines=8", "-"))
             .run()
 
-    assertThat(exitCode).isEqualTo(0)
-    assertThat(out.toString(UTF_8))
-        .isEqualTo(
-            """
-            |import com.used.FooBarBaz as Baz
-            |import com.used.bar
-            |
-            |fun untouched ( ) =   1
-            |
-            |fun test() {
-            |  val selected = 2
-            |  Baz(bar)
-            |}
-            |"""
-                .trimMargin(),
-        )
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |import com.used.FooBarBaz as Baz
+        |import com.used.bar
+        |
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |  Baz(bar)
+        |}
+        |"""
+            .trimMargin(),
+        out.toString(UTF_8),
+    )
   }
 
   @Test
@@ -718,29 +726,29 @@ class MainTest {
         Main(code.byteInputStream(), PrintStream(out), PrintStream(err), arrayOf("--lines=15", "-"))
             .run()
 
-    assertThat(exitCode).isEqualTo(0)
-    assertThat(out.toString(UTF_8))
-        .isEqualTo(
-            """
-            |val indent =
-            |    ""${'"'}
-            |    example
-            |     of
-            |       a
-            |
-            |    multiline
-            |      string
-            |    ""${'"'}
-            |        .trimIndent()
-            |
-            |fun untouched ( ) =   1
-            |
-            |fun test() {
-            |  val selected = 2
-            |}
-            |"""
-                .trimMargin(),
-        )
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |val indent =
+        |    ""${'"'}
+        |    example
+        |     of
+        |       a
+        |
+        |    multiline
+        |      string
+        |    ""${'"'}
+        |        .trimIndent()
+        |
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |}
+        |"""
+            .trimMargin(),
+        out.toString(UTF_8),
+    )
   }
 
   @Test
@@ -770,19 +778,19 @@ class MainTest {
     )
         .run()
 
-    assertThat(exitCode).isEqualTo(0)
-    assertThat(file.readText(UTF_8))
-        .isEqualTo(
-            """
-            |fun untouched ( ) =   1
-            |
-            |fun test() {
-            |  val selected = 2
-            |  val adjacent    =   3
-            |}
-            |"""
-                .trimMargin(),
-        )
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
   }
 
   @Test
@@ -806,19 +814,19 @@ class MainTest {
     )
         .run()
 
-    assertThat(exitCode).isEqualTo(0)
-    assertThat(out.toString(UTF_8))
-        .isEqualTo(
-            """
-            |fun untouched ( ) =   1
-            |
-            |fun test() {
-            |  val selected = 2
-            |  val adjacent    =   3
-            |}
-            |"""
-                .trimMargin(),
-        )
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin(),
+        out.toString(UTF_8),
+    )
   }
 
   @Test
@@ -832,8 +840,10 @@ class MainTest {
         Main(emptyInput, PrintStream(out), PrintStream(err), arrayOf("--lines=1", dir.toString()))
             .run()
 
-    assertThat(exitCode).isEqualTo(1)
-    assertThat(err.toString(testCharset))
-        .contains("partial formatting is only supported for a single file")
+    assertEquals(1, exitCode)
+    assertContains(
+        err.toString(testCharset),
+        "partial formatting is only supported for a single file",
+    )
   }
 }

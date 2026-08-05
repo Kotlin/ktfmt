@@ -17,10 +17,12 @@
 package com.facebook.ktfmt.format
 
 import com.facebook.ktfmt.format.Formatter.META_FORMAT
+import com.facebook.ktfmt.testutil.assertContains
+import com.facebook.ktfmt.testutil.assertContainsMatch
 import com.facebook.ktfmt.testutil.assertFormatted
 import com.facebook.ktfmt.testutil.assertThatFormatting
 import com.facebook.ktfmt.testutil.defaultTestFormattingOptions
-import com.google.common.truth.Truth.assertThat
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -3690,9 +3692,9 @@ class FormatterTest {
       Formatter.format(code)
       fail()
     } catch (e: ParseError) {
-      assertThat(e.errorDescription).contains("\\u0003")
-      assertThat(e.lineColumn.line).isEqualTo(1)
-      assertThat(e.lineColumn.column).isEqualTo(5)
+      assertContains(e.errorDescription, "\\u0003")
+      assertEquals(1, e.lineColumn.line)
+      assertEquals(5, e.lineColumn.column)
     }
   }
 
@@ -5747,9 +5749,9 @@ class FormatterTest {
       Formatter.format(code)
       fail()
     } catch (e: ParseError) {
-      assertThat(e.lineColumn.line).isEqualTo(6)
-      assertThat(e.lineColumn.column).isEqualTo(0)
-      assertThat(e.errorDescription).containsMatch("Expecting an (expression|argument)")
+      assertEquals(6, e.lineColumn.line)
+      assertEquals(0, e.lineColumn.column)
+      assertContainsMatch(e.errorDescription, "Expecting an (expression|argument)")
     }
   }
 
@@ -5767,8 +5769,8 @@ class FormatterTest {
       Formatter.format(code)
       fail()
     } catch (e: ParseError) {
-      assertThat(e.lineColumn.line).isEqualTo(2)
-      assertThat(e.lineColumn.column).isEqualTo(8)
+      assertEquals(2, e.lineColumn.line)
+      assertEquals(8, e.lineColumn.column)
     }
   }
 

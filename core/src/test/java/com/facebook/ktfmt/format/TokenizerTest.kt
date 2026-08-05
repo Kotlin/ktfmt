@@ -16,7 +16,7 @@
 
 package com.facebook.ktfmt.format
 
-import com.google.common.truth.Truth.assertThat
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -35,9 +35,10 @@ class TokenizerTest {
     val tokenizer = Tokenizer(code, file)
     file.accept(tokenizer)
 
-    assertThat(tokenizer.toks.map { it.originalText })
-        .containsExactly("val", "  ", "a", " ", "=", " ", "\n", "\n", "     ", "\n", "     ", "15")
-        .inOrder()
+    assertEquals(
+        listOf("val", "  ", "a", " ", "=", " ", "\n", "\n", "     ", "\n", "     ", "15"),
+        tokenizer.toks.map { it.originalText },
+    )
   }
 
   @Test
@@ -61,8 +62,8 @@ class TokenizerTest {
     val tokenizer = Tokenizer(code, file)
     file.accept(tokenizer)
 
-    assertThat(tokenizer.toks.map { it.originalText })
-        .containsExactly(
+    assertEquals(
+        listOf(
             "val",
             " ",
             "a",
@@ -88,8 +89,9 @@ class TokenizerTest {
             "      ",
             "\n",
             "    ",
-        )
-        .inOrder()
+        ),
+        tokenizer.toks.map { it.originalText },
+    )
   }
 
   @Test
@@ -105,12 +107,11 @@ class TokenizerTest {
     val tokenizer = Tokenizer(code, file)
     file.accept(tokenizer)
 
-    assertThat(tokenizer.toks.map { it.originalText })
-        .containsExactly("val", " ", "b", "=", "\"a\"", "\n", "val", " ", "a", "=", "5", "\n")
-        .inOrder()
-    assertThat(tokenizer.toks.map { it.index })
-        .containsExactly(0, -1, 1, 2, 3, -1, 4, -1, 5, 6, 7, -1)
-        .inOrder()
+    assertEquals(
+        listOf("val", " ", "b", "=", "\"a\"", "\n", "val", " ", "a", "=", "5", "\n"),
+        tokenizer.toks.map { it.originalText },
+    )
+    assertEquals(listOf(0, -1, 1, 2, 3, -1, 4, -1, 5, 6, 7, -1), tokenizer.toks.map { it.index })
   }
 
   @Test
@@ -131,8 +132,8 @@ class TokenizerTest {
     val tokenizer = Tokenizer(code, file)
     file.accept(tokenizer)
 
-    assertThat(tokenizer.toks.map { it.originalText })
-        .containsExactly(
+    assertEquals(
+        listOf(
             "context",
             "(",
             "Something",
@@ -173,10 +174,11 @@ class TokenizerTest {
             "\n",
             "}",
             "\n",
-        )
-        .inOrder()
-    assertThat(tokenizer.toks.map { it.index })
-        .containsExactly(
+        ),
+        tokenizer.toks.map { it.originalText },
+    )
+    assertEquals(
+        listOf(
             0,
             1,
             2,
@@ -217,8 +219,9 @@ class TokenizerTest {
             -1,
             23,
             -1,
-        )
-        .inOrder()
+        ),
+        tokenizer.toks.map { it.index },
+    )
   }
 
   @Test
@@ -239,8 +242,8 @@ class TokenizerTest {
     val tokenizer = Tokenizer(code, file)
     file.accept(tokenizer)
 
-    assertThat(tokenizer.toks.map { it.originalText })
-        .containsExactly(
+    assertEquals(
+        listOf(
             "fun",
             " ",
             "feedAnimal",
@@ -306,10 +309,11 @@ class TokenizerTest {
             "\n",
             "}",
             "\n",
-        )
-        .inOrder()
-    assertThat(tokenizer.toks.map { it.index })
-        .containsExactly(
+        ),
+        tokenizer.toks.map { it.originalText },
+    )
+    assertEquals(
+        listOf(
             0,
             -1,
             1,
@@ -375,8 +379,9 @@ class TokenizerTest {
             -1,
             40,
             -1,
-        )
-        .inOrder()
+        ),
+        tokenizer.toks.map { it.index },
+    )
   }
 
   @Test
@@ -403,8 +408,8 @@ class TokenizerTest {
     val tokenizer = Tokenizer(code, file)
     file.accept(tokenizer)
 
-    assertThat(tokenizer.toks.map { it.originalText })
-        .containsExactly(
+    assertEquals(
+        listOf(
             "//////////////////////////////////////",
             "\n",
             "fun",
@@ -468,10 +473,11 @@ class TokenizerTest {
             "\n",
             "}",
             "\n",
-        )
-        .inOrder()
-    assertThat(tokenizer.toks.map { it.index })
-        .containsExactly(
+        ),
+        tokenizer.toks.map { it.originalText },
+    )
+    assertEquals(
+        listOf(
             0,
             -1,
             1,
@@ -535,8 +541,9 @@ class TokenizerTest {
             -1,
             28,
             -1,
-        )
-        .inOrder()
+        ),
+        tokenizer.toks.map { it.index },
+    )
   }
 
   @Test
@@ -559,8 +566,8 @@ class TokenizerTest {
     val tokenizer = Tokenizer(code, file)
     file.accept(tokenizer)
 
-    assertThat(tokenizer.toks.map { it.originalText })
-        .containsExactly(
+    assertEquals(
+        listOf(
             "context",
             "(",
             "something",
@@ -616,10 +623,11 @@ class TokenizerTest {
             "\n",
             "}",
             "\n",
-        )
-        .inOrder()
-    assertThat(tokenizer.toks.map { it.index })
-        .containsExactly(
+        ),
+        tokenizer.toks.map { it.originalText },
+    )
+    assertEquals(
+        listOf(
             0,
             1,
             2,
@@ -675,8 +683,9 @@ class TokenizerTest {
             -1,
             33,
             -1,
-        )
-        .inOrder()
+        ),
+        tokenizer.toks.map { it.index },
+    )
   }
 
   @Test
@@ -739,7 +748,7 @@ class TokenizerTest {
       file.accept(tokenizer)
     } else {
       val e = assertThrows<ParseError> { file.accept(tokenizer) }
-      assertThat(e).hasMessageThat().isEqualTo(message)
+      assertEquals(message, e.message)
     }
   }
 }

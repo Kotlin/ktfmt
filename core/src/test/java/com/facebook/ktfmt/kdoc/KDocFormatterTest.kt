@@ -32,9 +32,9 @@
 
 package com.facebook.ktfmt.kdoc
 
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import kotlin.io.path.createTempDirectory
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 
 class KDocFormatterTest {
@@ -55,7 +55,7 @@ class KDocFormatterTest {
     // Because .trimIndent() will remove it:
     val indentedExpected = expected.split("\n").joinToString("\n") { indent + it }
 
-    assertThat(reformatted).isEqualTo(indentedExpected)
+    assertEquals(indentedExpected, reformatted)
 
     if (verifyDokka && !options.addPunctuation) {
       DokkaVerifier(tempDir).verify(source, reformatted)
@@ -72,9 +72,11 @@ class KDocFormatterTest {
       )
       val formattedAgain = reformatComment(again)
       if (reformatted != formattedAgain) {
-        assertWithMessage("Formatting is unstable: if formatted a second time, it changes")
-            .that("$indent// FORMATTED TWICE (implies unstable formatting)\n\n$formattedAgain")
-            .isEqualTo("$indent// FORMATTED ONCE\n\n$reformatted")
+        assertEquals(
+            "$indent// FORMATTED ONCE\n\n$reformatted",
+            "$indent// FORMATTED TWICE (implies unstable formatting)\n\n$formattedAgain",
+            "Formatting is unstable: if formatted a second time, it changes",
+        )
       }
     }
   }
@@ -149,8 +151,8 @@ class KDocFormatterTest {
     checkFormatter(source, KDocFormattingOptions(72), reformatted, indent = "    ")
     val initialOffset = source.indexOf("default")
     val newOffset = findSamePosition(source, initialOffset, reformatted)
-    assertThat(newOffset).isNotEqualTo(initialOffset)
-    assertThat(reformatted.substring(newOffset, newOffset + "default".length)).isEqualTo("default")
+    assertNotEquals(initialOffset, newOffset)
+    assertEquals("default", reformatted.substring(newOffset, newOffset + "default".length))
   }
 
   @Test
@@ -174,8 +176,8 @@ class KDocFormatterTest {
     checkFormatter(source, KDocFormattingOptions(72), reformatted, indent = "    ")
     val initialOffset = source.indexOf("default")
     val newOffset = findSamePosition(source, initialOffset, reformatted)
-    assertThat(newOffset).isNotEqualTo(initialOffset)
-    assertThat(reformatted.substring(newOffset, newOffset + "default".length)).isEqualTo("default")
+    assertNotEquals(initialOffset, newOffset)
+    assertEquals("default", reformatted.substring(newOffset, newOffset + "default".length))
   }
 
   @Test
@@ -3186,7 +3188,7 @@ class KDocFormatterTest {
         """
             .trimIndent()
     val lorem = loremize(source)
-    assertThat(lorem).isEqualTo(source)
+    assertEquals(source, lorem)
     checkFormatter(
         source,
         KDocFormattingOptions(72, 72),

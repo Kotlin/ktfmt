@@ -16,21 +16,19 @@
 
 package com.facebook.ktfmt.kdoc
 
-import com.google.common.truth.Truth.assertThat
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class EscapingTest {
 
   @Test
   fun `escaping kdoc`() {
-    assertThat(Escaping.escapeKDoc("/** foo */")).isEqualTo("/** foo */")
-    assertThat(Escaping.escapeKDoc("/*** foo */")).isEqualTo("/*** foo */")
-    assertThat(Escaping.escapeKDoc("/** * foo */")).isEqualTo("/** * foo */")
-    assertThat(Escaping.escapeKDoc("/** /* foo */")).isEqualTo("/** \u0004\u0005 foo */")
-    assertThat(Escaping.escapeKDoc("/** /* foo */ */"))
-        .isEqualTo("/** \u0004\u0005 foo \u0005\u0004 */")
+    assertEquals("/** foo */", Escaping.escapeKDoc("/** foo */"))
+    assertEquals("/*** foo */", Escaping.escapeKDoc("/*** foo */"))
+    assertEquals("/** * foo */", Escaping.escapeKDoc("/** * foo */"))
+    assertEquals("/** \u0004\u0005 foo */", Escaping.escapeKDoc("/** /* foo */"))
+    assertEquals("/** \u0004\u0005 foo \u0005\u0004 */", Escaping.escapeKDoc("/** /* foo */ */"))
 
-    assertThat(Escaping.escapeKDoc("/* /* foo */ */"))
-        .isEqualTo("/* \u0004\u0005 foo \u0005\u0004 */")
+    assertEquals("/* \u0004\u0005 foo \u0005\u0004 */", Escaping.escapeKDoc("/* /* foo */ */"))
   }
 }

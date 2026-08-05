@@ -18,13 +18,17 @@ package com.facebook.ktfmt.cli
 
 import com.facebook.ktfmt.format.Formatter
 import com.facebook.ktfmt.format.FormattingOptions
+import com.facebook.ktfmt.testutil.assertContains
 import com.google.common.collect.Range
 import com.google.common.collect.RangeSet
 import com.google.common.collect.TreeRangeSet
-import com.google.common.truth.Truth.assertThat
 import java.io.FileNotFoundException
 import kotlin.io.path.createTempDirectory
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -41,13 +45,13 @@ class ParsedArgsTest {
   @Test
   fun `unknown flags return an error`() {
     val result = parseOptions("--unknown")
-    assertThat(result).isInstanceOf(ParseResult.Error::class.java)
+    assertInstanceOf(ParseResult.Error::class.java, result)
   }
 
   @Test
   fun `unknown flags starting with '@' return an error`() {
     val result = parseOptions("@unknown")
-    assertThat(result).isInstanceOf(ParseResult.Error::class.java)
+    assertInstanceOf(ParseResult.Error::class.java, result)
   }
 
   @Test
@@ -57,91 +61,93 @@ class ParsedArgsTest {
     val formattingOptions = parsed.formattingOptions
 
     val defaultFormattingOptions = Formatter.META_FORMAT
-    assertThat(formattingOptions).isEqualTo(defaultFormattingOptions)
+    assertEquals(defaultFormattingOptions, formattingOptions)
   }
 
   @Test
   fun `parseOptions recognizes --meta-style`() {
     val parsed = assertSucceeds(parseOptions("--meta-style", "foo.kt"))
-    assertThat(parsed.formattingOptions).isEqualTo(Formatter.META_FORMAT)
+    assertEquals(Formatter.META_FORMAT, parsed.formattingOptions)
   }
 
   @Test
   fun `parseOptions recognizes --google-style`() {
     val parsed = assertSucceeds(parseOptions("--google-style", "foo.kt"))
-    assertThat(parsed.formattingOptions).isEqualTo(Formatter.GOOGLE_FORMAT)
+    assertEquals(Formatter.GOOGLE_FORMAT, parsed.formattingOptions)
   }
 
   @Test
   fun `parseOptions recognizes --dry-run`() {
     val parsed = assertSucceeds(parseOptions("--dry-run", "foo.kt"))
-    assertThat(parsed.dryRun).isTrue()
+    assertTrue(parsed.dryRun)
   }
 
   @Test
   fun `parseOptions recognizes -n as --dry-run`() {
     val parsed = assertSucceeds(parseOptions("-n", "foo.kt"))
-    assertThat(parsed.dryRun).isTrue()
+    assertTrue(parsed.dryRun)
   }
 
   @Test
   fun `parseOptions recognizes --set-exit-if-changed`() {
     val parsed = assertSucceeds(parseOptions("--set-exit-if-changed", "foo.kt"))
-    assertThat(parsed.setExitIfChanged).isTrue()
+    assertTrue(parsed.setExitIfChanged)
   }
 
   @Test
   fun `parseOptions defaults to removing imports`() {
     val parsed = assertSucceeds(parseOptions("foo.kt"))
-    assertThat(parsed.formattingOptions.removeUnusedImports).isTrue()
+    assertTrue(parsed.formattingOptions.removeUnusedImports)
   }
 
   @Test
   fun `parseOptions recognizes --do-not-remove-unused-imports to removing imports`() {
     val parsed = assertSucceeds(parseOptions("--do-not-remove-unused-imports", "foo.kt"))
-    assertThat(parsed.formattingOptions.removeUnusedImports).isFalse()
+    assertFalse(parsed.formattingOptions.removeUnusedImports)
   }
 
   @Test
   fun `parseOptions recognizes --enable-editorconfig`() {
     val parsed = assertSucceeds(parseOptions("--enable-editorconfig", "foo.kt"))
-    assertThat(parsed.editorConfig).isEqualTo(true)
+    assertEquals(true, parsed.editorConfig)
   }
 
   @Test
   fun `parseOptions recognizes --quiet`() {
     val parsed = assertSucceeds(parseOptions("--quiet", "foo.kt"))
-    assertThat(parsed.quiet).isTrue()
+    assertTrue(parsed.quiet)
   }
 
   @Test
   fun `parseOptions recognizes --stdin-name`() {
     val parsed = assertSucceeds(parseOptions("--stdin-name=my/foo.kt", "-"))
-    assertThat(parsed.stdinName).isEqualTo("my/foo.kt")
+    assertEquals("my/foo.kt", parsed.stdinName)
   }
 
   @Test
   fun `parseOptions recognizes --lines ranges`() {
     val parsed = assertSucceeds(parseOptions("--lines=1:3,5", "--lines", "7", "foo.kt"))
 
-    assertThat(parsed.lineRanges)
-        .isEqualTo(
-            ranges(
-                Range.closedOpen(0, 3),
-                Range.closedOpen(4, 5),
-                Range.closedOpen(6, 7),
-            ),
-        )
+    assertEquals(
+        ranges(
+            Range.closedOpen(0, 3),
+            Range.closedOpen(4, 5),
+            Range.closedOpen(6, 7),
+        ),
+        parsed.lineRanges,
+    )
   }
 
   @Test
   fun `parseOptions recognizes --line alias`() {
     val parsed = assertSucceeds(parseOptions("--line=1", "foo.kt"))
-    assertThat(parsed.fileNames).containsExactly("foo.kt")
-    assertThat(parsed.lineRanges).isEqualTo(ranges(Range.closedOpen(0, 1)))
+    assertEquals(listOf("foo.kt"), parsed.fileNames)
+    assertEquals(ranges(Range.closedOpen(0, 1)), parsed.lineRanges)
 
-    assertThat(assertSucceeds(parseOptions("--line", "2", "foo.kt")).lineRanges)
-        .isEqualTo(ranges(Range.closedOpen(1, 2)))
+    assertEquals(
+        ranges(Range.closedOpen(1, 2)),
+        assertSucceeds(parseOptions("--line", "2", "foo.kt")).lineRanges,
+    )
   }
 
   @Test
@@ -158,124 +164,127 @@ class ParsedArgsTest {
         ),
     )
 
-    assertThat(parsed.characterRanges)
-        .isEqualTo(
-            ranges(
-                Range.closedOpen(10, 15),
-                Range.closedOpen(20, 21),
-            ),
-        )
+    assertEquals(
+        ranges(
+            Range.closedOpen(10, 15),
+            Range.closedOpen(20, 21),
+        ),
+        parsed.characterRanges,
+    )
   }
 
   @Test
   fun `parseOptions rejects --lines without value`() {
     val parseResult = parseOptions("--lines")
-    assertThat(parseResult)
-        .isEqualTo(ParseResult.Error("required value was not provided for: --lines"))
+    assertEquals(ParseResult.Error("required value was not provided for: --lines"), parseResult)
   }
 
   @Test
   fun `parseOptions rejects invalid --lines range`() {
     val parseResult = parseOptions("--lines=not-a-line", "foo.kt")
-    assertThat(parseResult)
-        .isEqualTo(ParseResult.Error("invalid line range for --lines: not-a-line"))
+    assertEquals(ParseResult.Error("invalid line range for --lines: not-a-line"), parseResult)
   }
 
   @Test
   fun `parseOptions rejects --offset without value`() {
     val parseResult = parseOptions("--offset")
-    assertThat(parseResult)
-        .isEqualTo(ParseResult.Error("required value was not provided for: --offset"))
+    assertEquals(ParseResult.Error("required value was not provided for: --offset"), parseResult)
   }
 
   @Test
   fun `parseOptions rejects invalid --offset`() {
     val parseResult = parseOptions("--offset=not-an-offset", "--length=1", "foo.kt")
-    assertThat(parseResult)
-        .isEqualTo(ParseResult.Error("invalid integer value for --offset: not-an-offset"))
+    assertEquals(
+        ParseResult.Error("invalid integer value for --offset: not-an-offset"),
+        parseResult,
+    )
   }
 
   @Test
   fun `parseOptions rejects mismatched --offset and --length counts`() {
     val parseResult = parseOptions("--offset=1", "foo.kt")
-    assertThat(parseResult)
-        .isEqualTo(
-            ParseResult.Error("--offset and --length flags must be provided in matching pairs"),
-        )
+    assertEquals(
+        ParseResult.Error("--offset and --length flags must be provided in matching pairs"),
+        parseResult,
+    )
   }
 
   @Test
   fun `parseOptions rejects --lines with multiple files`() {
     val parseResult = parseOptions("--lines=1", "foo.kt", "bar.kt")
-    assertThat(parseResult)
-        .isEqualTo(ParseResult.Error("partial formatting is only supported for a single file"))
+    assertEquals(
+        ParseResult.Error("partial formatting is only supported for a single file"),
+        parseResult,
+    )
   }
 
   @Test
   fun `parseOptions rejects --offset with multiple files`() {
     val parseResult = parseOptions("--offset=1", "--length=1", "foo.kt", "bar.kt")
-    assertThat(parseResult)
-        .isEqualTo(ParseResult.Error("partial formatting is only supported for a single file"))
+    assertEquals(
+        ParseResult.Error("partial formatting is only supported for a single file"),
+        parseResult,
+    )
   }
 
   @Test
   fun `parseOptions accepts --stdin-name with empty value`() {
     val parsed = assertSucceeds(parseOptions("--stdin-name=", "-"))
-    assertThat(parsed.stdinName).isEqualTo("")
+    assertEquals("", parsed.stdinName)
   }
 
   @Test
   fun `parseOptions rejects --stdin-name without value`() {
     val parseResult = parseOptions("--stdin-name")
-    assertThat(parseResult).isInstanceOf(ParseResult.Error::class.java)
+    assertInstanceOf(ParseResult.Error::class.java, parseResult)
   }
 
   @Test
   fun `parseOptions rejects '-' and files at the same time`() {
     val parseResult = parseOptions("-", "File.kt")
-    assertThat(parseResult).isInstanceOf(ParseResult.Error::class.java)
+    assertInstanceOf(ParseResult.Error::class.java, parseResult)
   }
 
   @Test
   fun `parseOptions rejects --stdin-name when not reading from stdin`() {
     val parseResult = parseOptions("--stdin-name=foo", "file1.kt")
-    assertThat(parseResult).isInstanceOf(ParseResult.Error::class.java)
+    assertInstanceOf(ParseResult.Error::class.java, parseResult)
   }
 
   @Test
   fun `parseOptions recognises --help`() {
     val parseResult = parseOptions("--help")
-    assertThat(parseResult).isInstanceOf(ParseResult.ShowMessage::class.java)
+    assertInstanceOf(ParseResult.ShowMessage::class.java, parseResult)
   }
 
   @Test
   fun `parseOptions recognises -h`() {
     val parseResult = parseOptions("-h")
-    assertThat(parseResult).isInstanceOf(ParseResult.ShowMessage::class.java)
+    assertInstanceOf(ParseResult.ShowMessage::class.java, parseResult)
   }
 
   @Test
   fun `arg --help overrides all others`() {
     val parseResult = parseOptions("--style=google", "@unknown", "--help", "file.kt")
-    assertThat(parseResult).isInstanceOf(ParseResult.ShowMessage::class.java)
+    assertInstanceOf(ParseResult.ShowMessage::class.java, parseResult)
   }
 
   @Test
   fun `parseOptions recognises --version`() {
     val parseResult = parseOptions("--version")
-    assertThat(parseResult).isInstanceOf(ParseResult.ShowMessage::class.java)
+    assertInstanceOf(ParseResult.ShowMessage::class.java, parseResult)
   }
 
   @Test
   fun `parseOptions recognises -v`() {
     val parseResult = parseOptions("-v")
-    assertThat(parseResult).isInstanceOf(ParseResult.ShowMessage::class.java)
+    assertInstanceOf(ParseResult.ShowMessage::class.java, parseResult)
   }
 
   @Test
   fun `arg --version overrides all others`() {
     val parseResult = parseOptions("--style=google", "@unknown", "--version", "file.kt")
-    assertThat(parseResult).isInstanceOf(ParseResult.ShowMessage::class.java)
+    assertInstanceOf(ParseResult.ShowMessage::class.java, parseResult)
   }
 
   @Test
@@ -284,7 +293,7 @@ class ParsedArgsTest {
         assertThrows<FileNotFoundException> {
           ParsedArgs.processArgs(arrayOf("@non-existing-file"))
         }
-    assertThat(e.message).contains("non-existing-file")
+    assertContains(e.message, "non-existing-file")
   }
 
   @Test
@@ -293,14 +302,14 @@ class ParsedArgsTest {
     file.writeText("--google-style\n--dry-run\n--set-exit-if-changed\nFile1.kt\nFile2.kt\n")
 
     val result = ParsedArgs.processArgs(arrayOf("@" + file.canonicalPath))
-    assertThat(result).isInstanceOf(ParseResult.Ok::class.java)
+    assertInstanceOf(ParseResult.Ok::class.java, result)
 
     val parsed = (result as ParseResult.Ok).parsedValue
 
-    assertThat(parsed.formattingOptions).isEqualTo(Formatter.GOOGLE_FORMAT)
-    assertThat(parsed.dryRun).isTrue()
-    assertThat(parsed.setExitIfChanged).isTrue()
-    assertThat(parsed.fileNames).containsExactlyElementsIn(listOf("File1.kt", "File2.kt"))
+    assertEquals(Formatter.GOOGLE_FORMAT, parsed.formattingOptions)
+    assertTrue(parsed.dryRun)
+    assertTrue(parsed.setExitIfChanged)
+    assertEquals(listOf("File1.kt", "File2.kt"), parsed.fileNames)
   }
 
   @Test
@@ -311,39 +320,39 @@ class ParsedArgsTest {
         "--set-exit-if-changed",
         "File.kt",
     )
-    assertThat(testResult)
-        .isEqualTo(
-            parseResultOk(
-                fileNames = listOf("File.kt"),
-                formattingOptions = Formatter.GOOGLE_FORMAT,
-                dryRun = true,
-                setExitIfChanged = true,
-            ),
-        )
+    assertEquals(
+        parseResultOk(
+            fileNames = listOf("File.kt"),
+            formattingOptions = Formatter.GOOGLE_FORMAT,
+            dryRun = true,
+            setExitIfChanged = true,
+        ),
+        testResult,
+    )
   }
 
   @Test
   fun `last style in args wins`() {
     val testResult = parseOptions("--google-style", "--kotlinlang-style", "File.kt")
-    assertThat(testResult)
-        .isEqualTo(
-            parseResultOk(
-                fileNames = listOf("File.kt"),
-                formattingOptions = Formatter.KOTLINLANG_FORMAT,
-            ),
-        )
+    assertEquals(
+        parseResultOk(
+            fileNames = listOf("File.kt"),
+            formattingOptions = Formatter.KOTLINLANG_FORMAT,
+        ),
+        testResult,
+    )
   }
 
   @Test
   fun `error when parsing multiple args and one is unknown`() {
     val testResult = parseOptions("@unknown", "--google-style", "File.kt")
-    assertThat(testResult).isEqualTo(ParseResult.Error("Unexpected option: @unknown"))
+    assertEquals(ParseResult.Error("Unexpected option: @unknown"), testResult)
   }
 
   private fun parseOptions(vararg options: String): ParseResult = ParsedArgs.parseOptions(options)
 
   private fun assertSucceeds(parseResult: ParseResult): ParsedArgs {
-    assertThat(parseResult).isInstanceOf(ParseResult.Ok::class.java)
+    assertInstanceOf(ParseResult.Ok::class.java, parseResult)
     return (parseResult as ParseResult.Ok).parsedValue
   }
 

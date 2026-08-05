@@ -19,12 +19,12 @@ package com.facebook.ktfmt.cli
 import com.facebook.ktfmt.format.Formatter
 import com.facebook.ktfmt.format.TrailingCommaManagementStrategy
 import com.facebook.ktfmt.format.TrailingCommaManagementStrategy.ONLY_ADD
-import com.google.common.truth.Truth.assertThat
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import kotlin.io.path.createTempDirectory
 import kotlin.text.Charsets.UTF_8
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -35,7 +35,7 @@ class EditorConfigResolverTest {
 
   @BeforeEach
   fun setUp() {
-    assertThat(Charset.defaultCharset()).isEqualTo(testCharset) // Verify the test JVM flags
+    assertEquals(testCharset, Charset.defaultCharset()) // Verify the test JVM flags
   }
 
   @AfterEach
@@ -49,7 +49,7 @@ class EditorConfigResolverTest {
     src.parentFile.mkdirs()
     src.writeText("", UTF_8)
     val resolved = EditorConfigResolver.resolveFormattingOptions(src, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT)
+    assertEquals(Formatter.GOOGLE_FORMAT, resolved)
   }
 
   @Test
@@ -66,7 +66,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT)
+    assertEquals(Formatter.GOOGLE_FORMAT, resolved)
   }
 
   @Test
@@ -83,7 +83,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT.copy(maxWidth = 80))
+    assertEquals(Formatter.GOOGLE_FORMAT.copy(maxWidth = 80), resolved)
   }
 
   @Test
@@ -100,7 +100,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT)
+    assertEquals(Formatter.GOOGLE_FORMAT, resolved)
   }
 
   @Test
@@ -117,7 +117,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT.copy(blockIndent = 3))
+    assertEquals(Formatter.GOOGLE_FORMAT.copy(blockIndent = 3), resolved)
   }
 
   @Test
@@ -134,7 +134,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT)
+    assertEquals(Formatter.GOOGLE_FORMAT, resolved)
   }
 
   @Test
@@ -152,7 +152,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT.copy(blockIndent = 8))
+    assertEquals(Formatter.GOOGLE_FORMAT.copy(blockIndent = 8), resolved)
   }
 
   @Test
@@ -169,7 +169,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT.copy(blockIndent = 3))
+    assertEquals(Formatter.GOOGLE_FORMAT.copy(blockIndent = 3), resolved)
   }
 
   @Test
@@ -187,7 +187,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT.copy(blockIndent = 3))
+    assertEquals(Formatter.GOOGLE_FORMAT.copy(blockIndent = 3), resolved)
   }
 
   @Test
@@ -204,7 +204,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT.copy(continuationIndent = 3))
+    assertEquals(Formatter.GOOGLE_FORMAT.copy(continuationIndent = 3), resolved)
   }
 
   @Test
@@ -221,7 +221,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT.copy(continuationIndent = 3))
+    assertEquals(Formatter.GOOGLE_FORMAT.copy(continuationIndent = 3), resolved)
   }
 
   @Test
@@ -239,7 +239,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT.copy(continuationIndent = 3))
+    assertEquals(Formatter.GOOGLE_FORMAT.copy(continuationIndent = 3), resolved)
   }
 
   @Test
@@ -256,8 +256,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved)
-        .isEqualTo(Formatter.GOOGLE_FORMAT.copy(trailingCommaManagementStrategy = ONLY_ADD))
+    assertEquals(Formatter.GOOGLE_FORMAT.copy(trailingCommaManagementStrategy = ONLY_ADD), resolved)
   }
 
   @Test
@@ -274,7 +273,7 @@ class EditorConfigResolverTest {
 
     val file = root.resolve("src/main/kotlin/Example.kt")
     val resolved = EditorConfigResolver.resolveFormattingOptions(file, Formatter.GOOGLE_FORMAT)
-    assertThat(resolved).isEqualTo(Formatter.GOOGLE_FORMAT)
+    assertEquals(Formatter.GOOGLE_FORMAT, resolved)
   }
 
   @Test
@@ -337,23 +336,33 @@ class EditorConfigResolverTest {
         )
 
     val fileInRoot = root.resolve("build.gradle.kts")
-    assertThat(EditorConfigResolver.resolveFormattingOptions(fileInRoot, Formatter.GOOGLE_FORMAT))
-        .isEqualTo(rootOptions)
+    assertEquals(
+        rootOptions,
+        EditorConfigResolver.resolveFormattingOptions(fileInRoot, Formatter.GOOGLE_FORMAT),
+    )
 
     val fileInMain = root.resolve("src/main/kotlin/Example.kt")
-    assertThat(EditorConfigResolver.resolveFormattingOptions(fileInMain, Formatter.GOOGLE_FORMAT))
-        .isEqualTo(mainOptions)
+    assertEquals(
+        mainOptions,
+        EditorConfigResolver.resolveFormattingOptions(fileInMain, Formatter.GOOGLE_FORMAT),
+    )
 
     val fileInTest = root.resolve("src/test/kotlin/ExampleTest.kt")
-    assertThat(EditorConfigResolver.resolveFormattingOptions(fileInTest, Formatter.GOOGLE_FORMAT))
-        .isEqualTo(testOptions)
+    assertEquals(
+        testOptions,
+        EditorConfigResolver.resolveFormattingOptions(fileInTest, Formatter.GOOGLE_FORMAT),
+    )
 
     val ktsInMain = root.resolve("src/main/kotlin/ExampleTest.kts")
-    assertThat(EditorConfigResolver.resolveFormattingOptions(ktsInMain, Formatter.GOOGLE_FORMAT))
-        .isEqualTo(rootOptions.copy(maxWidth = 120))
+    assertEquals(
+        rootOptions.copy(maxWidth = 120),
+        EditorConfigResolver.resolveFormattingOptions(ktsInMain, Formatter.GOOGLE_FORMAT),
+    )
 
     val ktsInTest = root.resolve("src/test/kotlin/ExampleTest.kts")
-    assertThat(EditorConfigResolver.resolveFormattingOptions(ktsInTest, Formatter.GOOGLE_FORMAT))
-        .isEqualTo(Formatter.GOOGLE_FORMAT) // root=true stops even non-matching fall-through
+    assertEquals(
+        Formatter.GOOGLE_FORMAT,
+        EditorConfigResolver.resolveFormattingOptions(ktsInTest, Formatter.GOOGLE_FORMAT),
+    ) // root=true stops even non-matching fall-through
   }
 }

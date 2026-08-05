@@ -16,7 +16,7 @@
 
 package com.facebook.ktfmt.format
 
-import com.google.common.truth.Truth.assertThat
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class ParserTest {
@@ -29,6 +29,6 @@ class ParserTest {
   @Test
   fun `parsing sets idea_use_native_fs_for_win to false`() {
     Parser.parse("val a = 1")
-    assertThat(System.getProperty("idea.use.native.fs.for.win")).isEqualTo("false")
+    assertEquals("false", System.getProperty("idea.use.native.fs.for.win"))
   }
 }
