@@ -65,6 +65,7 @@ class NativeImagePlugin : Plugin<Project> {
         javaExtension.sourceSets.create("nativeImageSourceSet") {
           java.srcDir(nativeImageDir.dir("java"))
           resources.srcDir(nativeImageDir.dir("resources"))
+          compileClasspath += nativeImageJavacClasspath
         }
 
     val compileNativeImageClasses =
