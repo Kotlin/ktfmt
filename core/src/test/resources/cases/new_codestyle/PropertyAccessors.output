@@ -1,0 +1,18 @@
+class Properties {
+  public final override val context: CoroutineContext = parentContext + this
+
+  public override val coroutineContext: CoroutineContext
+    get() = context
+
+  override val isActive: Boolean
+    get() = super.isActive
+
+  val isStopped: Boolean
+    get() = super.isStopped
+
+  public override val propertyWithAVeryVeryVeryVeryVeryVeryVeryVeryVeryLongName: CoroutineContext
+    get() = context
+
+  public override val property: CoroutineContext
+    get() = aVeryVeryVeryVeryVeryVeryVeryVeryVeryLongInitializer
+}

@@ -142,6 +142,7 @@ open class KotlinInputAstVisitor(
   internal open val forceLineBreakAfterAssignment: Boolean = true
   internal open val forceLineBreakAfterNamedParameter: Boolean = true
   internal open val forceLineBreakAfterSupertypeColon: Boolean = true
+  internal open val forceLineBreakBeforeAccessors: Boolean = true
   internal open val hugBlockLikeInfixCalls: Boolean = false
   internal open val hugWhenExpressions: Boolean = false
   internal open val indentBooleanConditions: Boolean = true
@@ -1671,7 +1672,7 @@ open class KotlinInputAstVisitor(
     if (propertyComponents.isNotEmpty()) {
       builder.block(blockIndent) {
         for (component in propertyComponents) {
-          builder.forcedBreak()
+          if (forceLineBreakBeforeAccessors) builder.forcedBreak() else builder.breakOp(" ")
           // The semicolon must come after the newline, or the output code will not parse.
           builder.guessSemicolon()
 
