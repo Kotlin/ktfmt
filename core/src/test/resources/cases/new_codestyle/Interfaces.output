@@ -1,0 +1,7 @@
+object ClicsArchiveCommand :
+    Runnable,
+    Closeable,
+    KoinComponent,
+    AutoCloseable,
+    Comparable<ClicsArchiveCommand>,
+    Iterable<String> {}

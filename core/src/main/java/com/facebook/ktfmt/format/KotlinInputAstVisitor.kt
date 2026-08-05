@@ -34,7 +34,6 @@ import kotlin.jvm.optionals.getOrNull
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
-import org.jetbrains.kotlin.com.intellij.psi.stubs.PsiFileStubImpl
 import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
@@ -132,8 +131,6 @@ import org.jetbrains.kotlin.psi.KtWhileExpression
 import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlin.psi.psiUtil.startsWithComment
-import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
-import org.jetbrains.kotlin.psi.stubs.impl.KotlinPlaceHolderStubImpl
 
 /** An AST visitor that builds a stream of {@link Op}s to format. */
 open class KotlinInputAstVisitor(
@@ -144,6 +141,7 @@ open class KotlinInputAstVisitor(
   internal open val forceAnnotationBreaks: Boolean = false
   internal open val forceLineBreakAfterAssignment: Boolean = true
   internal open val forceLineBreakAfterNamedParameter: Boolean = true
+  internal open val forceLineBreakAfterSupertypeColon: Boolean = true
   internal open val hugBlockLikeInfixCalls: Boolean = false
   internal open val hugWhenExpressions: Boolean = false
   internal open val indentBooleanConditions: Boolean = true
@@ -192,25 +190,26 @@ open class KotlinInputAstVisitor(
     }
   }
 
-  /** Example `Int`, `(String)` or `() -> Int` */
-  override fun visitTypeReference(typeReference: KtTypeReference) {
-    builder.sync(typeReference)
-    // Normally we'd visit the children nodes through accessors on 'typeReference', and  we wouldn't
-    // loop over children.
-    // But, in this case the modifier list can either be inside the parenthesis:
-    // ... (@Composable (x) -> Unit)
-    // or outside of them:
-    // ... @Composable ((x) -> Unit)
-    val modifierList = typeReference.modifierList
-    val typeElement = typeReference.typeElement
-    for (child in typeReference.node.children()) {
+  /** Emits a type together with the parentheses around it, by walking [element]'s children. */
+  private fun emitParenthesizedType(
+      element: KtElement,
+      modifierList: KtModifierList?,
+      innerType: PsiElement?,
+  ) {
+    for (child in element.node.children()) {
       when {
         child.psi == modifierList -> visit(modifierList)
-        child.psi == typeElement -> visit(typeElement)
+        child.psi == innerType -> visit(innerType)
         child.elementType == KtTokens.LPAR -> builder.token("(")
         child.elementType == KtTokens.RPAR -> builder.token(")")
       }
     }
+  }
+
+  /** Example `Int`, `(String)` or `() -> Int` */
+  override fun visitTypeReference(typeReference: KtTypeReference) {
+    builder.sync(typeReference)
+    emitParenthesizedType(typeReference, typeReference.modifierList, typeReference.typeElement)
   }
 
   override fun visitDynamicType(type: KtDynamicType) {
@@ -220,18 +219,7 @@ open class KotlinInputAstVisitor(
   /** Example: `String?` or `((Int) -> Unit)?` */
   override fun visitNullableType(nullableType: KtNullableType) {
     builder.sync(nullableType)
-
-    // Normally we wouldn't loop over children, but there can be multiple layers of parens.
-    val modifierList = nullableType.modifierList
-    val innerType = nullableType.innerType
-    for (child in nullableType.node.children()) {
-      when {
-        child.psi == modifierList -> visit(modifierList)
-        child.psi == innerType -> visit(innerType)
-        child.elementType == KtTokens.LPAR -> builder.token("(")
-        child.elementType == KtTokens.RPAR -> builder.token(")")
-      }
-    }
+    emitParenthesizedType(nullableType, nullableType.modifierList, nullableType.innerType)
     builder.token("?")
   }
 
@@ -383,16 +371,7 @@ open class KotlinInputAstVisitor(
         builder.space()
         builder.block(ZERO) {
           builder.token("=")
-          if (bodyExpression.isLambdaOrScopingFunction) {
-            visitLambdaOrScopingFunction(bodyExpression)
-          } else if (bodyExpression.isChainedScopingFunction) {
-            visitChainedScopingFunction(bodyExpression, emitLeadingBreak = true)
-          } else if (bodyExpression.isBlockLikeCall) {
-            builder.space()
-            visit(bodyExpression)
-          } else if (bodyExpression.isChainedBlockLikeCall) {
-            visitChainedBlockLikeCall(bodyExpression, emitLeadingBreak = true)
-          } else {
+          if (!emitExpressionAfterOperator(bodyExpression)) {
             builder.block(expressionBreakIndent) {
               builder.breakToFill(" ")
               builder.block(ZERO) { visit(bodyExpression) }
@@ -431,14 +410,12 @@ open class KotlinInputAstVisitor(
   }
 
   private fun visitStatements(statements: Array<PsiElement>) {
-    var first = true
     builder.guessSemicolon()
-    for (statement in statements) {
+    for ((index, statement) in statements.withIndex()) {
       builder.forcedBreak()
-      if (!first) {
+      if (index > 0) {
         builder.blankLineWanted(BlankLineWanted.PRESERVE)
       }
-      first = false
       markForPartialFormat()
       visitStatement(statement)
       markForPartialFormat()
@@ -467,11 +444,6 @@ open class KotlinInputAstVisitor(
     if (property.parent !is KtWhenExpression) {
       builder.forcedBreak()
     }
-  }
-
-  @Deprecated("Kept for backwards compatibility, will be removed in the future")
-  fun visitBackingField(backingField: KtBackingField) {
-    emitBackingField(backingField)
   }
 
   /**
@@ -529,6 +501,28 @@ open class KotlinInputAstVisitor(
   }
 
   /**
+   * A chain of qualified expressions, decomposed into everything needed to lay it out.
+   *
+   * @param useBlockLikeLambdaStyle whether we want to make a lambda look like a block, this makes
+   *   Kotlin DSLs look as expected
+   */
+  private data class ChainLayout(
+      val parts: List<KtExpression>,
+      val useBlockLikeLambdaStyle: Boolean,
+      val groupingInfos: List<GroupingInfo>,
+  )
+
+  private fun chainLayout(expression: KtExpression): ChainLayout {
+    val parts = breakIntoParts(expression)
+    val useBlockLikeLambdaStyle = parts.last().isLambda() && parts.count { it.isLambda() } == 1
+    return ChainLayout(
+        parts,
+        useBlockLikeLambdaStyle,
+        computeGroupingInfo(parts, useBlockLikeLambdaStyle),
+    )
+  }
+
+  /**
    * Handles a chain of qualified expressions, i.e. `a[5].b!!.c()[4].f()`
    *
    * This is by far the most complicated part of this formatter. We start by breaking the expression
@@ -539,19 +533,49 @@ open class KotlinInputAstVisitor(
    * part, emitting it to the [builder] while closing and opening groups.
    */
   private fun emitQualifiedExpression(expression: KtExpression) {
-    val parts = breakIntoParts(expression)
-    // whether we want to make a lambda look like a block, this make Kotlin DSLs look as expected
-    val useBlockLikeLambdaStyle = parts.last().isLambda() && parts.count { it.isLambda() } == 1
-    val groupingInfos = computeGroupingInfo(parts, useBlockLikeLambdaStyle)
+    val chain = chainLayout(expression)
     builder.block(expressionBreakIndent) {
-      emitQualifiedExpressionParts(
-          parts,
-          groupingInfos,
-          useBlockLikeLambdaStyle,
-          range = parts.indices,
-          nameTag = BreakTag(),
-      )
+      emitQualifiedExpressionParts(chain, range = chain.parts.indices, nameTag = BreakTag())
     }
+  }
+
+  /**
+   * Lays out something that follows an operator such as `=` in two parts, deciding whether to break
+   * after that operator from the width of the first part alone.
+   *
+   * The head goes into a level of its own, preceded by the only break in that level, so the break
+   * is taken exactly when the head doesn't fit on the current line. The head's own contents indent
+   * one more level when that happens, since the head then starts a line of its own. The tail is
+   * emitted after that level closed, so its forced breaks are not part of the split the break is
+   * decided by, and so its indent can depend on the decision:
+   * ```
+   * val affected = when (event) {          // the head fits: it stays on the `=` line
+   *     is Update -> emptyList()
+   * }
+   *
+   * val affected: List<TeamId> =           // the head doesn't: the break is taken, and the tail
+   *     when (event) {                     // indents relative to the head
+   *         is Update -> emptyList()
+   *     }
+   * ```
+   *
+   * @param emitTail emits the rest, given the indents to lay it out at. A tail that aligns with the
+   *   head -- the body of a `when` -- uses `headIndent`; one that continues the head's line -- an
+   *   argument list -- uses `tailIndent`, or `headIndent` plus a level of its own.
+   */
+  private fun emitSplitAfterOperator(
+      emitHead: () -> Unit,
+      emitTail: (headIndent: Indent, tailIndent: Indent) -> Unit,
+  ) {
+    val brokeAfterOperator = BreakTag()
+    val headIndent = Indent.If.make(brokeAfterOperator, expressionBreakIndent, ZERO)
+    val tailIndent =
+        Indent.If.make(brokeAfterOperator, doubleExpressionBreakIndent, expressionBreakIndent)
+    builder.block(expressionBreakIndent) {
+      builder.breakOp(" ", ZERO, Optional.of(brokeAfterOperator))
+      builder.block(headIndent) { emitHead() }
+    }
+    emitTail(headIndent, tailIndent)
   }
 
   /**
@@ -560,8 +584,8 @@ open class KotlinInputAstVisitor(
    *
    * [emitQualifiedExpression] puts the whole chain into a single level, so a break in front of it
    * is taken whenever the *entire* chain doesn't fit -- even when only the selectors need to break.
-   * Here the receiver goes into a level of its own instead, so the break competes with the receiver
-   * and nothing else:
+   * Here the receiver plays the head of [emitSplitAfterOperator] instead, so the break competes
+   * with the receiver and nothing else:
    * ```
    * val testDataDir: Path = Path.of("")     // receiver fits: it stays on the `=` line
    *     .resolve("tests")
@@ -576,45 +600,27 @@ open class KotlinInputAstVisitor(
    * and calling [emitQualifiedExpression].
    */
   private fun emitQualifiedExpressionAfterOperator(expression: KtExpression): Boolean {
-    val parts = breakIntoParts(expression)
-    val useBlockLikeLambdaStyle = parts.last().isLambda() && parts.count { it.isLambda() } == 1
-    val groupingInfos = computeGroupingInfo(parts, useBlockLikeLambdaStyle)
-    val receiverEnd =
-        receiverSegmentEnd(parts, groupingInfos, useBlockLikeLambdaStyle) ?: return false
-
+    val chain = chainLayout(expression)
+    val receiverEnd = receiverSegmentEnd(chain) ?: return false
+    val lastIndex = chain.parts.lastIndex
     val nameTag = BreakTag() // allows adjusting arguments indentation if a break will be made
-    val brokeAfterOperator = BreakTag()
-    // The receiver, preceded by the only break in this level: it is taken exactly when the
-    // receiver doesn't fit on the current line. The receiver's own contents indent one more level
-    // when that happens, since the receiver then starts a line of its own.
-    builder.block(expressionBreakIndent) {
-      builder.breakOp(" ", ZERO, Optional.of(brokeAfterOperator))
-      builder.block(Indent.If.make(brokeAfterOperator, expressionBreakIndent, ZERO)) {
-        emitQualifiedExpressionParts(
-            parts,
-            groupingInfos,
-            useBlockLikeLambdaStyle,
-            range = 0..receiverEnd,
-            nameTag = nameTag,
-        )
-      }
-    }
-    // The selectors, in a level of their own so that they can still share a line with the receiver
-    // when they fit. This level is entered after the break above was decided, so its indent can
-    // depend on it.
-    if (receiverEnd < parts.lastIndex) {
-      val selectorsIndent =
-          Indent.If.make(brokeAfterOperator, doubleExpressionBreakIndent, expressionBreakIndent)
-      builder.block(selectorsIndent) {
-        emitQualifiedExpressionParts(
-            parts,
-            groupingInfos,
-            useBlockLikeLambdaStyle,
-            range = receiverEnd + 1..parts.lastIndex,
-            nameTag = nameTag,
-        )
-      }
-    }
+
+    emitSplitAfterOperator(
+        emitHead = {
+          emitQualifiedExpressionParts(chain, range = 0..receiverEnd, nameTag = nameTag)
+        },
+        emitTail = { _, selectorsIndent ->
+          if (receiverEnd < lastIndex) {
+            builder.block(selectorsIndent) {
+              emitQualifiedExpressionParts(
+                  chain,
+                  range = receiverEnd + 1..lastIndex,
+                  nameTag = nameTag,
+              )
+            }
+          }
+        },
+    )
     return true
   }
 
@@ -648,31 +654,99 @@ open class KotlinInputAstVisitor(
     if (expression !is KtCallExpression) return false
     // A leading comment brings its own forced break, which throws off the indents below.
     if (expression.hasLeadingComment) return false
-    // A trailing lambda is laid out by visitCallElement, which indents the callee along with it.
-    if (expression.lambdaArguments.isNotEmpty()) return false
-    val callee = expression.calleeExpression ?: return false
-    val argumentList = expression.valueArgumentList ?: return false
-    // Without arguments there is nothing to break at, so keeping the callee here buys nothing.
-    if (argumentList.hasEmptyParens()) return false
+    return emitCallAfterOperator(
+        expression.calleeExpression,
+        expression.typeArgumentList,
+        expression.valueArgumentList,
+        expression.lambdaArguments,
+    )
+  }
 
-    val brokeAfterOperator = BreakTag()
-    // The callee, preceded by the only break in this level: it is taken exactly when the callee
-    // doesn't fit on the current line. The callee's own contents indent one more level when that
-    // happens, since the callee then starts a line of its own.
-    builder.block(expressionBreakIndent) {
-      builder.breakOp(" ", ZERO, Optional.of(brokeAfterOperator))
-      builder.block(Indent.If.make(brokeAfterOperator, expressionBreakIndent, ZERO)) {
-        visit(callee)
-      }
+  /**
+   * The parts-wise version of [emitCallAfterOperator], for callers that aren't a [KtExpression].
+   */
+  private fun emitCallAfterOperator(
+      callee: KtExpression?,
+      typeArgumentList: KtTypeArgumentList?,
+      argumentList: KtValueArgumentList?,
+      lambdaArguments: List<KtLambdaArgument>,
+  ): Boolean {
+    if (!canEmitCallAfterOperator(callee, argumentList, lambdaArguments)) return false
+    callee as KtExpression
+    argumentList as KtValueArgumentList
+
+    emitSplitAfterOperator(
+        emitHead = { visit(callee) },
+        emitTail = { _, argumentsIndent ->
+          builder.block(argumentsIndent) {
+            builder.block(ZERO) { visit(typeArgumentList) }
+            visitValueArgumentListInternal(argumentList)
+          }
+        },
+    )
+    return true
+  }
+
+  /**
+   * Whether [emitCallAfterOperator] can lay out these call parts, so that callers can tell before
+   * they [OpsBuilder.sync] past anything.
+   */
+  private fun canEmitCallAfterOperator(
+      callee: KtExpression?,
+      argumentList: KtValueArgumentList?,
+      lambdaArguments: List<KtLambdaArgument>,
+  ): Boolean {
+    // A trailing lambda is laid out by visitCallElement, which indents the callee along with it.
+    if (lambdaArguments.isNotEmpty()) return false
+    if (callee == null) return false
+    // Without arguments there is nothing to break at, so keeping the callee here buys nothing.
+    return argumentList != null && !argumentList.hasEmptyParens()
+  }
+
+  /**
+   * Lays out a supertype list whose first entry is a constructor call on the class header line, so
+   * that only the call's arguments break and any remaining supertypes trail its closing paren:
+   * ```
+   * object ClicsArchiveCommand : DumpFileCommand(
+   *     name = "clics-archive",
+   * ), Runnable, Closeable {}
+   * ```
+   *
+   * Returns false, having emitted nothing, when the first supertype isn't a constructor call with
+   * arguments to break at -- the list then gets one entry per line instead, which is the caller's
+   * default layout.
+   */
+  private fun emitSuperTypeCallAfterColon(list: KtSuperTypeList): Boolean {
+    if (forceLineBreakAfterSupertypeColon) return false
+    val entries = list.entries
+    val call = entries.firstOrNull() as? KtSuperTypeCallEntry ?: return false
+    // A leading comment brings its own forced break, which throws off the indents below.
+    if (call.hasLeadingComment) return false
+    if (
+        !canEmitCallAfterOperator(
+            call.calleeExpression,
+            call.valueArgumentList,
+            call.lambdaArguments,
+        )
+    ) {
+      return false
     }
-    // The arguments, in a level of their own so that they can still share a line with the callee
-    // when they fit. This level is entered after the break above was decided, so its indent can
-    // depend on it.
-    val argumentsIndent =
-        Indent.If.make(brokeAfterOperator, doubleExpressionBreakIndent, expressionBreakIndent)
-    builder.block(argumentsIndent) {
-      builder.block(ZERO) { visit(expression.typeArgumentList) }
-      visitValueArgumentListInternal(argumentList)
+
+    builder.sync(list)
+    builder.sync(call)
+    // The type arguments are part of the constructor callee, as in visitSuperTypeCallEntry.
+    emitCallAfterOperator(call.calleeExpression, null, call.valueArgumentList, call.lambdaArguments)
+
+    // The remaining supertypes trail the call's closing paren, sharing its line when they fit and
+    // otherwise taking one line each.
+    if (entries.size > 1) {
+      builder.block(expressionBreakIndent) {
+        for (entry in entries.drop(1)) {
+          builder.token(",")
+          builder.breakOp(" ")
+          visit(entry)
+        }
+      }
     }
     return true
   }
@@ -682,11 +756,8 @@ open class KotlinInputAstVisitor(
    * `a.b[2]` in `a.b[2].c.d()` -- or null when every group opened in the chain is still open by the
    * time the last part is emitted, so there is no point at which the chain can be split in two.
    */
-  private fun receiverSegmentEnd(
-      parts: List<KtExpression>,
-      groupingInfos: List<GroupingInfo>,
-      useBlockLikeLambdaStyle: Boolean,
-  ): Int? {
+  private fun receiverSegmentEnd(chain: ChainLayout): Int? {
+    val (parts, useBlockLikeLambdaStyle, groupingInfos) = chain
     // The group of a block-like trailing lambda is opened at the root and closed at the very last
     // part, so it always spans the whole chain.
     if (useBlockLikeLambdaStyle) return null
@@ -703,12 +774,11 @@ open class KotlinInputAstVisitor(
 
   /** Emits [range] of the parts of a chain, see [emitQualifiedExpression]. */
   private fun emitQualifiedExpressionParts(
-      parts: List<KtExpression>,
-      groupingInfos: List<GroupingInfo>,
-      useBlockLikeLambdaStyle: Boolean,
+      chain: ChainLayout,
       range: IntRange,
       nameTag: BreakTag,
   ) {
+    val (parts, useBlockLikeLambdaStyle, groupingInfos) = chain
     for (index in range) {
       val ktExpression = parts[index]
       if (ktExpression is KtQualifiedExpression) {
@@ -992,7 +1062,8 @@ open class KotlinInputAstVisitor(
     if (isSingleUnnamedLambda) {
       wrapInBlock = true
       breakBeforePostfix = false
-      leadingBreak = !hasEmptyParens && hasTrailingComma
+      // The lambda itself sits between the parens, so they are never empty here.
+      leadingBreak = hasTrailingComma
       breakAfterPrefix = false
     } else {
       // A call without a trailing comma that is nonetheless forced onto multiple lines (because one
@@ -1125,15 +1196,11 @@ open class KotlinInputAstVisitor(
       builder.breakOpThenBlock(bracePlusBlockIndent) {
         builder.fenceComments()
         builder.blankLineWanted(BlankLineWanted.NO)
-        if (blockComments.size == 1) {
-          builder.token(blockComments[0].text)
-        } else {
-          for ((i, comment) in blockComments.withIndex()) {
-            if (i > 0) {
-              builder.forcedBreak()
-            }
-            builder.token(comment.text)
+        for ((i, comment) in blockComments.withIndex()) {
+          if (i > 0) {
+            builder.forcedBreak()
           }
+          builder.token(comment.text)
         }
         builder.breakOp(" ", bracePlusZeroIndent)
       }
@@ -1219,9 +1286,14 @@ open class KotlinInputAstVisitor(
    * ```
    *
    * @param wrapInBlock if true, place all the elements in a block. When there's no [leadingBreak],
-   *   this will be negatively indented. Note that the [prefix] and [postfix] aren't included in the
-   *   block.
+   *   this will be negatively indented unless [compensateMissingLeadingBreak] says otherwise. Note
+   *   that the [prefix] and [postfix] aren't included in the block.
    * @param leadingBreak if true, break before the first element.
+   * @param compensateMissingLeadingBreak if true, and there is no [leadingBreak], pull the block
+   *   back by one level. Callers that emit a [prefix] are indented on the assumption that the
+   *   leading break fires, so without it the elements have to be pulled back to meet the prefix.
+   *   Callers that instead place the first element with a break of their own -- such as the `:` of
+   *   a supertype list -- are already at the right level and pass false.
    * @param prefix if provided, emit this before the first element.
    * @param postfix if provided, emit this after the last element (or trailing comma).
    * @param breakAfterPrefix if true, emit a break after [prefix], but before the start of the
@@ -1264,6 +1336,7 @@ open class KotlinInputAstVisitor(
       hasTrailingComma: Boolean = false,
       wrapInBlock: Boolean = true,
       leadingBreak: Boolean = true,
+      compensateMissingLeadingBreak: Boolean = true,
       prefix: String? = null,
       postfix: String? = null,
       breakAfterPrefix: Boolean = true,
@@ -1285,16 +1358,15 @@ open class KotlinInputAstVisitor(
       builder.breakOp(breakType, " ", ZERO)
     }
 
-    val indent = if (leadingBreak) ZERO else expressionBreakNegativeIndent
+    val indent =
+        if (leadingBreak || !compensateMissingLeadingBreak) ZERO else expressionBreakNegativeIndent
     builder.block(indent, isEnabled = wrapInBlock) {
       if (leadingBreak) {
         builder.breakOp(breakType, "", ZERO)
       }
 
-      var first = true
-      for (value in list) {
-        if (!first) emitComma()
-        first = false
+      for ((index, value) in list.withIndex()) {
+        if (index > 0) emitComma()
         visit(value)
       }
 
@@ -1522,7 +1594,7 @@ open class KotlinInputAstVisitor(
       delegate: KtPropertyDelegate? = null,
       accessors: List<KtPropertyAccessor>? = null,
       backingField: KtBackingField? = null,
-  ): Int {
+  ) {
     val verticalAnnotationBreak = BreakTag()
     if (isField) {
       builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak))
@@ -1572,17 +1644,18 @@ open class KotlinInputAstVisitor(
       if (delegate != null) {
         builder.spaceThenToken("by")
         val delegateExpr = delegate.expression
-        if (delegateExpr.isLambdaOrScopingFunction) {
-          builder.space()
-          visit(delegate)
-        } else if (delegateExpr != null && delegateExpr.isChainedScopingFunction) {
-          visitChainedScopingFunction(delegateExpr, emitLeadingBreak = true)
-        } else if (delegateExpr.isBlockLikeCall) {
-          builder.space()
-          visit(delegate)
-        } else if (delegateExpr != null && delegateExpr.isChainedBlockLikeCall) {
-          visitChainedBlockLikeCall(delegateExpr, emitLeadingBreak = true)
-        } else {
+        val laidOut =
+            delegateExpr != null &&
+                emitExpressionAfterOperator(
+                    delegateExpr,
+                    scopingFunctionHugs = true,
+                    // The delegate node carries the expression; visiting it keeps the `by` intact.
+                    emitHugged = {
+                      builder.space()
+                      visit(delegate)
+                    },
+                )
+        if (!laidOut) {
           builder.breakOpThenBlock(" ", expressionBreakIndent) {
             builder.fenceComments()
             visit(delegate)
@@ -1593,15 +1666,8 @@ open class KotlinInputAstVisitor(
       }
     }
     // for example `field = value`, `private set`, or `get = 2 * field`
-    val propertyComponents = buildList {
-      if (backingField != null) {
-        add(backingField)
-      }
-      if (accessors != null) {
-        addAll(accessors)
-      }
-    }
-        .sortedBy { it.startOffset }
+    val propertyComponents =
+        (listOfNotNull(backingField) + accessors.orEmpty()).sortedBy { it.startOffset }
     if (propertyComponents.isNotEmpty()) {
       builder.block(blockIndent) {
         for (component in propertyComponents) {
@@ -1619,7 +1685,7 @@ open class KotlinInputAstVisitor(
                     typeParameters = null,
                     receiverTypeReference = null,
                     name = null,
-                    parameterList = getParameterListWithBugFixes(component),
+                    parameterList = component.parameterList,
                     typeConstraintList = null,
                     bodyExpression = component.bodyBlockExpression ?: component.bodyExpression,
                     typeOrDelegationCall = component.returnTypeReference,
@@ -1638,8 +1704,48 @@ open class KotlinInputAstVisitor(
     if (isField) {
       builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak))
     }
+  }
 
-    return 0
+  /**
+   * Lays out the right-hand side of an operator that a declaration is assigned across -- the `=` of
+   * an initializer or an expression body, or the `by` of a property delegate -- according to the
+   * kind of expression it is.
+   *
+   * Lambdas, scoping functions and block-like calls keep the operator's line instead of breaking
+   * after it, and in styles that hug them, so do `when` expressions and block-like infix calls.
+   *
+   * Returns false, having emitted nothing, when [expression] is not one of those shapes. Callers
+   * then emit their own default layout, which differs between them.
+   *
+   * @param scopingFunctionHugs whether a lambda or scoping function is emitted by [emitHugged]
+   *   instead of by [visitLambdaOrScopingFunction]. The `by` of a delegate is already followed by
+   *   its expression on the same line, so its lambda hugs it rather than breaking to it.
+   * @param emitHugged emits [expression] on the operator's line, after a plain space. Callers whose
+   *   expression is wrapped in another PSI node -- the `by` of a delegate -- visit that node here.
+   */
+  private fun emitExpressionAfterOperator(
+      expression: KtExpression,
+      scopingFunctionHugs: Boolean = false,
+      emitHugged: () -> Unit = {
+        builder.space()
+        visit(expression)
+      },
+  ): Boolean {
+    when {
+      expression.isLambdaOrScopingFunction ->
+          if (scopingFunctionHugs) emitHugged() else visitLambdaOrScopingFunction(expression)
+      expression.isChainedScopingFunction ->
+          visitChainedScopingFunction(expression, emitLeadingBreak = true)
+      expression.isBlockLikeCall -> emitHugged()
+      expression.isChainedBlockLikeCall ->
+          visitChainedBlockLikeCall(expression, emitLeadingBreak = true)
+      hugBlockLikeInfixCalls && expression.isInfixBlockLikeCall ->
+          emitInfixBlockLikeCall(expression)
+      hugWhenExpressions && expression is KtWhenExpression && !expression.hasLeadingComment ->
+          emitWhenExpressionAfterOperator(expression)
+      else -> return false
+    }
+    return true
   }
 
   /**
@@ -1647,34 +1753,20 @@ open class KotlinInputAstVisitor(
    */
   private fun emitInitializer(initializer: KtExpression) {
     builder.spaceThenToken("=")
-    if (initializer.isLambdaOrScopingFunction) {
-      visitLambdaOrScopingFunction(initializer)
-    } else if (initializer.isChainedScopingFunction) {
-      visitChainedScopingFunction(initializer, emitLeadingBreak = true)
-    } else if (initializer.isBlockLikeCall) {
-      builder.space()
-      visit(initializer)
-    } else if (initializer.isChainedBlockLikeCall) {
-      visitChainedBlockLikeCall(initializer, emitLeadingBreak = true)
-    } else if (hugBlockLikeInfixCalls && initializer.isInfixBlockLikeCall) {
-      emitInfixBlockLikeCall(initializer)
-    } else if (
-        hugWhenExpressions && initializer is KtWhenExpression && !initializer.hasLeadingComment
-    ) {
-      emitWhenExpressionAfterOperator(initializer)
-    } else {
-      // A chain gets to keep its receiver on the `=` line when it fits there; everything else
-      // breaks after the `=` and is laid out one level in.
-      val laidOutAsChain =
-          !forceLineBreakAfterAssignment &&
-              initializer.isPlainQualifiedChain &&
-              !initializer.hasLeadingComment &&
-              emitQualifiedExpressionAfterOperator(initializer)
-      if (!laidOutAsChain) {
-        builder.breakOpThenBlock(" ", expressionBreakIndent) {
-          builder.fenceComments()
-          visit(initializer)
-        }
+    if (emitExpressionAfterOperator(initializer)) {
+      return
+    }
+    // A chain gets to keep its receiver on the `=` line when it fits there; everything else
+    // breaks after the `=` and is laid out one level in.
+    val laidOutAsChain =
+        !forceLineBreakAfterAssignment &&
+            initializer.isPlainQualifiedChain &&
+            !initializer.hasLeadingComment &&
+            emitQualifiedExpressionAfterOperator(initializer)
+    if (!laidOutAsChain) {
+      builder.breakOpThenBlock(" ", expressionBreakIndent) {
+        builder.fenceComments()
+        visit(initializer)
       }
     }
   }
@@ -1700,35 +1792,6 @@ open class KotlinInputAstVisitor(
     }
   }
 
-  // Bug in Kotlin 1.9.10: KtPropertyAccessor is the direct parent of the left and right paren
-  // elements. Also parameterList is always null for getters. As a workaround, we create our own
-  // fake KtParameterList.
-  // TODO: won't need this after https://youtrack.jetbrains.com/issue/KT-70922
-  private fun getParameterListWithBugFixes(accessor: KtPropertyAccessor): KtParameterList? {
-    if (accessor.bodyExpression == null && accessor.bodyBlockExpression == null) return null
-
-    val stub = accessor.stub ?: PsiFileStubImpl(accessor.containingFile)
-
-    return object :
-        KtParameterList(KotlinPlaceHolderStubImpl(stub, KtStubElementTypes.VALUE_PARAMETER_LIST)) {
-      override fun getParameters(): List<KtParameter> {
-        return accessor.valueParameters
-      }
-
-      override fun getTrailingComma(): PsiElement? {
-        return accessor.parameterList?.trailingComma
-      }
-
-      override fun getLeftParenthesis(): PsiElement? {
-        return accessor.parameterList?.leftParenthesis
-      }
-
-      override fun getRightParenthesis(): PsiElement? {
-        return accessor.parameterList?.rightParenthesis
-      }
-    }
-  }
-
   /**
    * Emit an `a to Foo(\n ...,\n)` style infix call that follows an operator such as `=`, deciding
    * whether to break after that operator from the width of the head alone.
@@ -1737,33 +1800,31 @@ open class KotlinInputAstVisitor(
     builder.sync(expression)
     val right = checkNotNull(expression.right)
     val call = checkNotNull(right.callExpression)
-    val brokeAfterOperator = BreakTag()
-    val callIndent = Indent.If.make(brokeAfterOperator, expressionBreakIndent, ZERO)
 
-    builder.block(expressionBreakIndent) {
-      builder.breakOp(" ", ZERO, Optional.of(brokeAfterOperator))
-      builder.block(callIndent) {
-        builder.fenceComments()
-        visit(expression.left)
-        builder.spaceThenToken(expression.operationReference.text)
-        builder.space()
-        // The call may be the selector of a qualifier, as in `a to Organizations.Override(...)`.
-        if (right is KtQualifiedExpression) {
-          visit(right.receiverExpression)
-          builder.token(right.operationSign.value)
-        }
-        builder.sync(call)
-        visit(call.calleeExpression)
-        builder.block(ZERO) { visit(call.typeArgumentList) }
-      }
-    }
-    // Emitted after the level above closed, so that its forced breaks are not part of the split the
-    // break after the operator is decided by. The extra level carries the head's indent over.
-    builder.block(callIndent) {
-      builder.block(expressionBreakIndent) {
-        visitValueArgumentListInternal(checkNotNull(call.valueArgumentList))
-      }
-    }
+    emitSplitAfterOperator(
+        emitHead = {
+          builder.fenceComments()
+          visit(expression.left)
+          builder.spaceThenToken(expression.operationReference.text)
+          builder.space()
+          // The call may be the selector of a qualifier, as in `a to Organizations.Override(...)`.
+          if (right is KtQualifiedExpression) {
+            visit(right.receiverExpression)
+            builder.token(right.operationSign.value)
+          }
+          builder.sync(call)
+          visit(call.calleeExpression)
+          builder.block(ZERO) { visit(call.typeArgumentList) }
+        },
+        // The extra level carries the head's indent over to the arguments.
+        emitTail = { callIndent, _ ->
+          builder.block(callIndent) {
+            builder.block(expressionBreakIndent) {
+              visitValueArgumentListInternal(checkNotNull(call.valueArgumentList))
+            }
+          }
+        },
+    )
   }
 
   /**
@@ -1785,17 +1846,14 @@ open class KotlinInputAstVisitor(
    */
   private fun emitWhenExpressionAfterOperator(expression: KtWhenExpression) {
     builder.sync(expression)
-    val brokeAfterOperator = BreakTag()
-    val bodyIndent = Indent.If.make(brokeAfterOperator, expressionBreakIndent, ZERO)
-
-    builder.block(expressionBreakIndent) {
-      builder.breakOp(" ", ZERO, Optional.of(brokeAfterOperator))
-      builder.block(bodyIndent) {
-        builder.fenceComments()
-        emitWhenHead(expression)
-      }
-    }
-    builder.block(bodyIndent) { emitWhenBody(expression) }
+    emitSplitAfterOperator(
+        emitHead = {
+          builder.fenceComments()
+          emitWhenHead(expression)
+        },
+        // The body's braces align with the `when`, so it is laid out at the head's own indent.
+        emitTail = { bodyIndent, _ -> builder.block(bodyIndent) { emitWhenBody(expression) } },
+    )
   }
 
   /**
@@ -1850,13 +1908,11 @@ open class KotlinInputAstVisitor(
 
   /**
    * Returns true when any chained selector after the innermost scoping-function receiver carries
-   * value arguments (i.e. `.foo(a)` or `.fold({ ... }, { ... })`). Used to decide formatting style
-   * for property initializers: value-arg chains stay on same line as `=`, while no-arg chains
-   * break.
+   * value arguments (i.e. `.foo(a)` or `.fold({ ... }, { ... })`).
    *
-   * Chains that pass regular value arguments are excluded from special chained handling in
-   * qualified expressions, since those are better served by the general qualified-expression
-   * layout, except in property initializer context where we handle them specially.
+   * Such chains are excluded from the special scoping-function chain layout in
+   * [visitQualifiedExpression], since they are better served by the general qualified-expression
+   * layout.
    */
   private fun chainedSelectorsHaveValueArguments(expression: KtExpression): Boolean {
     var current: KtExpression = expression
@@ -1947,8 +2003,11 @@ open class KotlinInputAstVisitor(
         builder.space()
         builder.block(ZERO) {
           builder.token(":")
-          builder.breakOp(" ", expressionBreakIndent)
-          visit(superTypes)
+          // A lone supertype constructor call keeps the header line, breaking only its arguments.
+          if (!emitSuperTypeCallAfterColon(superTypes)) {
+            builder.breakOp(" ", expressionBreakIndent)
+            visit(superTypes)
+          }
         }
       }
       val typeConstraintList = classOrObject.typeConstraintList
@@ -2049,11 +2108,8 @@ open class KotlinInputAstVisitor(
       return
     }
     builder.tokenThenSpace("package")
-    var first = true
-    for (packageName in directive.packageNames) {
-      if (first) {
-        first = false
-      } else {
+    for ((index, packageName) in directive.packageNames.withIndex()) {
+      if (index > 0) {
         builder.token(".")
       }
       builder.token(packageName.getIdentifier()?.text ?: packageName.getReferencedName())
@@ -2198,7 +2254,7 @@ open class KotlinInputAstVisitor(
         else -> builder.breakOp(" ")
       }
 
-      visit(expression.baseExpression)
+      visit(baseExpression)
     }
   }
 
@@ -2221,14 +2277,11 @@ open class KotlinInputAstVisitor(
         builder.token("[")
 
         builder.block(ZERO) {
-          var first = true
           builder.breakOp()
-          for (value in annotation.entries) {
-            if (!first) {
+          for ((index, value) in annotation.entries.withIndex()) {
+            if (index > 0) {
               builder.breakOp(" ")
             }
-            first = false
-
             visit(value)
           }
         }
@@ -2271,6 +2324,9 @@ open class KotlinInputAstVisitor(
       data: Void?,
   ): Void? {
     for (child in fileAnnotationList.node.children()) {
+      // Leaf nodes -- whitespace and the tokens of the annotations themselves -- implement both
+      // ASTNode and PsiElement, while composite nodes do not. This skips the leaves, leaving the
+      // annotation entries to be visited.
       if (child is PsiElement) {
         continue
       }
@@ -2283,7 +2339,13 @@ open class KotlinInputAstVisitor(
 
   override fun visitSuperTypeList(list: KtSuperTypeList) {
     builder.sync(list)
-    builder.block(expressionBreakIndent) { visitEachCommaSeparated(list.entries) }
+    builder.block(expressionBreakIndent) {
+      visitEachCommaSeparated(
+          list.entries,
+          leadingBreak = forceLineBreakAfterSupertypeColon,
+          compensateMissingLeadingBreak = false,
+      )
+    }
   }
 
   override fun visitSuperTypeCallEntry(call: KtSuperTypeCallEntry) {
@@ -2331,10 +2393,10 @@ open class KotlinInputAstVisitor(
             builder.token("else")
           } else {
             val conditions = whenEntry.conditions
-            for ((index, condition) in conditions.withIndex()) {
+            for ((conditionIndex, condition) in conditions.withIndex()) {
               visit(condition)
               builder.guessToken(",")
-              if (index != conditions.lastIndex) {
+              if (conditionIndex != conditions.lastIndex) {
                 builder.forcedBreak()
               }
             }
@@ -2396,7 +2458,7 @@ open class KotlinInputAstVisitor(
         }
       } else {
         val parent = body.parent
-        if (parent is KtClass && parent.isEnum() && children.isNotEmpty()) {
+        if (parent is KtClass && parent.isEnum()) {
           builder.token(";")
           builder.forcedBreak()
         }
@@ -2498,21 +2560,35 @@ open class KotlinInputAstVisitor(
   }
 
   /**
+   * Emits a comma-separated list wrapped in delimiters, with the closing one outside the level the
+   * elements are in so that it returns to the surrounding indent.
+   */
+  private fun emitDelimitedList(
+      elements: Iterable<PsiElement>,
+      hasTrailingComma: Boolean,
+      openingDelimiter: String,
+      closingDelimiter: String,
+  ) {
+    builder.block(ZERO) {
+      builder.token(openingDelimiter)
+      builder.breakOpThenBlock(expressionBreakIndent) {
+        visitEachCommaSeparated(elements, hasTrailingComma, wrapInBlock = true)
+      }
+    }
+    builder.token(closingDelimiter)
+  }
+
+  /**
    * Example `[3]` in `a[3]` or `a[3].b` Separated since it needs to be used from a top level array
    * expression (`a[3]`) and from within a qualified chain (`a[3].b)
    */
   private fun visitArrayAccessBrackets(expression: KtArrayAccessExpression) {
-    builder.block(ZERO) {
-      builder.token("[")
-      builder.breakOpThenBlock(expressionBreakIndent) {
-        visitEachCommaSeparated(
-            expression.indexExpressions,
-            expression.trailingComma != null,
-            wrapInBlock = true,
-        )
-      }
-    }
-    builder.token("]")
+    emitDelimitedList(
+        expression.indexExpressions,
+        expression.trailingComma != null,
+        openingDelimiter = "[",
+        closingDelimiter = "]",
+    )
   }
 
   /** Example `val (a, b: Int) = Pair(1, 2)` or `val [a, b] = Pair(1, 2)` */
@@ -2523,19 +2599,12 @@ open class KotlinInputAstVisitor(
       builder.tokenThenSpace(valOrVarKeyword.text)
     }
     val hasTrailingComma = destructuringDeclaration.trailingComma != null
-    val openingDelimiter = destructuringDeclaration.lPar?.text ?: "("
-    val closingDelimiter = destructuringDeclaration.rPar?.text ?: ")"
-    builder.block(ZERO) {
-      builder.token(openingDelimiter)
-      builder.breakOpThenBlock(expressionBreakIndent) {
-        visitEachCommaSeparated(
-            destructuringDeclaration.entries,
-            hasTrailingComma,
-            wrapInBlock = true,
-        )
-      }
-    }
-    builder.token(closingDelimiter)
+    emitDelimitedList(
+        destructuringDeclaration.entries,
+        hasTrailingComma,
+        openingDelimiter = destructuringDeclaration.lPar?.text ?: "(",
+        closingDelimiter = destructuringDeclaration.rPar?.text ?: ")",
+    )
     val initializer = destructuringDeclaration.initializer
     if (initializer != null) {
       builder.spaceThenToken("=")
@@ -2771,39 +2840,58 @@ open class KotlinInputAstVisitor(
     builder.block(expressionBreakIndent) { visit(type.returnTypeReference) }
   }
 
+  /**
+   * Emits an operation whose right-hand side is a type -- `a is Int`, `a as Int` -- as a single
+   * group, so that a break lands before the operator rather than inside the left-hand side.
+   *
+   * A qualified left-hand side lays out its own chain, so the group opens after it; anything else
+   * is enclosed by the group.
+   *
+   * @param emitSeparator emits what goes between the left-hand side and the operator
+   */
+  private fun emitTypeOperation(
+      left: KtExpression?,
+      operationReference: PsiElement,
+      right: PsiElement?,
+      emitSeparator: () -> Unit,
+  ) {
+    val openGroupBeforeLeft = left !is KtQualifiedExpression
+    if (openGroupBeforeLeft) builder.open(ZERO)
+    visit(left)
+    if (!openGroupBeforeLeft) builder.open(ZERO)
+    emitSeparator()
+    visit(operationReference)
+    builder.breakToFillThenBlock(" ", expressionBreakIndent) { visit(right) }
+    builder.close()
+  }
+
   /** Example `a is Int` or `b !is Int` */
   override fun visitIsExpression(expression: KtIsExpression) {
     builder.sync(expression)
-    val openGroupBeforeLeft = expression.leftHandSide !is KtQualifiedExpression
-    if (openGroupBeforeLeft) builder.open(ZERO)
-    visit(expression.leftHandSide)
-    if (!openGroupBeforeLeft) builder.open(ZERO)
-    val parent = expression.parent
-    if (
-        parent is KtValueArgument ||
-            parent is KtParenthesizedExpression ||
-            parent is KtContainerNode
+    emitTypeOperation(
+        expression.leftHandSide,
+        expression.operationReference,
+        expression.typeReference,
     ) {
-      builder.breakOp(" ", expressionBreakIndent)
-    } else {
-      builder.space()
+      val parent = expression.parent
+      if (
+          parent is KtValueArgument ||
+              parent is KtParenthesizedExpression ||
+              parent is KtContainerNode
+      ) {
+        builder.breakOp(" ", expressionBreakIndent)
+      } else {
+        builder.space()
+      }
     }
-    visit(expression.operationReference)
-    builder.breakToFillThenBlock(" ", expressionBreakIndent) { visit(expression.typeReference) }
-    builder.close()
   }
 
   /** Example `a as Int` or `a as? Int` */
   override fun visitBinaryWithTypeRHSExpression(expression: KtBinaryExpressionWithTypeRHS) {
     builder.sync(expression)
-    val openGroupBeforeLeft = expression.left !is KtQualifiedExpression
-    if (openGroupBeforeLeft) builder.open(ZERO)
-    visit(expression.left)
-    if (!openGroupBeforeLeft) builder.open(ZERO)
-    builder.breakOp(" ", expressionBreakIndent)
-    visit(expression.operationReference)
-    builder.breakToFillThenBlock(" ", expressionBreakIndent) { visit(expression.right) }
-    builder.close()
+    emitTypeOperation(expression.left, expression.operationReference, expression.right) {
+      builder.breakOp(" ", expressionBreakIndent)
+    }
   }
 
   /**
@@ -2921,7 +3009,7 @@ open class KotlinInputAstVisitor(
 
   override fun visitKtFile(file: KtFile) {
     markForPartialFormat()
-    val importListEmpty = file.importList?.text?.isBlank() ?: true
+    val importListEmpty = file.importList?.text.isNullOrBlank()
 
     var isFirst = true
     for (child in file.children) {

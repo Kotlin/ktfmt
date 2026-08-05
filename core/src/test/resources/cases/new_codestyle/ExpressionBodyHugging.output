@@ -1,0 +1,36 @@
+class Foo {
+  fun affectedTeams(event: TeamEvent) =
+      when (event) {
+        is TeamUpdate -> emptyList()
+        is TeamDelete -> listOf(event.teamId)
+        else -> error("unexpected")
+      }
+
+  val affectedTeamsProperty =
+      when (event) {
+        is TeamUpdate -> emptyList()
+        is TeamDelete -> listOf(event.teamId)
+        else -> error("unexpected")
+      }
+
+  val overrides
+    get() =
+        when (event) {
+          is TeamUpdate -> emptyList()
+          else -> error("unexpected")
+        }
+
+  fun entry() =
+      "clics" to
+          DumpFileCommand(
+              name = "clics-archive",
+              waitTime = waitTime,
+          )
+
+  val entryProperty =
+      "clics" to
+          DumpFileCommand(
+              name = "clics-archive",
+              waitTime = waitTime,
+          )
+}
