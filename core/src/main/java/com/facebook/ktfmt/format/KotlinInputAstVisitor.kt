@@ -143,17 +143,9 @@ open class KotlinInputAstVisitor(
 
   internal open val forceAnnotationBreaks: Boolean = false
   internal open val forceLineBreakAfterAssignment: Boolean = true
-
-  /**
-   * Whether an [isInfixBlockLikeCall] hugs the operator it follows, see [emitInfixBlockLikeCall].
-   */
   internal open val hugBlockLikeInfixCalls: Boolean = false
-
-  /**
-   * Whether a `when` expression hugs the operator it follows, see
-   * [emitWhenExpressionAfterOperator].
-   */
   internal open val hugWhenExpressions: Boolean = false
+  internal open val indentBooleanConditions: Boolean = true
 
   /** Standard indentation for a block */
   private val blockIndent: Indent.Const = Indent.Const.make(options.blockIndent, 1)
@@ -1387,7 +1379,7 @@ open class KotlinInputAstVisitor(
         else -> {
           builder.space()
           if (isFirst) {
-            builder.open(expressionBreakIndent)
+            builder.open(if (indentBooleanConditions) expressionBreakIndent else ZERO)
           }
           builder.token(leftExpression.operationReference.text)
           val fillMode =

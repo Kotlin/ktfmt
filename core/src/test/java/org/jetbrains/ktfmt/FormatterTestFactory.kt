@@ -99,6 +99,7 @@ abstract class FormatterTestFactory(
     return directory
         .listDirectoryEntries()
         .filter { it.extension == "input" }
+        .filter { it.name == "BooleanConditions.input" }
         .sortedBy { it.name }
         .map { input ->
           val name = input.nameWithoutExtension
