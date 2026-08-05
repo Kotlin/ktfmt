@@ -221,6 +221,36 @@ internal val KtExpression?.isLambdaOrScopingFunction: Boolean
   }
 
 /**
+ * Returns true when [KtExpression] is a call that carries both a value argument list and a trailing
+ * lambda, e.g. `launch(dispatcher) { ... }` or `scope.launch(dispatcher) { ... }`.
+ *
+ * These are exactly the calls [isLambdaOrScopingFunction] turns down because of their parentheses.
+ * Styles that hug them lay them out the same way: the call keeps the line of the `=`/`by` operator
+ * it follows, and the lambda body is indented one block in from the declaration.
+ */
+internal val KtExpression?.isCallWithTrailingLambda: Boolean
+  get() {
+    if (this == null) return false
+    val prev = this.getPrevSiblingIgnoringWhitespace()
+    if (prev is PsiComment && prev.text.startsWith("//")) {
+      return false // Leading line comments cause weird indentation; block comments are ok.
+    }
+
+    var carry: KtExpression? = this
+    if (carry is KtQualifiedExpression && carry.receiverExpression is KtSimpleNameExpression) {
+      carry = carry.selectorExpression
+    }
+    if (carry !is KtCallExpression) return false
+    // Without parentheses this is a scoping function, which [isLambdaOrScopingFunction] covers.
+    if (carry.valueArgumentList?.leftParenthesis == null) return false
+    carry = carry.lambdaArguments.firstOrNull()?.getArgumentExpression() ?: return false
+    if (carry is KtLabeledExpression) {
+      carry = carry.baseExpression
+    }
+    return carry is KtLambdaExpression
+  }
+
+/**
  * Returns true when [KtExpression] is a scoping-function call whose lambda body has source-level
  * newlines (i.e. spans multiple lines). Used to decide whether chained selectors after the lambda's
  * closing brace must break onto a new line.

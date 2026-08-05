@@ -145,6 +145,7 @@ open class KotlinInputAstVisitor(
   internal open val forceLineBreakAfterSupertypeColon: Boolean = true
   internal open val forceLineBreakBeforeAccessors: Boolean = true
   internal open val hugBlockLikeInfixCalls: Boolean = false
+  internal open val hugCallsWithTrailingLambda: Boolean = false
   internal open val hugWhenExpressions: Boolean = false
   internal open val indentBooleanConditions: Boolean = true
 
@@ -373,7 +374,10 @@ open class KotlinInputAstVisitor(
         builder.space()
         builder.block(ZERO) {
           builder.token("=")
-          if (!emitExpressionAfterOperator(bodyExpression)) {
+          if (
+              !emitExpressionAfterOperator(bodyExpression) &&
+                  !emitChainAfterOperator(bodyExpression)
+          ) {
             builder.block(expressionBreakIndent) {
               builder.breakToFill(" ")
               builder.block(ZERO) { visit(bodyExpression) }
@@ -542,25 +546,11 @@ open class KotlinInputAstVisitor(
   }
 
   /**
-   * Lays out something that follows an operator such as `=` in two parts, deciding whether to break
-   * after that operator from the width of the first part alone.
+   * Lays out expression that follows an operator such as `=` in two parts, deciding whether to
+   * break after an operator, of after the head of the expression.
    *
-   * The head goes into a level of its own, preceded by the only break in that level, so the break
-   * is taken exactly when the head doesn't fit on the current line. The head's own contents indent
-   * one more level when that happens, since the head then starts a line of its own. The tail is
-   * emitted after that level closed, so its forced breaks are not part of the split the break is
-   * decided by, and so its indent can depend on the decision:
-   * ```
-   * val affected = when (event) {          // the head fits: it stays on the `=` line
-   *     is Update -> emptyList()
-   * }
-   *
-   * val affected: List<TeamId> =           // the head doesn't: the break is taken, and the tail
-   *     when (event) {                     // indents relative to the head
-   *         is Update -> emptyList()
-   *     }
-   * ```
-   *
+   * @param [emitHead] emits a head of the operator, i.e. something that can fit into the same line
+   *   as the operator; e.g. `when (a) {`, `if (cond) {`, etc.
    * @param emitTail emits the rest, given the indents to lay it out at. A tail that aligns with the
    *   head -- the body of a `when` -- uses `headIndent`; one that continues the head's line -- an
    *   argument list -- uses `tailIndent`, or `headIndent` plus a level of its own.
@@ -583,23 +573,6 @@ open class KotlinInputAstVisitor(
   /**
    * Lays out a chain of qualified expressions that follows an operator such as `=`, deciding
    * whether to break after that operator from the width of the chain's receiver alone.
-   *
-   * [emitQualifiedExpression] puts the whole chain into a single level, so a break in front of it
-   * is taken whenever the *entire* chain doesn't fit -- even when only the selectors need to break.
-   * Here the receiver plays the head of [emitSplitAfterOperator] instead, so the break competes
-   * with the receiver and nothing else:
-   * ```
-   * val testDataDir: Path = Path.of("")     // receiver fits: it stays on the `=` line
-   *     .resolve("tests")
-   *
-   * val testDataDir: Path =                 // receiver doesn't: the break is taken, and the
-   *     Path.ofAVeryVeryLongName("")        // selectors indent relative to the receiver
-   *         .resolve("tests")
-   * ```
-   *
-   * Returns false, having emitted nothing, when the chain's grouping spans the receiver and the
-   * selectors, so the two can't be put into separate levels. Callers fall back to breaking first
-   * and calling [emitQualifiedExpression].
    */
   private fun emitQualifiedExpressionAfterOperator(expression: KtExpression): Boolean {
     val chain = chainLayout(expression)
@@ -629,28 +602,6 @@ open class KotlinInputAstVisitor(
   /**
    * Lays out a call that follows an operator such as the `=` of a named argument, deciding whether
    * to break after that operator from the width of the callee alone.
-   *
-   * The default layout puts the whole call into a single level, so a break in front of it is taken
-   * whenever the *entire* call doesn't fit -- even when only its arguments need to break. Here the
-   * callee goes into a level of its own instead, so the break competes with the callee and nothing
-   * else:
-   * ```
-   * add(
-   *     queue = OverrideQueue(     // callee fits: it stays on the `=` line
-   *         waitTime,
-   *     ),
-   * )
-   *
-   * add(
-   *     queue =                    // callee doesn't: the break is taken, and the arguments
-   *         AVeryVeryLongQueue(    // indent relative to the callee
-   *             waitTime,
-   *         ),
-   * )
-   * ```
-   *
-   * Returns false, having emitted nothing, when the call has no arguments to break at or is a shape
-   * whose layout is decided elsewhere. Callers fall back to breaking first and visiting the call.
    */
   private fun emitCallAfterOperator(expression: KtExpression?): Boolean {
     if (expression !is KtCallExpression) return false
@@ -1714,7 +1665,8 @@ open class KotlinInputAstVisitor(
    * kind of expression it is.
    *
    * Lambdas, scoping functions and block-like calls keep the operator's line instead of breaking
-   * after it, and in styles that hug them, so do `when` expressions and block-like infix calls.
+   * after it, and in styles that hug them, so do `when` expressions, block-like infix calls and
+   * calls that carry a trailing lambda alongside their value arguments.
    *
    * Returns false, having emitted nothing, when [expression] is not one of those shapes. Callers
    * then emit their own default layout, which differs between them.
@@ -1741,7 +1693,8 @@ open class KotlinInputAstVisitor(
       expression.isBlockLikeCall -> emitHugged()
       expression.isChainedBlockLikeCall ->
           visitChainedBlockLikeCall(expression, emitLeadingBreak = true)
-      expression is KtObjectLiteralExpression -> emitHugged()
+      !forceLineBreakAfterAssignment && expression is KtObjectLiteralExpression -> emitHugged()
+      hugCallsWithTrailingLambda && expression.isCallWithTrailingLambda -> emitHugged()
       hugBlockLikeInfixCalls && expression.isInfixBlockLikeCall ->
           emitInfixBlockLikeCall(expression)
       hugWhenExpressions && expression is KtWhenExpression && !expression.hasLeadingComment ->
@@ -1750,6 +1703,20 @@ open class KotlinInputAstVisitor(
     }
     return true
   }
+
+  /**
+   * Lays out [expression] as a chain that keeps the receiver on the line of the operator it follows
+   * -- see [emitQualifiedExpressionAfterOperator] -- in the styles that allow it.
+   *
+   * Returns false, having emitted nothing, when [expression] is not a chain, when the style breaks
+   * after the operator unconditionally, or when the chain can't be split that way. Callers then
+   * emit their own default layout.
+   */
+  private fun emitChainAfterOperator(expression: KtExpression): Boolean =
+      !forceLineBreakAfterAssignment &&
+          expression.isPlainQualifiedChain &&
+          !expression.hasLeadingComment &&
+          emitQualifiedExpressionAfterOperator(expression)
 
   /**
    * Emits `= <initializer>`, laying the initializer out according to the kind of expression it is.
@@ -1761,12 +1728,7 @@ open class KotlinInputAstVisitor(
     }
     // A chain gets to keep its receiver on the `=` line when it fits there; everything else
     // breaks after the `=` and is laid out one level in.
-    val laidOutAsChain =
-        !forceLineBreakAfterAssignment &&
-            initializer.isPlainQualifiedChain &&
-            !initializer.hasLeadingComment &&
-            emitQualifiedExpressionAfterOperator(initializer)
-    if (!laidOutAsChain) {
+    if (!emitChainAfterOperator(initializer)) {
       builder.breakOpThenBlock(" ", expressionBreakIndent) {
         builder.fenceComments()
         visit(initializer)

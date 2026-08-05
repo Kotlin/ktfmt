@@ -33,4 +33,12 @@ class Foo {
               name = "clics-archive",
               waitTime = waitTime,
           )
+
+  fun callChain() =
+      StressOptions()
+          .iterations(20 * stressTestMultiplierSqrt)
+          .invocationsPerIteration(1_000 * stressTestMultiplierSqrt)
+          .commonConfiguration()
+          .customize(isStressTest)
+          .check(this::class)
 }
