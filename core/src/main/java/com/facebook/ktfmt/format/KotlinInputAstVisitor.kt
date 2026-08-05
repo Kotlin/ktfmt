@@ -143,6 +143,7 @@ open class KotlinInputAstVisitor(
 
   internal open val forceAnnotationBreaks: Boolean = false
   internal open val forceLineBreakAfterAssignment: Boolean = true
+  internal open val forceLineBreakAfterNamedParameter: Boolean = true
   internal open val hugBlockLikeInfixCalls: Boolean = false
   internal open val hugWhenExpressions: Boolean = false
   internal open val indentBooleanConditions: Boolean = true
@@ -613,6 +614,65 @@ open class KotlinInputAstVisitor(
             nameTag = nameTag,
         )
       }
+    }
+    return true
+  }
+
+  /**
+   * Lays out a call that follows an operator such as the `=` of a named argument, deciding whether
+   * to break after that operator from the width of the callee alone.
+   *
+   * The default layout puts the whole call into a single level, so a break in front of it is taken
+   * whenever the *entire* call doesn't fit -- even when only its arguments need to break. Here the
+   * callee goes into a level of its own instead, so the break competes with the callee and nothing
+   * else:
+   * ```
+   * add(
+   *     queue = OverrideQueue(     // callee fits: it stays on the `=` line
+   *         waitTime,
+   *     ),
+   * )
+   *
+   * add(
+   *     queue =                    // callee doesn't: the break is taken, and the arguments
+   *         AVeryVeryLongQueue(    // indent relative to the callee
+   *             waitTime,
+   *         ),
+   * )
+   * ```
+   *
+   * Returns false, having emitted nothing, when the call has no arguments to break at or is a shape
+   * whose layout is decided elsewhere. Callers fall back to breaking first and visiting the call.
+   */
+  private fun emitCallAfterOperator(expression: KtExpression?): Boolean {
+    if (expression !is KtCallExpression) return false
+    // A leading comment brings its own forced break, which throws off the indents below.
+    if (expression.hasLeadingComment) return false
+    // A trailing lambda is laid out by visitCallElement, which indents the callee along with it.
+    if (expression.lambdaArguments.isNotEmpty()) return false
+    val callee = expression.calleeExpression ?: return false
+    val argumentList = expression.valueArgumentList ?: return false
+    // Without arguments there is nothing to break at, so keeping the callee here buys nothing.
+    if (argumentList.hasEmptyParens()) return false
+
+    val brokeAfterOperator = BreakTag()
+    // The callee, preceded by the only break in this level: it is taken exactly when the callee
+    // doesn't fit on the current line. The callee's own contents indent one more level when that
+    // happens, since the callee then starts a line of its own.
+    builder.block(expressionBreakIndent) {
+      builder.breakOp(" ", ZERO, Optional.of(brokeAfterOperator))
+      builder.block(Indent.If.make(brokeAfterOperator, expressionBreakIndent, ZERO)) {
+        visit(callee)
+      }
+    }
+    // The arguments, in a level of their own so that they can still share a line with the callee
+    // when they fit. This level is entered after the break above was decided, so its indent can
+    // depend on it.
+    val argumentsIndent =
+        Indent.If.make(brokeAfterOperator, doubleExpressionBreakIndent, expressionBreakIndent)
+    builder.block(argumentsIndent) {
+      builder.block(ZERO) { visit(expression.typeArgumentList) }
+      visitValueArgumentListInternal(argumentList)
     }
     return true
   }
@@ -1292,6 +1352,10 @@ open class KotlinInputAstVisitor(
         builder.space()
       }
     }
+    if (hasArgName && !isLambda && !argument.isSpread && !forceLineBreakAfterNamedParameter) {
+      if (emitCallAfterOperator(argument.getArgumentExpression())) return
+    }
+
     val indent = if (hasArgName && !isLambda) expressionBreakIndent else ZERO
     builder.block(indent, isEnabled = wrapInBlock) {
       if (hasArgName && !isLambda) {
