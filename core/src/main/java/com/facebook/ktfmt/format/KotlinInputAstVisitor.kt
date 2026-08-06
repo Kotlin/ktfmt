@@ -1624,7 +1624,8 @@ open class KotlinInputAstVisitor(
     if (propertyComponents.isNotEmpty()) {
       builder.block(blockIndent) {
         for (component in propertyComponents) {
-          if (forceLineBreakBeforeAccessors) builder.forcedBreak() else builder.breakOp(" ")
+          if (forceBreakBeforePropertyComponent(component)) builder.forcedBreak()
+          else builder.breakOp(" ")
           // The semicolon must come after the newline, or the output code will not parse.
           builder.guessSemicolon()
 
@@ -1658,6 +1659,15 @@ open class KotlinInputAstVisitor(
       builder.blankLineWanted(BlankLineWanted.conditional(verticalAnnotationBreak))
     }
   }
+
+  private fun forceBreakBeforePropertyComponent(component: KtExpression): Boolean =
+      when (component) {
+        is KtBackingField -> true
+        is KtPropertyAccessor -> {
+          forceLineBreakBeforeAccessors || component.modifierList != null
+        }
+        else -> true
+      }
 
   /**
    * Lays out the right-hand side of an operator that a declaration is assigned across -- the `=` of

@@ -1,0 +1,8 @@
+class Properties {
+  protected var slots: Array<S?>? = null
+    private set
+
+  protected var nCollectors = 0
+    protected get
+    private set
+}

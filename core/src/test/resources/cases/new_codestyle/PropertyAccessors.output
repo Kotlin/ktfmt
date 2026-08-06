@@ -15,4 +15,10 @@ class Properties {
 
   public override val property: CoroutineContext
     get() = aVeryVeryVeryVeryVeryVeryVeryVeryVeryLongInitializer
+
+  val propertyAccessorWIthBlockBody: String
+    get() =
+        synchronized(this) {
+          "foo"
+        }
 }
