@@ -1971,9 +1971,12 @@ open class KotlinInputAstVisitor(
       carry = carry.selectorExpression
     }
     if (carry is KtCallExpression) {
-      visit(carry.calleeExpression)
+      val call = carry
+      visit(call.calleeExpression)
+      // The extra level keeps the type arguments off the broken level the lambda body forces.
+      builder.block(ZERO) { visit(call.typeArgumentList) }
       builder.space()
-      carry = carry.lambdaArguments[0].getArgumentExpression()
+      carry = call.lambdaArguments[0].getArgumentExpression()
     }
     if (carry is KtLabeledExpression) {
       visit(carry.labelQualifier)

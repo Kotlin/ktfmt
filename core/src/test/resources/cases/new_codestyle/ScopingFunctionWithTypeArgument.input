@@ -1,0 +1,7 @@
+val d =
+    async<Unit> {
+        expect(3)
+        yield() // no effect, parent waiting
+        finish(4)
+        throw TestException()
+    }

@@ -182,6 +182,7 @@ internal val KtExpression.isChainedScopingFunction: Boolean
  * 2. '... = Runnable { ... }' is considered a scoping function
  * 3. '... = scope { ... }' '... = apply { ... }' is a scoping function
  * 4. '... = scope.launch { ... }' is a dot-qualified scoping function
+ * 5. '... = async<Unit> { ... }' is a scoping function with a type argument
  *
  * but not:
  * 1. '... = foo() { ... }' due to the empty parenthesis
@@ -200,11 +201,7 @@ internal val KtExpression?.isLambdaOrScopingFunction: Boolean
       carry = carry.selectorExpression
     }
     if (carry is KtCallExpression) {
-      if (
-          carry.valueArgumentList?.leftParenthesis == null &&
-              carry.lambdaArguments.isNotEmpty() &&
-              carry.typeArgumentList?.arguments.isNullOrEmpty()
-      ) {
+      if (carry.valueArgumentList?.leftParenthesis == null && carry.lambdaArguments.isNotEmpty()) {
         carry = carry.lambdaArguments[0].getArgumentExpression()
       } else {
         return false
