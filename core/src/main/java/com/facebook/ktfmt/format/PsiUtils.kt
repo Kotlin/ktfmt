@@ -241,9 +241,42 @@ internal val KtExpression?.isCallWithTrailingLambda: Boolean
       carry = carry.selectorExpression
     }
     if (carry !is KtCallExpression) return false
-    // Without parentheses this is a scoping function, which [isLambdaOrScopingFunction] covers.
-    if (carry.valueArgumentList?.leftParenthesis == null) return false
-    carry = carry.lambdaArguments.firstOrNull()?.getArgumentExpression() ?: return false
+    return carry.hasTrailingLambdaAfterArguments
+  }
+
+/**
+ * The index into [breakIntoParts] of the part that ends the trailing lambda a chain is built on --
+ * `scope.launch(dispatcher) { ... }` in `scope.launch(dispatcher) { ... }.join().await()` -- or
+ * null when the chain isn't built on one.
+ *
+ * The innermost such part is the head: a chain grows leftwards, so the first part carrying a
+ * trailing lambda is the one the selectors after it hang off, whether or not they carry trailing
+ * lambdas of their own.
+ */
+internal val KtExpression.trailingLambdaChainHead: Int?
+  get() {
+    if (this !is KtQualifiedExpression) return null
+    val parts = breakIntoParts(this)
+    // Array accesses and postfix operators (`a[0]`, `a!!`) split a chain into segments that neither
+    // the head nor the selectors after it can be laid out across, so those chains keep the regular
+    // layout. Only the parts past the innermost receiver can be one of those.
+    if (parts.subList(1, parts.size).any { it !is KtQualifiedExpression }) return null
+    // The last part is the chain itself, so a head there would leave no selectors to hang off it.
+    return (0 until parts.lastIndex).firstOrNull { index ->
+      parts[index].callExpression?.hasTrailingLambdaAfterArguments == true
+    }
+  }
+
+/**
+ * Whether this call carries both a parenthesized value argument list and a trailing lambda, e.g.
+ * `launch(dispatcher) { ... }`. Without the parentheses it is a scoping function instead, which
+ * [isLambdaOrScopingFunction] covers.
+ */
+private val KtCallExpression.hasTrailingLambdaAfterArguments: Boolean
+  get() {
+    if (valueArgumentList?.leftParenthesis == null) return false
+    var carry: KtExpression? =
+        lambdaArguments.firstOrNull()?.getArgumentExpression() ?: return false
     if (carry is KtLabeledExpression) {
       carry = carry.baseExpression
     }

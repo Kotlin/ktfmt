@@ -148,6 +148,7 @@ open class KotlinInputAstVisitor(
   internal open val forceLineBreakBeforeAccessors: Boolean = true
   internal open val hugBlockLikeInfixCalls: Boolean = false
   internal open val hugCallsWithTrailingLambda: Boolean = false
+  internal open val hugChainsAfterTrailingLambda: Boolean = false
   internal open val hugWhenExpressions: Boolean = false
   internal open val indentBooleanConditions: Boolean = true
   internal open val forceLineBreakInWhenConditionList: Boolean = true
@@ -498,6 +499,8 @@ open class KotlinInputAstVisitor(
       expression.isChainedBlockLikeCall -> {
         visitChainedBlockLikeCall(expression, emitLeadingBreak = false)
       }
+      hugChainsAfterTrailingLambda &&
+          visitChainAfterTrailingLambda(expression, emitLeadingBreak = false) -> Unit
       else -> {
         emitQualifiedExpression(expression)
       }
@@ -662,16 +665,7 @@ open class KotlinInputAstVisitor(
 
   /**
    * Lays out a supertype list whose first entry is a constructor call on the class header line, so
-   * that only the call's arguments break and any remaining supertypes trail its closing paren:
-   * ```
-   * object ClicsArchiveCommand : DumpFileCommand(
-   *     name = "clics-archive",
-   * ), Runnable, Closeable {}
-   * ```
-   *
-   * Returns false, having emitted nothing, when the first supertype isn't a constructor call with
-   * arguments to break at -- the list then gets one entry per line instead, which is the caller's
-   * default layout.
+   * that only the call's arguments break and any remaining supertypes trail its closing paren.
    */
   private fun emitSuperTypeCallAfterColon(list: KtSuperTypeList): Boolean {
     if (forceLineBreakAfterSupertypeColon) return false
@@ -1710,6 +1704,9 @@ open class KotlinInputAstVisitor(
       !forceLineBreakAfterAssignment && expression is KtObjectLiteralExpression -> emitHugged()
       !forceLineBreakAfterAssignment && expression is KtTryExpression -> emitHugged()
       hugCallsWithTrailingLambda && expression.isCallWithTrailingLambda -> emitHugged()
+      hugChainsAfterTrailingLambda &&
+          !expression.hasLeadingComment &&
+          visitChainAfterTrailingLambda(expression, emitLeadingBreak = true) -> Unit
       hugBlockLikeInfixCalls && expression.isInfixBlockLikeCall ->
           emitInfixBlockLikeCall(expression)
       hugWhenExpressions && expression is KtWhenExpression && !expression.hasLeadingComment ->
@@ -1852,6 +1849,38 @@ open class KotlinInputAstVisitor(
     visit(parts[0])
 
     emitChainedSelectors(parts, forceBreak = true)
+  }
+
+  /**
+   * Emit a `launch(dispatcher) { ... }.join()` style chain whose head is a call carrying a trailing
+   * lambda: render that call block-like, so its lambda body is indented one block in and its
+   * closing brace returns to the chain's own indent, then hang the remaining selectors off that
+   * brace:
+   * ```
+   * GlobalScope.launch(Dispatchers.Main) {
+   *     expect(2)
+   * }.join()
+   * ```
+   *
+   * Unlike [visitChainedScopingFunction], the selectors are not forced onto their own line -- they
+   * only break when they don't fit, in which case they indent by [expressionBreakIndent].
+   *
+   * Returns false, having emitted nothing, when [expression] isn't built on a trailing lambda that
+   * way; the caller then emits the regular chain layout.
+   */
+  private fun visitChainAfterTrailingLambda(
+      expression: KtExpression,
+      emitLeadingBreak: Boolean,
+  ): Boolean {
+    val headIndex = expression.trailingLambdaChainHead ?: return false
+    val parts = breakIntoParts(expression)
+    if (emitLeadingBreak) {
+      builder.space()
+    }
+
+    visit(parts[headIndex])
+    emitChainedSelectors(parts.subList(headIndex, parts.size), forceBreak = false)
+    return true
   }
 
   /**

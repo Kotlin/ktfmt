@@ -13,6 +13,7 @@ internal class KotlinLangInputAstVisitor(
   override val forceLineBreakBeforeAccessors: Boolean = false
   override val hugBlockLikeInfixCalls: Boolean = true
   override val hugCallsWithTrailingLambda: Boolean = true
+  override val hugChainsAfterTrailingLambda: Boolean = true
   override val hugWhenExpressions: Boolean = true
   override val indentBooleanConditions: Boolean = false
   override val forceLineBreakInWhenConditionList: Boolean = false
