@@ -1,0 +1,12 @@
+fun foo() {
+extensions.configure<KoverProjectExtension>("kover") {
+        reports {
+            total {
+                html {
+                    htmlDir =
+                        conventionProject.layout.buildDirectory.dir("kover/${project.name}/html")
+                }
+            }
+        }
+    }
+    }

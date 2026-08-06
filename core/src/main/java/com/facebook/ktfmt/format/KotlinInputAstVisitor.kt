@@ -1427,11 +1427,18 @@ open class KotlinInputAstVisitor(
     builder.sync(expression)
     val op = expression.operationToken
 
-    if (KtTokens.ALL_ASSIGNMENTS.contains(op) && expression.right.isLambdaOrScopingFunction) {
+    val right = expression.right
+    if (
+        KtTokens.ALL_ASSIGNMENTS.contains(op) &&
+            right != null &&
+            (!forceLineBreakAfterAssignment || right.isLambdaOrScopingFunction)
+    ) {
       // Assignments are statements in Kotlin; we don't have to worry about compound assignment.
       visit(expression.left)
       builder.spaceThenToken(expression.operationReference.text)
-      visitLambdaOrScopingFunction(expression.right)
+      // The level keeps the break after the operator out of reach of any forced break the
+      // left-hand side brought with it -- an annotation before the statement, say.
+      builder.block(ZERO) { emitAssignedExpression(right) }
       return
     }
 
@@ -1737,15 +1744,23 @@ open class KotlinInputAstVisitor(
    */
   private fun emitInitializer(initializer: KtExpression) {
     builder.spaceThenToken("=")
-    if (emitExpressionAfterOperator(initializer)) {
+    emitAssignedExpression(initializer)
+  }
+
+  /**
+   * Lays out the right-hand side of an assignment operator -- the `=` of an initializer or of an
+   * assignment statement -- according to the kind of expression it is.
+   */
+  private fun emitAssignedExpression(expression: KtExpression) {
+    if (emitExpressionAfterOperator(expression)) {
       return
     }
     // A chain gets to keep its receiver on the `=` line when it fits there; everything else
     // breaks after the `=` and is laid out one level in.
-    if (!emitChainAfterOperator(initializer)) {
+    if (!emitChainAfterOperator(expression)) {
       builder.breakOpThenBlock(" ", expressionBreakIndent) {
         builder.fenceComments()
-        visit(initializer)
+        visit(expression)
       }
     }
   }
