@@ -1,0 +1,15 @@
+fun f1(x: Int) {
+  when (x) {
+    0,
+    1 -> println("a or b")
+  }
+}
+
+fun f2() {
+  when (it.resolvedCall.resultingDescriptor) {
+    is LocalVariableDescriptor,
+    is ValueParameterDescriptor,
+    is ReceiverParameterDescriptor -> true
+    else -> false
+  }
+}

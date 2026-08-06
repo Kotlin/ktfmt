@@ -127,6 +127,7 @@ import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.KtWhenConditionInRange
 import org.jetbrains.kotlin.psi.KtWhenConditionIsPattern
 import org.jetbrains.kotlin.psi.KtWhenConditionWithExpression
+import org.jetbrains.kotlin.psi.KtWhenEntry
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.KtWhileExpression
 import org.jetbrains.kotlin.psi.psiUtil.children
@@ -148,6 +149,7 @@ open class KotlinInputAstVisitor(
   internal open val hugCallsWithTrailingLambda: Boolean = false
   internal open val hugWhenExpressions: Boolean = false
   internal open val indentBooleanConditions: Boolean = true
+  internal open val forceLineBreakInWhenConditionList: Boolean = true
 
   /** Standard indentation for a block */
   private val blockIndent: Indent.Const = Indent.Const.make(options.blockIndent, 1)
@@ -2364,42 +2366,34 @@ open class KotlinInputAstVisitor(
           builder.blankLineWanted(BlankLineWanted.PRESERVE)
         }
         builder.forcedBreak()
-        builder.block(ZERO) {
-          if (whenEntry.elseKeyword != null) {
-            builder.token("else")
-          } else {
-            val conditions = whenEntry.conditions
-            for ((conditionIndex, condition) in conditions.withIndex()) {
-              visit(condition)
-              builder.guessToken(",")
-              if (conditionIndex != conditions.lastIndex) {
-                builder.forcedBreak()
-              }
-            }
-          }
-          whenEntry.guard?.let { guard ->
-            builder.space()
-            emitKeywordWithCondition(
-                "if",
-                guard.getExpression(),
-                surroundConditionWithParens = false,
-            )
-          }
-        }
+
         val whenExpression = whenEntry.expression
-        if (whenEntry.trailingComma != null) {
-          builder.forcedBreak()
-        } else {
-          builder.space()
-        }
-        builder.token("->")
-        if (whenExpression is KtBlockExpression || whenExpression is KtLambdaExpression) {
-          builder.space()
-          visit(whenExpression)
-        } else {
-          builder.block(expressionBreakIndent) {
-            builder.breakToFill(" ")
+        val bodyIsBraced =
+            whenExpression is KtBlockExpression || whenExpression is KtLambdaExpression
+        // When comma-separated conditions are allowed to share a line, whether they actually fit
+        // depends on the `-> body` that trails them, so they have to be laid out in the same level
+        // as it. A braced body always breaks, so it is kept out of that level -- otherwise the
+        // conditions would always be broken apart too.
+        val conditionsShareLevelWithBody = !forceLineBreakInWhenConditionList && !bodyIsBraced
+
+        builder.block(ZERO, isEnabled = conditionsShareLevelWithBody) {
+          builder.block(ZERO, isEnabled = !conditionsShareLevelWithBody) {
+            emitWhenEntryConditions(whenEntry)
+          }
+          if (whenEntry.trailingComma != null) {
+            builder.forcedBreak()
+          } else {
+            builder.space()
+          }
+          builder.token("->")
+          if (bodyIsBraced) {
+            builder.space()
             visit(whenExpression)
+          } else {
+            builder.block(expressionBreakIndent) {
+              builder.breakToFill(" ")
+              visit(whenExpression)
+            }
           }
         }
         builder.guessSemicolon()
@@ -2407,6 +2401,26 @@ open class KotlinInputAstVisitor(
       builder.forcedBreak()
     }
     builder.token("}")
+  }
+
+  /** Emits `else`, or the comma-separated conditions of a `when` entry, followed by its guard. */
+  private fun emitWhenEntryConditions(whenEntry: KtWhenEntry) {
+    if (whenEntry.elseKeyword != null) {
+      builder.token("else")
+    } else {
+      val conditions = whenEntry.conditions
+      for ((conditionIndex, condition) in conditions.withIndex()) {
+        visit(condition)
+        builder.guessToken(",")
+        if (conditionIndex != conditions.lastIndex) {
+          if (forceLineBreakInWhenConditionList) builder.forcedBreak() else builder.breakOp(" ")
+        }
+      }
+    }
+    whenEntry.guard?.let { guard ->
+      builder.space()
+      emitKeywordWithCondition("if", guard.getExpression(), surroundConditionWithParens = false)
+    }
   }
 
   override fun visitClassBody(body: KtClassBody) {
