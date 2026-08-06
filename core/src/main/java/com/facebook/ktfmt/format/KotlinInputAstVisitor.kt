@@ -1377,6 +1377,7 @@ open class KotlinInputAstVisitor(
     }
     if (hasArgName && !isLambda && !argument.isSpread && !forceLineBreakAfterNamedParameter) {
       if (emitCallAfterOperator(argument.getArgumentExpression())) return
+      if (emitExpressionAfterOperator(argument.getArgumentExpression()!!)) return
     }
 
     val indent = if (hasArgName && !isLambda) expressionBreakIndent else ZERO
@@ -1709,6 +1710,7 @@ open class KotlinInputAstVisitor(
           visitChainAfterTrailingLambda(expression, emitLeadingBreak = true) -> Unit
       hugBlockLikeInfixCalls && expression.isInfixBlockLikeCall ->
           emitInfixBlockLikeCall(expression)
+      !forceLineBreakAfterAssignment && expression is KtBinaryExpression -> emitHugged()
       hugWhenExpressions && expression is KtWhenExpression && !expression.hasLeadingComment ->
           emitWhenExpressionAfterOperator(expression)
       else -> return false
