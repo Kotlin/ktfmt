@@ -1704,6 +1704,7 @@ open class KotlinInputAstVisitor(
       expression.isChainedBlockLikeCall ->
           visitChainedBlockLikeCall(expression, emitLeadingBreak = true)
       !forceLineBreakAfterAssignment && expression is KtObjectLiteralExpression -> emitHugged()
+      !forceLineBreakAfterAssignment && expression is KtTryExpression -> emitHugged()
       hugCallsWithTrailingLambda && expression.isCallWithTrailingLambda -> emitHugged()
       hugBlockLikeInfixCalls && expression.isInfixBlockLikeCall ->
           emitInfixBlockLikeCall(expression)
