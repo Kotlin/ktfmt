@@ -73,6 +73,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtFileAnnotationList
 import org.jetbrains.kotlin.psi.KtFinallySection
 import org.jetbrains.kotlin.psi.KtForExpression
+import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtFunctionType
 import org.jetbrains.kotlin.psi.KtIfExpression
 import org.jetbrains.kotlin.psi.KtImportDirective
@@ -150,6 +151,7 @@ open class KotlinInputAstVisitor(
   internal open val hugWhenExpressions: Boolean = false
   internal open val indentBooleanConditions: Boolean = true
   internal open val forceLineBreakInWhenConditionList: Boolean = true
+  internal open val forceLineBreaksBetweenEmptyMethods: Boolean = true
 
   /** Standard indentation for a block */
   private val blockIndent: Indent.Const = Indent.Const.make(options.blockIndent, 1)
@@ -2459,6 +2461,10 @@ open class KotlinInputAstVisitor(
         val blankLineBetweenMembers =
             when {
               prev == null -> BlankLineWanted.PRESERVE
+              !forceLineBreaksBetweenEmptyMethods &&
+                  prev is KtFunction &&
+                  prev.bodyBlockExpression == null &&
+                  prev.bodyExpression == null -> BlankLineWanted.PRESERVE
               prev !is KtProperty -> BlankLineWanted.YES
               prev.getter != null || prev.setter != null -> BlankLineWanted.YES
               curr is KtProperty -> BlankLineWanted.PRESERVE

@@ -1,0 +1,19 @@
+internal abstract class AbstractTimeSource {
+  abstract fun currentTimeMillis(): Long
+
+  abstract fun nanoTime(): Long
+
+  abstract fun wrapTask(block: Runnable): Runnable
+
+  abstract fun trackTask()
+
+  abstract fun unTrackTask()
+
+  abstract fun registerTimeLoopThread()
+
+  abstract fun unregisterTimeLoopThread()
+
+  abstract fun parkNanos(blocker: Any, nanos: Long) // should return immediately when nanos <= 0
+
+  abstract fun unpark(thread: Thread)
+}

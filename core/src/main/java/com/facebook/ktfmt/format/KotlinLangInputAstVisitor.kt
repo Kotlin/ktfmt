@@ -16,4 +16,5 @@ internal class KotlinLangInputAstVisitor(
   override val hugWhenExpressions: Boolean = true
   override val indentBooleanConditions: Boolean = false
   override val forceLineBreakInWhenConditionList: Boolean = false
+  override val forceLineBreaksBetweenEmptyMethods: Boolean = false
 }
