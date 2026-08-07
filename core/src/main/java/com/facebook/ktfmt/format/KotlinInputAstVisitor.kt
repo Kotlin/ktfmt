@@ -380,7 +380,7 @@ open class KotlinInputAstVisitor(
         builder.block(ZERO) {
           builder.token("=")
           if (
-              !emitExpressionAfterOperator(bodyExpression) &&
+              !emitExpressionAfterOperator(bodyExpression, indentHuggedBinaryExpression = true) &&
                   !emitChainAfterOperator(bodyExpression)
           ) {
             builder.block(expressionBreakIndent) {
@@ -1690,12 +1690,17 @@ open class KotlinInputAstVisitor(
    * @param scopingFunctionHugs whether a lambda or scoping function is emitted by [emitHugged]
    *   instead of by [visitLambdaOrScopingFunction]. The `by` of a delegate is already followed by
    *   its expression on the same line, so its lambda hugs it rather than breaking to it.
+   * @param indentHuggedBinaryExpression whether the operands of a hugged binary expression are laid
+   *   out one level in from the line the operator is on. The `=` of a declaration or of an
+   *   assignment indents them; an operator that is itself already indented -- the `=` of a named
+   *   argument, say -- keeps them at its own level.
    * @param emitHugged emits [expression] on the operator's line, after a plain space. Callers whose
    *   expression is wrapped in another PSI node -- the `by` of a delegate -- visit that node here.
    */
   private fun emitExpressionAfterOperator(
       expression: KtExpression,
       scopingFunctionHugs: Boolean = false,
+      indentHuggedBinaryExpression: Boolean = false,
       emitHugged: () -> Unit = {
         builder.space()
         visit(expression)
@@ -1717,7 +1722,12 @@ open class KotlinInputAstVisitor(
           visitChainAfterTrailingLambda(expression, emitLeadingBreak = true) -> Unit
       hugBlockLikeInfixCalls && expression.isInfixBlockLikeCall ->
           emitInfixBlockLikeCall(expression)
-      !forceLineBreakAfterAssignment && expression is KtBinaryExpression -> emitHugged()
+      !forceLineBreakAfterAssignment && expression is KtBinaryExpression ->
+          if (indentHuggedBinaryExpression) {
+            builder.block(expressionBreakIndent) { emitHugged() }
+          } else {
+            emitHugged()
+          }
       hugWhenExpressions && expression is KtWhenExpression && !expression.hasLeadingComment ->
           emitWhenExpressionAfterOperator(expression)
       else -> return false
@@ -1752,7 +1762,7 @@ open class KotlinInputAstVisitor(
    * assignment statement -- according to the kind of expression it is.
    */
   private fun emitAssignedExpression(expression: KtExpression) {
-    if (emitExpressionAfterOperator(expression)) {
+    if (emitExpressionAfterOperator(expression, indentHuggedBinaryExpression = true)) {
       return
     }
     // A chain gets to keep its receiver on the `=` line when it fits there; everything else
