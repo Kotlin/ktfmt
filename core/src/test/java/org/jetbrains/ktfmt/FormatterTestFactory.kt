@@ -3,6 +3,7 @@ package org.jetbrains.ktfmt
 import com.facebook.ktfmt.format.Formatter
 import com.facebook.ktfmt.format.FormattingOptions
 import com.facebook.ktfmt.format.TrailingCommaManagementStrategy
+import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.extension
 import kotlin.io.path.isDirectory
@@ -12,7 +13,6 @@ import kotlin.io.path.name
 import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
-import kotlin.io.resolve
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
@@ -62,7 +62,7 @@ abstract class FormatterTestFactory(
     // Without this, neither 'overwrite' nor navigation in IJ will work
     val root = run {
       val location = javaClass.protectionDomain?.codeSource?.location!!
-      val root = location.toURI().path.substringBefore("build/classes/kotlin/test")
+      val root = URI(location.toURI().toString().substringBefore("build/classes/kotlin/test"))
       Path.of(root).resolve("src/test/resources/cases")
     }
   }
