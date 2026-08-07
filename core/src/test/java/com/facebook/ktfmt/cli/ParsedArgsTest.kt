@@ -289,10 +289,9 @@ class ParsedArgsTest {
 
   @Test
   fun `processArgs use the @file option with non existing file`() {
-    val e =
-        assertThrows<FileNotFoundException> {
-          ParsedArgs.processArgs(arrayOf("@non-existing-file"))
-        }
+    val e = assertThrows<FileNotFoundException> {
+      ParsedArgs.processArgs(arrayOf("@non-existing-file"))
+    }
     assertContains(e.message, "non-existing-file")
   }
 

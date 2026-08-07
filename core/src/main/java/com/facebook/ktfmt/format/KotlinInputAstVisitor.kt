@@ -2240,7 +2240,8 @@ open class KotlinInputAstVisitor(
         visit(psi)
       }
 
-      val shouldForceBreak = forceAnnotationBreaks &&
+      val shouldForceBreak =
+          forceAnnotationBreaks &&
               // don't force break on parameter annotations
               list.parent !is KtParameter &&
               // don't force break on receiver type annotations
