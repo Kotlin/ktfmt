@@ -1,0 +1,12 @@
+fun f() {
+    when (computeSomething(
+            firstArgument,
+            secondArgument,
+            thirdArgument,
+            fourthArgument,
+            fifthArgument,
+        )) {
+        0 -> println("zero")
+        else -> println("other")
+    }
+}

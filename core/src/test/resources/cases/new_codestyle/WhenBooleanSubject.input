@@ -1,0 +1,6 @@
+fun f() {
+    when (aaaaa == null || aaaaa.bbbbb[0] == null || aaaaa.bbbbb[0].cc == null || aaaaa.bbbbb[0].dddd == null) {
+        true -> println("yes")
+        false -> println("no")
+    }
+}

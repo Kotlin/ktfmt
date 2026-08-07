@@ -149,6 +149,7 @@ open class KotlinInputAstVisitor(
   internal open val hugBlockLikeInfixCalls: Boolean = false
   internal open val hugCallsWithTrailingLambda: Boolean = false
   internal open val hugChainsAfterTrailingLambda: Boolean = false
+  internal open val hugConditionParens: Boolean = false
   internal open val hugWhenExpressions: Boolean = false
   internal open val indentBooleanConditions: Boolean = true
   internal open val forceLineBreakInWhenConditionList: Boolean = true
@@ -3179,14 +3180,14 @@ open class KotlinInputAstVisitor(
       if (surroundConditionWithParens) {
         builder.token("(")
       }
-      if (options.manageTrailingCommas) {
+      if (options.manageTrailingCommas && !hugConditionParens) {
         builder.block(expressionBreakIndent) {
           builder.breakOp()
           visit(condition)
           builder.breakOp(expressionBreakNegativeIndent)
         }
       } else {
-        builder.block(ZERO) { visit(condition) }
+        builder.block(if (hugConditionParens) expressionBreakIndent else ZERO) { visit(condition) }
       }
     }
     if (surroundConditionWithParens) {

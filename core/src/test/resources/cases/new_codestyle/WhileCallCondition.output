@@ -1,0 +1,6 @@
+fun f() {
+  while (computeSomething(
+      firstArgument, secondArgument, thirdArgument, fourthArgument, fifthArgument)) {
+    println()
+  }
+}

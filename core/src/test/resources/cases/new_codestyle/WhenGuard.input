@@ -1,0 +1,7 @@
+fun f(state: State) {
+    when (state) {
+        is Loaded if state.firstCondition && state.secondCondition && state.thirdCondition && state.fourthCondition -> handle()
+        is Empty if state.isReallyEmpty -> Unit
+        else -> Unit
+    }
+}
