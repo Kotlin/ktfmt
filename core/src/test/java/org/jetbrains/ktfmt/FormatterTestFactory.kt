@@ -1,4 +1,4 @@
-package org.jetbrains.ktfmt.testutil
+package org.jetbrains.ktfmt
 
 import com.facebook.ktfmt.format.Formatter
 import com.facebook.ktfmt.format.FormattingOptions
