@@ -2240,7 +2240,14 @@ open class KotlinInputAstVisitor(
         visit(psi)
       }
 
-      if (onlyAnnotationsSoFar && forceAnnotationBreaks && psi is KtAnnotationEntry) {
+      val shouldForceBreak = forceAnnotationBreaks &&
+              // don't force break on parameter annotations
+              list.parent !is KtParameter &&
+              // don't force break on receiver type annotations
+              !(list.parent is KtTypeReference && list.parent.parent is KtFunction) &&
+              // don't force break on parameter type annotations
+              !(list.parent is KtTypeReference && list.parent.parent is KtParameter)
+      if (onlyAnnotationsSoFar && shouldForceBreak) {
         builder.forcedBreak()
       } else if (onlyAnnotationsSoFar) {
         builder.breakOp(" ")
