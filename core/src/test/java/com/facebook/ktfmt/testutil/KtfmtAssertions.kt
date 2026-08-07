@@ -22,6 +22,9 @@ import com.facebook.ktfmt.format.FormattingOptions
 import com.facebook.ktfmt.format.Parser
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 
 var defaultTestFormattingOptions: FormattingOptions = Formatter.META_FORMAT
 
@@ -135,4 +138,25 @@ class FormattedCodeSubject(private val code: String) {
     println(code)
     println()
   }
+}
+
+fun assertContains(expected: String?, actual: String, message: String? = null) {
+  assertNotNull(expected, "Subject of `assertContains` should not be null")
+  assertTrue(expected!!.contains(actual), message)
+}
+
+fun assertContainsMatch(expected: String?, actual: String, message: String? = null) {
+  assertNotNull(expected, "Subject of `assertContainsMatch` should not be null")
+  val regex = actual.toRegex()
+  assertTrue(regex.containsMatchIn(expected!!), message)
+}
+
+fun assertDoesNotContain(expected: String?, actual: String, message: String? = null) {
+  assertNotNull(expected, "Subject of `assertDoesNotContain` should not be null")
+  assertFalse(expected!!.contains(actual), message)
+}
+
+fun assertStartsWith(string: String?, prefix: String, message: String? = null) {
+  assertNotNull(string, "Subject of `assertStartsWith` should not be null")
+  assertTrue(string!!.startsWith(prefix), message)
 }
