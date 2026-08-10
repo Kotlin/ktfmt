@@ -10,7 +10,6 @@ org-junit-junit-bom = "6.1.2"
 gradlePlugin-dependencyAnalysis = "3.18.0"
 gradlePlugin-dokka = "2.2.0"
 gradlePlugin-intelliJPlatform = "2.12.0"
-gradlePlugin-nexusPublish = "2.0.0"
 gradlePlugin-shadowJar = "9.0.2"
 
 [libraries]
@@ -30,5 +29,4 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "gradlePlugin-dokka" }
 dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version.ref = "gradlePlugin-dokka" }
 intelliJPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "gradlePlugin-intelliJPlatform" }
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "gradlePlugin-nexusPublish" }
 shadowJar = { id = "com.gradleup.shadow", version.ref = "gradlePlugin-shadowJar" }
