@@ -47,10 +47,11 @@ dependencies {
   testRuntimeOnly(libs.junit.platform.launcher)
 }
 
-val generateSources by tasks.registering {
-  outputs.dir(layout.buildDirectory.dir("generated/main/java"))
-  dependsOn(tasks.withType<GenerateKtfmtFileTask>())
-}
+val generateSources =
+    tasks.register("generateSources") {
+      outputs.dir(layout.buildDirectory.dir("generated/main/java"))
+      dependsOn(tasks.withType<GenerateKtfmtFileTask>())
+    }
 
 tasks {
   // Run tests with UTF-16 encoding

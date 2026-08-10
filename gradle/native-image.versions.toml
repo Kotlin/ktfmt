@@ -1,6 +1,6 @@
 [versions]
 org-graalvm = "25.0.1"
-graalvmPlugin = "0.11.1"
+graalvmPlugin = "1.1.8"
 org-jline = "3.30.6"
 
 [libraries]

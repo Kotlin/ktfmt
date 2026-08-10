@@ -9,7 +9,7 @@ org-junit-junit-bom = "6.1.2"
 # plugins
 gradlePlugin-dependencyAnalysis = "3.18.0"
 gradlePlugin-dokka = "2.2.0"
-gradlePlugin-intelliJPlatform = "2.6.0"
+gradlePlugin-intelliJPlatform = "2.12.0"
 gradlePlugin-nexusPublish = "2.0.0"
 gradlePlugin-shadowJar = "9.0.2"
 
