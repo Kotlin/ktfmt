@@ -49,7 +49,7 @@ dependencies {
 
 val generateSources =
     tasks.register("generateSources") {
-      outputs.dir(layout.buildDirectory.dir("generated/main/java"))
+      outputs.dir(layout.buildDirectory.dir("generated/main/kotlin"))
       dependsOn(tasks.withType<GenerateKtfmtFileTask>())
     }
 

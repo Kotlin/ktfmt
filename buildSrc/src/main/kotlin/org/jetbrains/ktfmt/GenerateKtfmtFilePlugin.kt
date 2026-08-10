@@ -28,7 +28,7 @@ class GenerateKtfmtFilePlugin : Plugin<Project> {
       error("gradle.properties not found in root project, can't generate Ktfmt.kt")
     }
 
-    val outputDir = project.layout.buildDirectory.dir("generated/main/java").get().asFile
+    val outputDir = project.layout.buildDirectory.dir("generated/main/kotlin").get().asFile
     val outputFile = outputDir.resolve("org/jetbrains/ktfmt/util/Ktfmt.kt")
 
     project.tasks.register<GenerateKtfmtFileTask>("generateKtfmtFile") {
