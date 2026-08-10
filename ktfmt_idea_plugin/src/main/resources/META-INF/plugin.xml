@@ -1,8 +1,8 @@
-<idea-plugin url="https://github.com/facebook/ktfmt/tree/main/ktfmt_idea_plugin">
-    <id>com.facebook.ktfmt_idea_plugin</id>
+<idea-plugin url="https://github.com/Kotlin/ktfmt/tree/main/ktfmt_idea_plugin">
+    <id>org.jetbrains.ktfmt_idea_plugin</id>
     <!--suppress PluginXmlCapitalization -->
     <name>ktfmt</name>
-    <vendor url="https://github.com/facebook/ktfmt">Facebook</vendor>
+    <vendor url="https://github.com/Kotlin/ktfmt">JetBrains</vendor>
 
     <description>ktfmt is a program that reformats Kotlin source code to comply with the common community standard for
         Kotlin code conventions.
@@ -12,12 +12,12 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <formattingService
-                implementation="com.facebook.ktfmt.intellij.KtfmtFormattingService"/>
-        <postStartupActivity implementation="com.facebook.ktfmt.intellij.InitialConfigurationStartupActivity"/>
+                implementation="org.jetbrains.ktfmt.intellij.KtfmtFormattingService"/>
+        <postStartupActivity implementation="org.jetbrains.ktfmt.intellij.InitialConfigurationStartupActivity"/>
         <!--suppress PluginXmlCapitalization -->
-        <projectConfigurable instance="com.facebook.ktfmt.intellij.KtfmtConfigurable"
-                             id="com.facebook.ktfmt_idea_plugin.settings"
-                             displayName="ktfmt Settings"
+        <projectConfigurable instance="org.jetbrains.ktfmt.intellij.KtfmtConfigurable"
+                             id="org.jetbrains.ktfmt_idea_plugin.settings"
+                             displayName="Ktfmt Settings"
                              parentId="editor"/>
         <notificationGroup displayType="STICKY_BALLOON" id="Enable ktfmt"
                            isLogByDefault="false"/>

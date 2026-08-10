@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import com.facebook.ktfmt.GenerateKtfmtFileTask
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
+import org.jetbrains.ktfmt.GenerateKtfmtFileTask
 
 plugins {
   kotlin("jvm")
@@ -66,12 +66,12 @@ tasks {
     val kotlinVersion = rootProject.libs.versions.kotlin.get().substringBeforeLast(".")
     exclude {
       val path = it.path
-      "com/facebook/ktfmt/util/kotlin-" in path && "kotlin-$kotlinVersion" !in path
+      "org/jetbrains/ktfmt/util/kotlin-" in path && "kotlin-$kotlinVersion" !in path
     }
   }
 
   // Add main class to jar manifest
-  withType(Jar::class) { manifest { attributes["Main-Class"] = "com.facebook.ktfmt.cli.Main" } }
+  withType(Jar::class) { manifest { attributes["Main-Class"] = "org.jetbrains.ktfmt.cli.Main" } }
 
   // Sources
   register("sourcesJar", Jar::class) {
@@ -114,14 +114,14 @@ kotlin {
   }
 }
 
-group = "com.facebook"
+group = "org.jetbrains"
 
 version = rootProject.version
 
 publishing {
   publications {
     create<MavenPublication>("maven") {
-      groupId = "com.facebook"
+      groupId = "org.jetbrains"
       artifactId = "ktfmt"
       version = rootProject.version.toString()
 
@@ -133,9 +133,9 @@ publishing {
         name = "Ktfmt"
         description =
             "A program that reformats Kotlin source code to comply with the common community standard for Kotlin code conventions."
-        url = "https://github.com/facebook/ktfmt"
+        url = "https://github.com/Kotlin/ktfmt"
         inceptionYear = "2019"
-        developers { developer { name = "Facebook" } }
+        developers { developer { name = "Kotlin./g" } }
         licenses {
           license {
             name = "The Apache License, Version 2.0"
@@ -143,9 +143,9 @@ publishing {
           }
         }
         scm {
-          connection = "scm:git:https://github.com/facebook/ktfmt.git"
-          developerConnection = "scm:git:git@github.com:facebook/ktfmt.git"
-          url = "https://github.com/facebook/ktfmt.git"
+          connection = "scm:git:https://github.com/Kotlin/ktfmt.git"
+          developerConnection = "scm:git:git@github.com:Kotlin/ktfmt.git"
+          url = "https://github.com/Kotlin/ktfmt.git"
         }
       }
     }

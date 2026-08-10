@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-import org.gradle.kotlin.dsl.`kotlin-dsl`
+package org.jetbrains.ktfmt.debughelpers
 
-plugins {
-  `kotlin-dsl`
-}
+import org.jetbrains.kotlin.com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 
-dependencies { implementation(nativeImageLibs.graalvm.gradle.plugin) }
+class PrintAstVisitor : KtTreeVisitorVoid() {
+  private var depth = 0
 
-gradlePlugin {
-  plugins {
-    register("ktfmt-file-generator") {
-      id = "ktfmt.ktfmt-file-generator"
-      implementationClass = "org.jetbrains.ktfmt.GenerateKtfmtFilePlugin"
-    }
-    register("native-image") {
-      id = "ktfmt.native-image"
-      implementationClass = "org.jetbrains.ktfmt.NativeImagePlugin"
-    }
+  override fun visitElement(element: PsiElement) {
+    print("  ".repeat(depth))
+    println("${element.javaClass.simpleName} ${element.text?.replace("\n", "\\n")}")
+    depth++
+    super.visitElement(element)
+    depth--
   }
 }

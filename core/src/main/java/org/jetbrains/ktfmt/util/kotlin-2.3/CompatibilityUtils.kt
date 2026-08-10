@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-import org.gradle.kotlin.dsl.`kotlin-dsl`
+@file:Suppress("IncorrectPackageName", "PackageDirectoryMismatch")
 
-plugins {
-  `kotlin-dsl`
+package org.jetbrains.ktfmt.util
+
+import org.jetbrains.kotlin.psi.KtContextReceiverList
+import org.jetbrains.kotlin.psi.KtDestructuringDeclarationEntry
+import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
+
+fun KtContextReceiverList.listToVisit(): List<KtElement> {
+  return contextParameters().ifEmpty { contextReceivers() }
 }
 
-dependencies { implementation(nativeImageLibs.graalvm.gradle.plugin) }
+val CONTEXT_PARAMETER_LIST = KtStubElementTypes.CONTEXT_PARAMETER_LIST
 
-gradlePlugin {
-  plugins {
-    register("ktfmt-file-generator") {
-      id = "ktfmt.ktfmt-file-generator"
-      implementationClass = "org.jetbrains.ktfmt.GenerateKtfmtFilePlugin"
-    }
-    register("native-image") {
-      id = "ktfmt.native-image"
-      implementationClass = "org.jetbrains.ktfmt.NativeImagePlugin"
-    }
-  }
-}
+val KtDestructuringDeclarationEntry.ownValOrVarKeywordText: String?
+  get() = ownValOrVarKeyword?.text

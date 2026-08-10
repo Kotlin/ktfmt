@@ -14,23 +14,17 @@
  * limitations under the License.
  */
 
-import org.gradle.kotlin.dsl.`kotlin-dsl`
+package org.jetbrains.ktfmt.format
 
-plugins {
-  `kotlin-dsl`
-}
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
-dependencies { implementation(nativeImageLibs.graalvm.gradle.plugin) }
-
-gradlePlugin {
-  plugins {
-    register("ktfmt-file-generator") {
-      id = "ktfmt.ktfmt-file-generator"
-      implementationClass = "org.jetbrains.ktfmt.GenerateKtfmtFilePlugin"
-    }
-    register("native-image") {
-      id = "ktfmt.native-image"
-      implementationClass = "org.jetbrains.ktfmt.NativeImagePlugin"
-    }
+class KotlinInputTest {
+  @Test
+  fun `Comments are toks not tokens`() {
+    val code = "/** foo */ class F {}"
+    val input = KotlinInput(code, Parser.parse(code))
+    assertEquals(listOf("class", "F", "{", "}", ""), input.getTokens().map { it.tok.text })
+    assertEquals(listOf("/** foo */", " "), input.getTokens()[0].toksBefore.map { it.text })
   }
 }

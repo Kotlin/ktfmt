@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-import org.gradle.kotlin.dsl.`kotlin-dsl`
+package org.jetbrains.ktfmt.format
 
-plugins {
-  `kotlin-dsl`
-}
+import org.jetbrains.kotlin.psi.KtFile
 
-dependencies { implementation(nativeImageLibs.graalvm.gradle.plugin) }
+internal class FormatterContext(@JvmField val code: String) {
 
-gradlePlugin {
-  plugins {
-    register("ktfmt-file-generator") {
-      id = "ktfmt.ktfmt-file-generator"
-      implementationClass = "org.jetbrains.ktfmt.GenerateKtfmtFilePlugin"
-    }
-    register("native-image") {
-      id = "ktfmt.native-image"
-      implementationClass = "org.jetbrains.ktfmt.NativeImagePlugin"
-    }
+  private val ktFile: KtFile by lazy { Parser.parse(code) }
+
+  inline fun transform(block: (KtFile) -> String): FormatterContext {
+    val newCode = block(ktFile)
+    return if (newCode == code) this else FormatterContext(newCode)
   }
 }

@@ -1,73 +1,73 @@
-public final class com/facebook/ktfmt/cli/EditorConfigResolver {
-	public static final field INSTANCE Lcom/facebook/ktfmt/cli/EditorConfigResolver;
-	public final fun resolveFormattingOptions (Ljava/io/File;Lcom/facebook/ktfmt/format/FormattingOptions;)Lcom/facebook/ktfmt/format/FormattingOptions;
+public final class org/jetbrains/ktfmt/cli/EditorConfigResolver {
+	public static final field INSTANCE Lorg/jetbrains/ktfmt/cli/EditorConfigResolver;
+	public final fun resolveFormattingOptions (Ljava/io/File;Lorg/jetbrains/ktfmt/format/FormattingOptions;)Lorg/jetbrains/ktfmt/format/FormattingOptions;
 }
 
-public final class com/facebook/ktfmt/cli/Main {
-	public static final field Companion Lcom/facebook/ktfmt/cli/Main$Companion;
+public final class org/jetbrains/ktfmt/cli/Main {
+	public static final field Companion Lorg/jetbrains/ktfmt/cli/Main$Companion;
 	public fun <init> (Ljava/io/InputStream;Ljava/io/PrintStream;Ljava/io/PrintStream;[Ljava/lang/String;)V
 	public static final fun main ([Ljava/lang/String;)V
 	public final fun run ()I
 }
 
-public final class com/facebook/ktfmt/cli/Main$Companion {
+public final class org/jetbrains/ktfmt/cli/Main$Companion {
 	public final fun expandArgsToFileNames (Ljava/util/List;)Ljava/util/List;
 	public final fun main ([Ljava/lang/String;)V
 }
 
-public abstract interface class com/facebook/ktfmt/cli/ParseResult {
+public abstract interface class org/jetbrains/ktfmt/cli/ParseResult {
 }
 
-public final class com/facebook/ktfmt/cli/ParseResult$Error : com/facebook/ktfmt/cli/ParseResult {
+public final class org/jetbrains/ktfmt/cli/ParseResult$Error : org/jetbrains/ktfmt/cli/ParseResult {
 	public fun <init> (Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lcom/facebook/ktfmt/cli/ParseResult$Error;
-	public static synthetic fun copy$default (Lcom/facebook/ktfmt/cli/ParseResult$Error;Ljava/lang/String;ILjava/lang/Object;)Lcom/facebook/ktfmt/cli/ParseResult$Error;
+	public final fun copy (Ljava/lang/String;)Lorg/jetbrains/ktfmt/cli/ParseResult$Error;
+	public static synthetic fun copy$default (Lorg/jetbrains/ktfmt/cli/ParseResult$Error;Ljava/lang/String;ILjava/lang/Object;)Lorg/jetbrains/ktfmt/cli/ParseResult$Error;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getErrorMessage ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/cli/ParseResult$Ok : com/facebook/ktfmt/cli/ParseResult {
-	public fun <init> (Lcom/facebook/ktfmt/cli/ParsedArgs;)V
-	public final fun component1 ()Lcom/facebook/ktfmt/cli/ParsedArgs;
-	public final fun copy (Lcom/facebook/ktfmt/cli/ParsedArgs;)Lcom/facebook/ktfmt/cli/ParseResult$Ok;
-	public static synthetic fun copy$default (Lcom/facebook/ktfmt/cli/ParseResult$Ok;Lcom/facebook/ktfmt/cli/ParsedArgs;ILjava/lang/Object;)Lcom/facebook/ktfmt/cli/ParseResult$Ok;
+public final class org/jetbrains/ktfmt/cli/ParseResult$Ok : org/jetbrains/ktfmt/cli/ParseResult {
+	public fun <init> (Lorg/jetbrains/ktfmt/cli/ParsedArgs;)V
+	public final fun component1 ()Lorg/jetbrains/ktfmt/cli/ParsedArgs;
+	public final fun copy (Lorg/jetbrains/ktfmt/cli/ParsedArgs;)Lorg/jetbrains/ktfmt/cli/ParseResult$Ok;
+	public static synthetic fun copy$default (Lorg/jetbrains/ktfmt/cli/ParseResult$Ok;Lorg/jetbrains/ktfmt/cli/ParsedArgs;ILjava/lang/Object;)Lorg/jetbrains/ktfmt/cli/ParseResult$Ok;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getParsedValue ()Lcom/facebook/ktfmt/cli/ParsedArgs;
+	public final fun getParsedValue ()Lorg/jetbrains/ktfmt/cli/ParsedArgs;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/cli/ParseResult$ShowMessage : com/facebook/ktfmt/cli/ParseResult {
+public final class org/jetbrains/ktfmt/cli/ParseResult$ShowMessage : org/jetbrains/ktfmt/cli/ParseResult {
 	public fun <init> (Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lcom/facebook/ktfmt/cli/ParseResult$ShowMessage;
-	public static synthetic fun copy$default (Lcom/facebook/ktfmt/cli/ParseResult$ShowMessage;Ljava/lang/String;ILjava/lang/Object;)Lcom/facebook/ktfmt/cli/ParseResult$ShowMessage;
+	public final fun copy (Ljava/lang/String;)Lorg/jetbrains/ktfmt/cli/ParseResult$ShowMessage;
+	public static synthetic fun copy$default (Lorg/jetbrains/ktfmt/cli/ParseResult$ShowMessage;Ljava/lang/String;ILjava/lang/Object;)Lorg/jetbrains/ktfmt/cli/ParseResult$ShowMessage;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getMessage ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/cli/ParsedArgs {
-	public static final field Companion Lcom/facebook/ktfmt/cli/ParsedArgs$Companion;
-	public fun <init> (Ljava/util/List;Lcom/facebook/ktfmt/format/FormattingOptions;ZZLjava/lang/String;ZZ)V
+public final class org/jetbrains/ktfmt/cli/ParsedArgs {
+	public static final field Companion Lorg/jetbrains/ktfmt/cli/ParsedArgs$Companion;
+	public fun <init> (Ljava/util/List;Lorg/jetbrains/ktfmt/format/FormattingOptions;ZZLjava/lang/String;ZZ)V
 	public final fun component1 ()Ljava/util/List;
-	public final fun component2 ()Lcom/facebook/ktfmt/format/FormattingOptions;
+	public final fun component2 ()Lorg/jetbrains/ktfmt/format/FormattingOptions;
 	public final fun component3 ()Z
 	public final fun component4 ()Z
 	public final fun component5 ()Ljava/lang/String;
 	public final fun component6 ()Z
 	public final fun component7 ()Z
-	public final fun copy (Ljava/util/List;Lcom/facebook/ktfmt/format/FormattingOptions;ZZLjava/lang/String;ZZ)Lcom/facebook/ktfmt/cli/ParsedArgs;
-	public static synthetic fun copy$default (Lcom/facebook/ktfmt/cli/ParsedArgs;Ljava/util/List;Lcom/facebook/ktfmt/format/FormattingOptions;ZZLjava/lang/String;ZZILjava/lang/Object;)Lcom/facebook/ktfmt/cli/ParsedArgs;
+	public final fun copy (Ljava/util/List;Lorg/jetbrains/ktfmt/format/FormattingOptions;ZZLjava/lang/String;ZZ)Lorg/jetbrains/ktfmt/cli/ParsedArgs;
+	public static synthetic fun copy$default (Lorg/jetbrains/ktfmt/cli/ParsedArgs;Ljava/util/List;Lorg/jetbrains/ktfmt/format/FormattingOptions;ZZLjava/lang/String;ZZILjava/lang/Object;)Lorg/jetbrains/ktfmt/cli/ParsedArgs;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDryRun ()Z
 	public final fun getEditorConfig ()Z
 	public final fun getFileNames ()Ljava/util/List;
-	public final fun getFormattingOptions ()Lcom/facebook/ktfmt/format/FormattingOptions;
+	public final fun getFormattingOptions ()Lorg/jetbrains/ktfmt/format/FormattingOptions;
 	public final fun getQuiet ()Z
 	public final fun getSetExitIfChanged ()Z
 	public final fun getStdinName ()Ljava/lang/String;
@@ -75,73 +75,73 @@ public final class com/facebook/ktfmt/cli/ParsedArgs {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/cli/ParsedArgs$Companion {
+public final class org/jetbrains/ktfmt/cli/ParsedArgs$Companion {
 	public final fun getHELP_TEXT ()Ljava/lang/String;
-	public final fun parseOptions ([Ljava/lang/String;)Lcom/facebook/ktfmt/cli/ParseResult;
-	public final fun processArgs ([Ljava/lang/String;)Lcom/facebook/ktfmt/cli/ParseResult;
+	public final fun parseOptions ([Ljava/lang/String;)Lorg/jetbrains/ktfmt/cli/ParseResult;
+	public final fun processArgs ([Ljava/lang/String;)Lorg/jetbrains/ktfmt/cli/ParseResult;
 }
 
-public final class com/facebook/ktfmt/debughelpers/OpsDebugKt {
+public final class org/jetbrains/ktfmt/debughelpers/OpsDebugKt {
 	public static final fun printOps (Lcom/google/common/collect/ImmutableList;)V
 }
 
-public final class com/facebook/ktfmt/debughelpers/PrintAstVisitor : org/jetbrains/kotlin/psi/KtTreeVisitorVoid {
+public final class org/jetbrains/ktfmt/debughelpers/PrintAstVisitor : org/jetbrains/kotlin/psi/KtTreeVisitorVoid {
 	public fun <init> ()V
 	public fun visitElement (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
 }
 
-public final class com/facebook/ktfmt/format/EnumEntryList {
-	public static final field Companion Lcom/facebook/ktfmt/format/EnumEntryList$Companion;
+public final class org/jetbrains/ktfmt/format/EnumEntryList {
+	public static final field Companion Lorg/jetbrains/ktfmt/format/EnumEntryList$Companion;
 	public synthetic fun <init> (Ljava/util/List;Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getEnumEntries ()Ljava/util/List;
 	public final fun getTerminatingSemicolon ()Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;
 	public final fun getTrailingComma ()Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;
 }
 
-public final class com/facebook/ktfmt/format/EnumEntryList$Companion {
-	public final fun extractChildList (Lorg/jetbrains/kotlin/psi/KtClassBody;)Lcom/facebook/ktfmt/format/EnumEntryList;
-	public final fun extractParentList (Lorg/jetbrains/kotlin/psi/KtEnumEntry;)Lcom/facebook/ktfmt/format/EnumEntryList;
+public final class org/jetbrains/ktfmt/format/EnumEntryList$Companion {
+	public final fun extractChildList (Lorg/jetbrains/kotlin/psi/KtClassBody;)Lorg/jetbrains/ktfmt/format/EnumEntryList;
+	public final fun extractParentList (Lorg/jetbrains/kotlin/psi/KtEnumEntry;)Lorg/jetbrains/ktfmt/format/EnumEntryList;
 }
 
-public final class com/facebook/ktfmt/format/FenceCommentsOp : com/google/googlejavaformat/Op {
-	public static final field INSTANCE Lcom/facebook/ktfmt/format/FenceCommentsOp;
+public final class org/jetbrains/ktfmt/format/FenceCommentsOp : com/google/googlejavaformat/Op {
+	public static final field INSTANCE Lorg/jetbrains/ktfmt/format/FenceCommentsOp;
 	public fun add (Lcom/google/googlejavaformat/DocBuilder;)V
 	public final fun getAS_LIST ()Lcom/google/common/collect/ImmutableList;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/format/Formatter {
-	public static final field GOOGLE_FORMAT Lcom/facebook/ktfmt/format/FormattingOptions;
-	public static final field INSTANCE Lcom/facebook/ktfmt/format/Formatter;
-	public static final field KOTLINLANG_FORMAT Lcom/facebook/ktfmt/format/FormattingOptions;
-	public static final field META_FORMAT Lcom/facebook/ktfmt/format/FormattingOptions;
-	public static final fun format (Lcom/facebook/ktfmt/format/FormattingOptions;Ljava/lang/String;)Ljava/lang/String;
-	public static final fun format (Lcom/facebook/ktfmt/format/FormattingOptions;Ljava/lang/String;Lcom/google/common/collect/RangeSet;)Ljava/lang/String;
-	public static final fun format (Lcom/facebook/ktfmt/format/FormattingOptions;Ljava/lang/String;Lcom/google/common/collect/RangeSet;Lcom/google/common/collect/RangeSet;)Ljava/lang/String;
+public final class org/jetbrains/ktfmt/format/Formatter {
+	public static final field GOOGLE_FORMAT Lorg/jetbrains/ktfmt/format/FormattingOptions;
+	public static final field INSTANCE Lorg/jetbrains/ktfmt/format/Formatter;
+	public static final field KOTLINLANG_FORMAT Lorg/jetbrains/ktfmt/format/FormattingOptions;
+	public static final field META_FORMAT Lorg/jetbrains/ktfmt/format/FormattingOptions;
 	public static final fun format (Ljava/lang/String;)Ljava/lang/String;
 	public static final fun format (Ljava/lang/String;Z)Ljava/lang/String;
-	public static synthetic fun format$default (Lcom/facebook/ktfmt/format/FormattingOptions;Ljava/lang/String;Lcom/google/common/collect/RangeSet;Lcom/google/common/collect/RangeSet;ILjava/lang/Object;)Ljava/lang/String;
+	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Ljava/lang/String;)Ljava/lang/String;
+	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Ljava/lang/String;Lcom/google/common/collect/RangeSet;)Ljava/lang/String;
+	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Ljava/lang/String;Lcom/google/common/collect/RangeSet;Lcom/google/common/collect/RangeSet;)Ljava/lang/String;
+	public static synthetic fun format$default (Lorg/jetbrains/ktfmt/format/FormattingOptions;Ljava/lang/String;Lcom/google/common/collect/RangeSet;Lcom/google/common/collect/RangeSet;ILjava/lang/Object;)Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/format/FormattingOptions {
-	public static final field Companion Lcom/facebook/ktfmt/format/FormattingOptions$Companion;
+public final class org/jetbrains/ktfmt/format/FormattingOptions {
+	public static final field Companion Lorg/jetbrains/ktfmt/format/FormattingOptions$Companion;
 	public static final field DEFAULT_BLOCK_INDENT I
 	public static final field DEFAULT_CONTINUATION_INDENT I
 	public static final field DEFAULT_MAX_WIDTH I
-	public fun <init> (IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZ)V
-	public fun <init> (IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZZ)V
-	public synthetic fun <init> (IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (IIILorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;ZZ)V
+	public fun <init> (IIILorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;ZZZZ)V
+	public synthetic fun <init> (IIILorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;ZZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (IIIZZZ)V
 	public synthetic fun <init> (IIIZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
 	public final fun component2 ()I
 	public final fun component3 ()I
-	public final fun component4 ()Lcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;
+	public final fun component4 ()Lorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;
 	public final fun component5 ()Z
 	public final fun component6 ()Z
 	public final fun component7 ()Z
-	public final fun copy (IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZZ)Lcom/facebook/ktfmt/format/FormattingOptions;
-	public static synthetic fun copy$default (Lcom/facebook/ktfmt/format/FormattingOptions;IIILcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;ZZZZILjava/lang/Object;)Lcom/facebook/ktfmt/format/FormattingOptions;
+	public final fun copy (IIILorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;ZZZZ)Lorg/jetbrains/ktfmt/format/FormattingOptions;
+	public static synthetic fun copy$default (Lorg/jetbrains/ktfmt/format/FormattingOptions;IIILorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;ZZZZILjava/lang/Object;)Lorg/jetbrains/ktfmt/format/FormattingOptions;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getBlockIndent ()I
 	public final fun getContinuationIndent ()I
@@ -149,28 +149,28 @@ public final class com/facebook/ktfmt/format/FormattingOptions {
 	public final fun getMaxWidth ()I
 	public final fun getPreserveLambdaBreaks ()Z
 	public final fun getRemoveUnusedImports ()Z
-	public final fun getTrailingCommaManagementStrategy ()Lcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;
+	public final fun getTrailingCommaManagementStrategy ()Lorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;
 	public fun hashCode ()I
-	public final fun toBuilder ()Lcom/facebook/ktfmt/format/FormattingOptions$Builder;
+	public final fun toBuilder ()Lorg/jetbrains/ktfmt/format/FormattingOptions$Builder;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/format/FormattingOptions$Builder {
+public final class org/jetbrains/ktfmt/format/FormattingOptions$Builder {
 	public fun <init> ()V
-	public final fun blockIndent (I)Lcom/facebook/ktfmt/format/FormattingOptions$Builder;
-	public final fun build ()Lcom/facebook/ktfmt/format/FormattingOptions;
-	public final fun continuationIndent (I)Lcom/facebook/ktfmt/format/FormattingOptions$Builder;
-	public final fun debuggingPrintOpsAfterFormatting (Z)Lcom/facebook/ktfmt/format/FormattingOptions$Builder;
-	public final fun maxWidth (I)Lcom/facebook/ktfmt/format/FormattingOptions$Builder;
-	public final fun preserveLambdaBreaks (Z)Lcom/facebook/ktfmt/format/FormattingOptions$Builder;
-	public final fun removeUnusedImports (Z)Lcom/facebook/ktfmt/format/FormattingOptions$Builder;
-	public final fun trailingCommaManagementStrategy (Lcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;)Lcom/facebook/ktfmt/format/FormattingOptions$Builder;
+	public final fun blockIndent (I)Lorg/jetbrains/ktfmt/format/FormattingOptions$Builder;
+	public final fun build ()Lorg/jetbrains/ktfmt/format/FormattingOptions;
+	public final fun continuationIndent (I)Lorg/jetbrains/ktfmt/format/FormattingOptions$Builder;
+	public final fun debuggingPrintOpsAfterFormatting (Z)Lorg/jetbrains/ktfmt/format/FormattingOptions$Builder;
+	public final fun maxWidth (I)Lorg/jetbrains/ktfmt/format/FormattingOptions$Builder;
+	public final fun preserveLambdaBreaks (Z)Lorg/jetbrains/ktfmt/format/FormattingOptions$Builder;
+	public final fun removeUnusedImports (Z)Lorg/jetbrains/ktfmt/format/FormattingOptions$Builder;
+	public final fun trailingCommaManagementStrategy (Lorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;)Lorg/jetbrains/ktfmt/format/FormattingOptions$Builder;
 }
 
-public final class com/facebook/ktfmt/format/FormattingOptions$Companion {
+public final class org/jetbrains/ktfmt/format/FormattingOptions$Companion {
 }
 
-public final class com/facebook/ktfmt/format/KotlinInput : com/google/googlejavaformat/Input {
+public final class org/jetbrains/ktfmt/format/KotlinInput : com/google/googlejavaformat/Input {
 	public fun <init> (Ljava/lang/String;Lorg/jetbrains/kotlin/psi/KtFile;)V
 	public final fun characterRangesToTokenRanges (Ljava/util/Collection;)Lcom/google/common/collect/RangeSet;
 	public fun getColumnNumber (I)I
@@ -183,8 +183,8 @@ public final class com/facebook/ktfmt/format/KotlinInput : com/google/googlejava
 	public fun getkN ()I
 }
 
-public class com/facebook/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/kotlin/psi/KtTreeVisitorVoid {
-	public fun <init> (Lcom/facebook/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/OpsBuilder;)V
+public class org/jetbrains/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/kotlin/psi/KtTreeVisitorVoid {
+	public fun <init> (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/OpsBuilder;)V
 	public fun visitAnnotatedExpression (Lorg/jetbrains/kotlin/psi/KtAnnotatedExpression;)V
 	public fun visitAnnotation (Lorg/jetbrains/kotlin/psi/KtAnnotation;)V
 	public fun visitAnnotationEntry (Lorg/jetbrains/kotlin/psi/KtAnnotationEntry;)V
@@ -270,7 +270,7 @@ public class com/facebook/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/kot
 	public fun visitWhileExpression (Lorg/jetbrains/kotlin/psi/KtWhileExpression;)V
 }
 
-public final class com/facebook/ktfmt/format/KotlinTok : com/google/googlejavaformat/Input$Tok {
+public final class org/jetbrains/ktfmt/format/KotlinTok : com/google/googlejavaformat/Input$Tok {
 	public fun <init> (ILjava/lang/String;Ljava/lang/String;IZLorg/jetbrains/kotlin/lexer/KtToken;)V
 	public fun getColumn ()I
 	public fun getIndex ()I
@@ -288,49 +288,49 @@ public final class com/facebook/ktfmt/format/KotlinTok : com/google/googlejavafo
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/format/KotlinToken : com/google/googlejavaformat/Input$Token {
-	public fun <init> (Lcom/google/common/collect/ImmutableList;Lcom/facebook/ktfmt/format/KotlinTok;Lcom/google/common/collect/ImmutableList;)V
-	public fun getTok ()Lcom/facebook/ktfmt/format/KotlinTok;
+public final class org/jetbrains/ktfmt/format/KotlinToken : com/google/googlejavaformat/Input$Token {
+	public fun <init> (Lcom/google/common/collect/ImmutableList;Lorg/jetbrains/ktfmt/format/KotlinTok;Lcom/google/common/collect/ImmutableList;)V
 	public synthetic fun getTok ()Lcom/google/googlejavaformat/Input$Tok;
+	public fun getTok ()Lorg/jetbrains/ktfmt/format/KotlinTok;
 	public fun getToksAfter ()Lcom/google/common/collect/ImmutableList;
 	public fun getToksBefore ()Lcom/google/common/collect/ImmutableList;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/format/MultilineStringFormatter {
+public final class org/jetbrains/ktfmt/format/MultilineStringFormatter {
 	public fun <init> (I)V
 	public final fun getContinuationIndentSize ()I
 }
 
-public final class com/facebook/ktfmt/format/ParseError : java/lang/IllegalArgumentException {
-	public static final field Companion Lcom/facebook/ktfmt/format/ParseError$Companion;
+public final class org/jetbrains/ktfmt/format/ParseError : java/lang/IllegalArgumentException {
+	public static final field Companion Lorg/jetbrains/ktfmt/format/ParseError$Companion;
 	public fun <init> (Ljava/lang/String;Lorg/jetbrains/kotlin/com/intellij/openapi/util/text/LineColumn;)V
 	public fun <init> (Ljava/lang/String;Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
 	public final fun getErrorDescription ()Ljava/lang/String;
 	public final fun getLineColumn ()Lorg/jetbrains/kotlin/com/intellij/openapi/util/text/LineColumn;
 }
 
-public final class com/facebook/ktfmt/format/ParseError$Companion {
+public final class org/jetbrains/ktfmt/format/ParseError$Companion {
 }
 
-public final class com/facebook/ktfmt/format/Parser {
-	public static final field INSTANCE Lcom/facebook/ktfmt/format/Parser;
+public final class org/jetbrains/ktfmt/format/Parser {
+	public static final field INSTANCE Lorg/jetbrains/ktfmt/format/Parser;
 	public final fun getEnv ()Lorg/jetbrains/kotlin/cli/jvm/compiler/KotlinCoreEnvironment;
 	public final fun parse (Ljava/lang/String;)Lorg/jetbrains/kotlin/psi/KtFile;
 }
 
-public final class com/facebook/ktfmt/format/PsiUtilsKt {
+public final class org/jetbrains/ktfmt/format/PsiUtilsKt {
 	public static final fun hasEmptyParens (Lorg/jetbrains/kotlin/psi/KtParameterList;)Z
 	public static final fun hasEmptyParens (Lorg/jetbrains/kotlin/psi/KtValueArgumentList;)Z
 	public static final fun isLambda (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
 }
 
-public final class com/facebook/ktfmt/format/RedundantElementManager {
-	public static final field INSTANCE Lcom/facebook/ktfmt/format/RedundantElementManager;
+public final class org/jetbrains/ktfmt/format/RedundantElementManager {
+	public static final field INSTANCE Lorg/jetbrains/ktfmt/format/RedundantElementManager;
 }
 
-public final class com/facebook/ktfmt/format/Tokenizer : org/jetbrains/kotlin/psi/KtTreeVisitorVoid {
-	public static final field Companion Lcom/facebook/ktfmt/format/Tokenizer$Companion;
+public final class org/jetbrains/ktfmt/format/Tokenizer : org/jetbrains/kotlin/psi/KtTreeVisitorVoid {
+	public static final field Companion Lorg/jetbrains/ktfmt/format/Tokenizer$Companion;
 	public fun <init> (Ljava/lang/String;Lorg/jetbrains/kotlin/psi/KtFile;)V
 	public final fun getFile ()Lorg/jetbrains/kotlin/psi/KtFile;
 	public final fun getIndex ()I
@@ -339,104 +339,104 @@ public final class com/facebook/ktfmt/format/Tokenizer : org/jetbrains/kotlin/ps
 	public fun visitElement (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
 }
 
-public final class com/facebook/ktfmt/format/Tokenizer$Companion {
+public final class org/jetbrains/ktfmt/format/Tokenizer$Companion {
 }
 
-public final class com/facebook/ktfmt/format/TrailingCommaManagementStrategy : java/lang/Enum {
-	public static final field COMPLETE Lcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;
-	public static final field NONE Lcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;
-	public static final field ONLY_ADD Lcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;
+public final class org/jetbrains/ktfmt/format/TrailingCommaManagementStrategy : java/lang/Enum {
+	public static final field COMPLETE Lorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;
+	public static final field NONE Lorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;
+	public static final field ONLY_ADD Lorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getRemoveRedundantTrailingCommas ()Z
 	public fun toString ()Ljava/lang/String;
-	public static fun valueOf (Ljava/lang/String;)Lcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;
-	public static fun values ()[Lcom/facebook/ktfmt/format/TrailingCommaManagementStrategy;
+	public static fun valueOf (Ljava/lang/String;)Lorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;
+	public static fun values ()[Lorg/jetbrains/ktfmt/format/TrailingCommaManagementStrategy;
 }
 
-public final class com/facebook/ktfmt/format/TrailingCommas {
-	public static final field INSTANCE Lcom/facebook/ktfmt/format/TrailingCommas;
+public final class org/jetbrains/ktfmt/format/TrailingCommas {
+	public static final field INSTANCE Lorg/jetbrains/ktfmt/format/TrailingCommas;
 }
 
-public final class com/facebook/ktfmt/format/TrailingCommas$Detector {
+public final class org/jetbrains/ktfmt/format/TrailingCommas$Detector {
 	public fun <init> ()V
 	public final fun getTrailingCommaElements ()Ljava/util/List;
 	public final fun takeElement (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
 }
 
-public final class com/facebook/ktfmt/format/TrailingCommas$Suggestor {
+public final class org/jetbrains/ktfmt/format/TrailingCommas$Suggestor {
 	public fun <init> ()V
 	public final fun getTrailingCommaSuggestions ()Ljava/util/List;
 	public final fun takeElement (Lorg/jetbrains/kotlin/psi/KtElement;)V
 }
 
-public final class com/facebook/ktfmt/format/WhitespaceTombstones {
-	public static final field INSTANCE Lcom/facebook/ktfmt/format/WhitespaceTombstones;
+public final class org/jetbrains/ktfmt/format/WhitespaceTombstones {
+	public static final field INSTANCE Lorg/jetbrains/ktfmt/format/WhitespaceTombstones;
 	public static final field SPACE_TOMBSTONE C
 	public final fun indexOfWhitespaceTombstone (Ljava/lang/String;)I
 	public final fun replaceTombstoneWithTrailingWhitespace (Ljava/lang/String;)Ljava/lang/String;
 	public final fun replaceTrailingWhitespaceWithTombstone (Ljava/lang/String;)Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/kdoc/CommentType : java/lang/Enum {
-	public static final field BLOCK Lcom/facebook/ktfmt/kdoc/CommentType;
-	public static final field KDOC Lcom/facebook/ktfmt/kdoc/CommentType;
-	public static final field LINE Lcom/facebook/ktfmt/kdoc/CommentType;
+public final class org/jetbrains/ktfmt/kdoc/CommentType : java/lang/Enum {
+	public static final field BLOCK Lorg/jetbrains/ktfmt/kdoc/CommentType;
+	public static final field KDOC Lorg/jetbrains/ktfmt/kdoc/CommentType;
+	public static final field LINE Lorg/jetbrains/ktfmt/kdoc/CommentType;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getLinePrefix ()Ljava/lang/String;
 	public final fun getPrefix ()Ljava/lang/String;
 	public final fun getSuffix ()Ljava/lang/String;
 	public final fun lineOverhead ()I
 	public final fun singleLineOverhead ()I
-	public static fun valueOf (Ljava/lang/String;)Lcom/facebook/ktfmt/kdoc/CommentType;
-	public static fun values ()[Lcom/facebook/ktfmt/kdoc/CommentType;
+	public static fun valueOf (Ljava/lang/String;)Lorg/jetbrains/ktfmt/kdoc/CommentType;
+	public static fun values ()[Lorg/jetbrains/ktfmt/kdoc/CommentType;
 }
 
-public final class com/facebook/ktfmt/kdoc/CommentTypeKt {
-	public static final fun commentType (Ljava/lang/String;)Lcom/facebook/ktfmt/kdoc/CommentType;
+public final class org/jetbrains/ktfmt/kdoc/CommentTypeKt {
+	public static final fun commentType (Ljava/lang/String;)Lorg/jetbrains/ktfmt/kdoc/CommentType;
 	public static final fun isBlockComment (Ljava/lang/String;)Z
 	public static final fun isKDocComment (Ljava/lang/String;)Z
 	public static final fun isLineComment (Ljava/lang/String;)Z
 }
 
-public final class com/facebook/ktfmt/kdoc/Escaping {
-	public static final field INSTANCE Lcom/facebook/ktfmt/kdoc/Escaping;
+public final class org/jetbrains/ktfmt/kdoc/Escaping {
+	public static final field INSTANCE Lorg/jetbrains/ktfmt/kdoc/Escaping;
 	public final fun escapeKDoc (Ljava/lang/String;)Ljava/lang/String;
 	public final fun indexOfCommentEscapeSequences (Ljava/lang/String;)I
 	public final fun unescapeKDoc (Ljava/lang/String;)Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/kdoc/FormattingTask {
-	public fun <init> (Lcom/facebook/ktfmt/kdoc/KDocFormattingOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/facebook/ktfmt/kdoc/CommentType;)V
-	public synthetic fun <init> (Lcom/facebook/ktfmt/kdoc/KDocFormattingOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lcom/facebook/ktfmt/kdoc/CommentType;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+public final class org/jetbrains/ktfmt/kdoc/FormattingTask {
+	public fun <init> (Lorg/jetbrains/ktfmt/kdoc/KDocFormattingOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lorg/jetbrains/ktfmt/kdoc/CommentType;)V
+	public synthetic fun <init> (Lorg/jetbrains/ktfmt/kdoc/KDocFormattingOptions;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Lorg/jetbrains/ktfmt/kdoc/CommentType;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getComment ()Ljava/lang/String;
 	public final fun getInitialIndent ()Ljava/lang/String;
-	public final fun getOptions ()Lcom/facebook/ktfmt/kdoc/KDocFormattingOptions;
+	public final fun getOptions ()Lorg/jetbrains/ktfmt/kdoc/KDocFormattingOptions;
 	public final fun getOrderedParameterNames ()Ljava/util/List;
 	public final fun getSecondaryIndent ()Ljava/lang/String;
-	public final fun getType ()Lcom/facebook/ktfmt/kdoc/CommentType;
+	public final fun getType ()Lorg/jetbrains/ktfmt/kdoc/CommentType;
 	public final fun setComment (Ljava/lang/String;)V
 	public final fun setInitialIndent (Ljava/lang/String;)V
-	public final fun setOptions (Lcom/facebook/ktfmt/kdoc/KDocFormattingOptions;)V
+	public final fun setOptions (Lorg/jetbrains/ktfmt/kdoc/KDocFormattingOptions;)V
 	public final fun setOrderedParameterNames (Ljava/util/List;)V
 	public final fun setSecondaryIndent (Ljava/lang/String;)V
 }
 
-public final class com/facebook/ktfmt/kdoc/KDocCommentsHelper : com/google/googlejavaformat/CommentsHelper {
+public final class org/jetbrains/ktfmt/kdoc/KDocCommentsHelper : com/google/googlejavaformat/CommentsHelper {
 	public fun <init> (Ljava/lang/String;I)V
 	public fun rewrite (Lcom/google/googlejavaformat/Input$Tok;II)Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/kdoc/KDocFormatter {
-	public fun <init> (Lcom/facebook/ktfmt/kdoc/KDocFormattingOptions;)V
-	public final fun reformatComment (Lcom/facebook/ktfmt/kdoc/FormattingTask;)Ljava/lang/String;
+public final class org/jetbrains/ktfmt/kdoc/KDocFormatter {
+	public fun <init> (Lorg/jetbrains/ktfmt/kdoc/KDocFormattingOptions;)V
 	public final fun reformatComment (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+	public final fun reformatComment (Lorg/jetbrains/ktfmt/kdoc/FormattingTask;)Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/kdoc/KDocFormattingOptions {
+public final class org/jetbrains/ktfmt/kdoc/KDocFormattingOptions {
 	public fun <init> ()V
 	public fun <init> (II)V
 	public synthetic fun <init> (IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun copy ()Lcom/facebook/ktfmt/kdoc/KDocFormattingOptions;
+	public final fun copy ()Lorg/jetbrains/ktfmt/kdoc/KDocFormattingOptions;
 	public final fun getAddPunctuation ()Z
 	public final fun getAlignTableColumns ()Z
 	public final fun getAllowParamBrackets ()Z
@@ -467,8 +467,8 @@ public final class com/facebook/ktfmt/kdoc/KDocFormattingOptions {
 	public final fun setTabWidth (I)V
 }
 
-public final class com/facebook/ktfmt/kdoc/Paragraph {
-	public fun <init> (Lcom/facebook/ktfmt/kdoc/FormattingTask;)V
+public final class org/jetbrains/ktfmt/kdoc/Paragraph {
+	public fun <init> (Lorg/jetbrains/ktfmt/kdoc/FormattingTask;)V
 	public final fun cleanup ()V
 	public final fun computeWords ()Ljava/util/List;
 	public final fun getAllowEmpty ()Z
@@ -479,10 +479,10 @@ public final class com/facebook/ktfmt/kdoc/Paragraph {
 	public final fun getHanging ()Z
 	public final fun getHangingIndent ()Ljava/lang/String;
 	public final fun getIndent ()Ljava/lang/String;
-	public final fun getNext ()Lcom/facebook/ktfmt/kdoc/Paragraph;
+	public final fun getNext ()Lorg/jetbrains/ktfmt/kdoc/Paragraph;
 	public final fun getOriginalIndent ()I
 	public final fun getPreformatted ()Z
-	public final fun getPrev ()Lcom/facebook/ktfmt/kdoc/Paragraph;
+	public final fun getPrev ()Lorg/jetbrains/ktfmt/kdoc/Paragraph;
 	public final fun getQuoted ()I
 	public final fun getSeparate ()Z
 	public final fun getSeparator ()Z
@@ -498,10 +498,10 @@ public final class com/facebook/ktfmt/kdoc/Paragraph {
 	public final fun setHanging (Z)V
 	public final fun setHangingIndent (Ljava/lang/String;)V
 	public final fun setIndent (Ljava/lang/String;)V
-	public final fun setNext (Lcom/facebook/ktfmt/kdoc/Paragraph;)V
+	public final fun setNext (Lorg/jetbrains/ktfmt/kdoc/Paragraph;)V
 	public final fun setOriginalIndent (I)V
 	public final fun setPreformatted (Z)V
-	public final fun setPrev (Lcom/facebook/ktfmt/kdoc/Paragraph;)V
+	public final fun setPrev (Lorg/jetbrains/ktfmt/kdoc/Paragraph;)V
 	public final fun setQuoted (I)V
 	public final fun setSeparate (Z)V
 	public final fun setSeparator (Z)V
@@ -509,56 +509,56 @@ public final class com/facebook/ktfmt/kdoc/Paragraph {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/kdoc/ParagraphList : java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
+public final class org/jetbrains/ktfmt/kdoc/ParagraphList : java/lang/Iterable, kotlin/jvm/internal/markers/KMappedMarker {
 	public fun <init> (Ljava/util/List;)V
 	public final fun isSingleParagraph ()Z
 	public fun iterator ()Ljava/util/Iterator;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/facebook/ktfmt/kdoc/ParagraphListBuilder {
-	public fun <init> (Ljava/lang/String;Lcom/facebook/ktfmt/kdoc/KDocFormattingOptions;Lcom/facebook/ktfmt/kdoc/FormattingTask;)V
-	public final fun scan (I)Lcom/facebook/ktfmt/kdoc/ParagraphList;
+public final class org/jetbrains/ktfmt/kdoc/ParagraphListBuilder {
+	public fun <init> (Ljava/lang/String;Lorg/jetbrains/ktfmt/kdoc/KDocFormattingOptions;Lorg/jetbrains/ktfmt/kdoc/FormattingTask;)V
+	public final fun scan (I)Lorg/jetbrains/ktfmt/kdoc/ParagraphList;
 }
 
-public final class com/facebook/ktfmt/kdoc/ParagraphListBuilderKt {
+public final class org/jetbrains/ktfmt/kdoc/ParagraphListBuilderKt {
 	public static final fun containsOnly (Ljava/lang/String;[C)Z
 	public static final fun isCloseSquareBracket (C)Z
 	public static final fun startsWithUpperCaseLetter (Ljava/lang/StringBuilder;)Z
 }
 
-public final class com/facebook/ktfmt/kdoc/Table {
-	public static final field Companion Lcom/facebook/ktfmt/kdoc/Table$Companion;
+public final class org/jetbrains/ktfmt/kdoc/Table {
+	public static final field Companion Lorg/jetbrains/ktfmt/kdoc/Table$Companion;
 	public fun <init> (ILjava/util/List;Ljava/util/List;Ljava/util/List;Ljava/util/List;)V
 	public final fun format (I)Ljava/util/List;
-	public static synthetic fun format$default (Lcom/facebook/ktfmt/kdoc/Table;IILjava/lang/Object;)Ljava/util/List;
+	public static synthetic fun format$default (Lorg/jetbrains/ktfmt/kdoc/Table;IILjava/lang/Object;)Ljava/util/List;
 	public final fun original ()Ljava/util/List;
 }
 
-public final class com/facebook/ktfmt/kdoc/Table$Align : java/lang/Enum {
-	public static final field CENTER Lcom/facebook/ktfmt/kdoc/Table$Align;
-	public static final field LEFT Lcom/facebook/ktfmt/kdoc/Table$Align;
-	public static final field RIGHT Lcom/facebook/ktfmt/kdoc/Table$Align;
+public final class org/jetbrains/ktfmt/kdoc/Table$Align : java/lang/Enum {
+	public static final field CENTER Lorg/jetbrains/ktfmt/kdoc/Table$Align;
+	public static final field LEFT Lorg/jetbrains/ktfmt/kdoc/Table$Align;
+	public static final field RIGHT Lorg/jetbrains/ktfmt/kdoc/Table$Align;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcom/facebook/ktfmt/kdoc/Table$Align;
-	public static fun values ()[Lcom/facebook/ktfmt/kdoc/Table$Align;
+	public static fun valueOf (Ljava/lang/String;)Lorg/jetbrains/ktfmt/kdoc/Table$Align;
+	public static fun values ()[Lorg/jetbrains/ktfmt/kdoc/Table$Align;
 }
 
-public final class com/facebook/ktfmt/kdoc/Table$Companion {
+public final class org/jetbrains/ktfmt/kdoc/Table$Companion {
 	public final fun getTable (Ljava/util/List;ILkotlin/jvm/functions/Function1;)Lkotlin/Pair;
 }
 
-public final class com/facebook/ktfmt/kdoc/Table$Row {
+public final class org/jetbrains/ktfmt/kdoc/Table$Row {
 	public fun <init> ()V
 	public final fun getCells ()Ljava/util/List;
 }
 
-public final class com/facebook/ktfmt/kdoc/UtilitiesKt {
+public final class org/jetbrains/ktfmt/kdoc/UtilitiesKt {
 	public static final fun collapseSpaces (Ljava/lang/String;)Ljava/lang/String;
 	public static final fun computeIndents (ILkotlin/jvm/functions/Function1;I)Lkotlin/Pair;
 	public static final fun findSamePosition (Ljava/lang/String;ILjava/lang/String;)I
 	public static final fun getIndent (I)Ljava/lang/String;
-	public static final fun getIndentSize (Ljava/lang/String;Lcom/facebook/ktfmt/kdoc/KDocFormattingOptions;)I
+	public static final fun getIndentSize (Ljava/lang/String;Lorg/jetbrains/ktfmt/kdoc/KDocFormattingOptions;)I
 	public static final fun getLineNumber (Ljava/lang/String;III)I
 	public static synthetic fun getLineNumber$default (Ljava/lang/String;IIIILjava/lang/Object;)I
 	public static final fun getParamName (Ljava/lang/String;)Ljava/lang/String;
@@ -575,14 +575,14 @@ public final class com/facebook/ktfmt/kdoc/UtilitiesKt {
 	public static final fun maxOf (Ljava/lang/Iterable;Lkotlin/jvm/functions/Function1;)Ljava/lang/Comparable;
 }
 
-public final class com/facebook/ktfmt/util/CompatibilityUtilsKt {
+public final class org/jetbrains/ktfmt/util/CompatibilityUtilsKt {
 	public static final fun getCONTEXT_PARAMETER_LIST ()Lorg/jetbrains/kotlin/psi/stubs/elements/KtPlaceHolderStubElementType;
 	public static final fun getOwnValOrVarKeywordText (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclarationEntry;)Ljava/lang/String;
 	public static final fun listToVisit (Lorg/jetbrains/kotlin/psi/KtContextReceiverList;)Ljava/util/List;
 }
 
-public final class com/facebook/ktfmt/util/Ktfmt {
-	public static final field INSTANCE Lcom/facebook/ktfmt/util/Ktfmt;
+public final class org/jetbrains/ktfmt/util/Ktfmt {
+	public static final field INSTANCE Lorg/jetbrains/ktfmt/util/Ktfmt;
 	public static final field version Ljava/lang/String;
 }
 

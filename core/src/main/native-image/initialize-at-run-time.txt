@@ -1,8 +1,8 @@
 # Some ktfmt classes build run-time-only object graphs in their <clinit> (ec4j config types, Kotlin
 # compiler PSI stub element types); keep them out of the build-time image heap. The rest of
-# com.facebook is initialized at build time for startup speed.
-com.facebook.ktfmt.cli.EditorConfigResolver
-com.facebook.ktfmt.util.CompatibilityUtilsKt
+# org.jetbrains.ktfmt is initialized at build time for startup speed.
+org.jetbrains.ktfmt.cli.EditorConfigResolver
+org.jetbrains.ktfmt.util.CompatibilityUtilsKt
 kotlin.random.AbstractPlatformRandom
 kotlin.random.Random
 kotlin.random.Random$Default

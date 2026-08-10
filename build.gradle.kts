@@ -80,7 +80,7 @@ class KtfmtArgumentsProvider(
 fun JavaExec.configureKtfmtRun(files: FileCollection, check: Boolean) {
   group = if (check) "verification" else "formatting"
   classpath = ktfmtCliClasspath.get()
-  mainClass.set("com.facebook.ktfmt.cli.Main")
+  mainClass.set("org.jetbrains.ktfmt.cli.Main")
   argumentProviders.add(KtfmtArgumentsProvider(files, check))
   onlyIf { files.files.isNotEmpty() }
 }
@@ -123,8 +123,6 @@ nexusPublishing {
     sonatype {
       nexusUrl = uri("https://ossrh-staging-api.central.sonatype.com/service/local/")
       snapshotRepositoryUrl = uri("https://central.sonatype.com/repository/maven-snapshots/")
-
-      stagingProfileId.set("com.facebook")
 
       username = System.getenv("OSSRH_USERNAME")
       password = System.getenv("OSSRH_PASSWORD")
