@@ -1,0 +1,5 @@
+val job =
+    GlobalScope.launch(dispatcher) {
+        ++capturedMutableState
+        expect(2)
+    }

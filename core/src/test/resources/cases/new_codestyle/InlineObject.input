@@ -1,0 +1,8 @@
+class Tests {
+    fun testNotifications() = runTest {
+        val coroutine =
+            object : AVeryVeryVeryVeryVeryVeryLongSupertype<String>(coroutineContext, true, false) {
+                fun foo(): String = "bar"
+            }
+    }
+}

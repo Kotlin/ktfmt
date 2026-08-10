@@ -1,0 +1,47 @@
+fun singleCallChain() {
+    reports {
+        total {
+            html {
+                report {
+                    htmlDir = conventionProject.layout.buildDirectory.dir("kover/${project.name}/html")
+                }
+            }
+        }
+    }
+}
+
+fun splittableChain() {
+    reports {
+        total {
+            html {
+                htmlDir = conventionProject.layout.buildDirectory.dir("kover/html").asFile.absolutePath
+            }
+        }
+    }
+}
+
+fun annotatedAssignment() {
+    var b
+    @Suppress("UNCHECKED_CAST") b = f(1) as Int
+    @Suppress("UNCHECKED_CAST")
+    b = f(1) as Int
+}
+
+fun whenAssignment() {
+    reports {
+        total {
+            htmlDirectoryValue = when (someLongConditionValue) {
+                1 -> firstValue
+                else -> secondValue
+            }
+        }
+    }
+}
+
+fun scopingFunctionAssignment() {
+    reports {
+        total {
+            htmlDirectoryValue = conventionProjectValue.apply { someLongName = otherLongName }
+        }
+    }
+}

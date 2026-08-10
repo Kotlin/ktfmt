@@ -1,0 +1,11 @@
+fun f() {
+  val teamsAffected: List<org.jetbrains.kotlinx.icpc.TeamId> =
+      when (val event = state.lastEvent) {
+        is CommentaryMessagesUpdate -> emptyList()
+        is InfoUpdate -> info.teams.keys.toList()
+        is RunUpdate -> {
+          lastSubmissionTime = maxOf(lastSubmissionTime, event.newInfo.time)
+          runsByTeamId.applyEvent(state)
+        }
+      }
+}

@@ -1,0 +1,4 @@
+GlobalScope.launch(Dispatchers.Main) {
+    expect(2)
+    throw TestException()
+}.join()

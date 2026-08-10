@@ -1,0 +1,14 @@
+fun f1() {
+  if (unwrapped !== rootCause &&
+      unwrapped !== unwrappedCause &&
+      unwrapped !is CancellationException &&
+      seenExceptions.add(unwrapped)) {
+    rootCause.addSuppressed(unwrapped)
+  }
+}
+
+fun f2() {
+  if (unwrapped !== rootCause) {
+    rootCause.addSuppressed(unwrapped)
+  }
+}

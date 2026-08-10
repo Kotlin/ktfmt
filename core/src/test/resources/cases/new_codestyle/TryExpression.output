@@ -1,0 +1,13 @@
+fun <T> f(block: () -> T): T? {
+  var thrown: Throwable? = null
+  val result =
+      try {
+        block()
+      } catch (t: Throwable) {
+        thrown = t
+        null
+      } finally {
+        cleanup()
+      }
+  return result
+}

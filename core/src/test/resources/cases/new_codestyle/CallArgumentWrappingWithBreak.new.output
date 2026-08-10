@@ -1,0 +1,13 @@
+fun f() {
+    add(
+        queue =
+            AVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryVeryLongOverrideQueue(
+                queueSettings.waitTime,
+                queueSettings.firstToSolveWaitTime,
+                queueSettings.featuredRunWaitTime,
+                queueSettings.inProgressRunWaitTime,
+                queueSettings.maxQueueSize,
+                queueSettings.maxUntestedRun,
+            ),
+    )
+}

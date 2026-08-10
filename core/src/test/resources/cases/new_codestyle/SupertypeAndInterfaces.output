@@ -1,0 +1,10 @@
+object ClicsArchiveCommand :
+    DumpFileCommand(
+        name = "clics-archive",
+        help = "Dump CLICS contest archive (zip)",
+        defaultFileName = "contest-archive.zip",
+        outputHelp = "Path to new zip file",
+    ),
+    Runnable,
+    Closeable,
+    KoinComponent {}

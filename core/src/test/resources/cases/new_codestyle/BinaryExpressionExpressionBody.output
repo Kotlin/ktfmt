@@ -1,0 +1,5 @@
+private fun URI.isCachedOrLocal() =
+    scheme == "file" ||
+        host == "cache-redirector.jetbrains.com" ||
+        host == "teamcity.jetbrains.com" ||
+        host == "buildserver.labs.intellij.net"
