@@ -16,6 +16,7 @@
 
 package org.jetbrains.ktfmt
 
+import org.apache.tools.ant.taskdefs.condition.Os
 import org.graalvm.buildtools.gradle.dsl.GraalVMExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -24,6 +25,7 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.plugins.JavaApplication
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.tasks.Exec
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.getByType
@@ -91,7 +93,37 @@ class NativeImagePlugin : Plugin<Project> {
           archiveClassifier.set("nativeimage")
         }
 
-    project.tasks.named("nativeCompile") { dependsOn(compileNativeImageClasses, nativeImageJar) }
+    val nativeCompile =
+        project.tasks.named("nativeCompile") {
+          dependsOn(compileNativeImageClasses, nativeImageJar)
+        }
+
+    val nativeImageExecutable =
+        project.layout.buildDirectory.file(
+            "native/nativeCompile/" + if (Os.isFamily(Os.FAMILY_WINDOWS)) "ktfmt.exe" else "ktfmt",
+        )
+
+    project.tasks.register<Exec>("nativeImageSmokeTest") {
+      group = "verification"
+      description = "Runs the Native Image binary against the project sources"
+      dependsOn(nativeCompile)
+
+      executable = nativeImageExecutable.get().asFile.absolutePath
+      args(
+          project.layout.projectDirectory.dir("src").asFile.absolutePath,
+          "--dry-run",
+          "--set-exit-if-changed",
+      )
+
+      doFirst {
+        if (!nativeImageExecutable.get().asFile.exists()) {
+          throw GradleException("No executable exists at ${nativeImageExecutable.get().asFile}")
+        }
+        if (!nativeImageExecutable.get().asFile.canExecute()) {
+          throw GradleException("${nativeImageExecutable.get().asFile} is not executable")
+        }
+      }
+    }
 
     configureGraalvmNative(project, nativeImageJar)
   }
