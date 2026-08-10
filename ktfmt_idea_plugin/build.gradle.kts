@@ -18,6 +18,7 @@ import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.IntellijIdeaC
 
 plugins {
   java
+  alias(libs.plugins.dependencyAnalysis)
   alias(libs.plugins.kotlin)
   alias(libs.plugins.intelliJPlatform)
 }
@@ -48,6 +49,9 @@ dependencies {
   }
 
   implementation(project(":ktfmt"))
+  implementation(libs.googleJavaformat)
+  implementation(libs.guava)
+  implementation(libs.kotlin.compilerEmbeddable)
 }
 
 intellijPlatform {

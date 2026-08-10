@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 plugins {
   kotlin("jvm")
+  alias(libs.plugins.dependencyAnalysis)
   alias(libs.plugins.dokka)
   alias(libs.plugins.dokka.javadoc)
   alias(libs.plugins.shadowJar)
@@ -37,12 +38,12 @@ repositories {
 dependencies {
   api(libs.googleJavaformat)
   api(libs.guava)
-  api(libs.jna)
   api(libs.kotlin.stdlib)
   api(libs.kotlin.compilerEmbeddable)
   implementation(libs.ec4j)
   testImplementation(platform(libs.junit.bom))
-  testImplementation(libs.junit.jupiter)
+  testImplementation(libs.junit.jupiter.api)
+  testRuntimeOnly(libs.junit.jupiter.engine)
   testRuntimeOnly(libs.junit.platform.launcher)
 }
 

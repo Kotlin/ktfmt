@@ -3,11 +3,11 @@ java = "17"
 kotlin = "2.3.20"
 com-google-googlejavaformat-google-java-format = "1.23.0"
 com-google-guava-guava = "33.5.0-jre"
-net-java-dev-jna-jna = "4.2.2"
 org-ec4j-core = "1.2.0"
 org-junit-junit-bom = "6.1.2"
 
 # plugins
+gradlePlugin-dependencyAnalysis = "3.18.0"
 gradlePlugin-dokka = "2.2.0"
 gradlePlugin-intelliJPlatform = "2.6.0"
 gradlePlugin-nexusPublish = "2.0.0"
@@ -18,13 +18,14 @@ ec4j = { module = "org.ec4j.core:ec4j-core", version.ref = "org-ec4j-core" }
 googleJavaformat = { module = "com.google.googlejavaformat:google-java-format", version.ref = "com-google-googlejavaformat-google-java-format" }
 guava = { module = "com.google.guava:guava", version.ref = "com-google-guava-guava" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "org-junit-junit-bom" }
-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
-jna = { module = "net.java.dev.jna:jna", version.ref = "net-java-dev-jna-jna" }
 kotlin-compilerEmbeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 
 [plugins]
+dependencyAnalysis = { id = "com.autonomousapps.dependency-analysis", version.ref = "gradlePlugin-dependencyAnalysis" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "gradlePlugin-dokka" }
 dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version.ref = "gradlePlugin-dokka" }
 intelliJPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "gradlePlugin-intelliJPlatform" }
