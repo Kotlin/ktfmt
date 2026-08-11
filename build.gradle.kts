@@ -51,7 +51,7 @@ val ktfmtCliClasspath =
       }
     }
 
-dependencies { add(ktfmtCliDependencies.name, project(":ktfmt")) }
+dependencies { ktfmtCliDependencies(project(":ktfmt")) }
 
 val ktfmtFiles =
     fileTree(rootDir) {
@@ -77,10 +77,10 @@ class KtfmtArgumentsProvider(
 
 fun JavaExec.configureKtfmtRun(files: FileCollection, check: Boolean) {
   group = if (check) "verification" else "formatting"
-  classpath = ktfmtCliClasspath.get()
-  mainClass.set("org.jetbrains.ktfmt.cli.Main")
+  classpath(ktfmtCliClasspath)
+  mainClass = "org.jetbrains.ktfmt.cli.Main"
   argumentProviders.add(KtfmtArgumentsProvider(files, check))
-  onlyIf { files.files.isNotEmpty() }
+  inputs.files(files)
 }
 
 val ktfmtCheck =

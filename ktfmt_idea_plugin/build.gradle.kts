@@ -55,7 +55,7 @@ dependencies {
 }
 
 intellijPlatform {
-  projectName.set("ktfmt_idea_plugin")
+  projectName = "ktfmt_idea_plugin"
 
   pluginConfiguration.ideaVersion {
     sinceBuild = "223.7571.182" // 2022.3

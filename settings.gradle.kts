@@ -34,10 +34,6 @@ project(":idea_plugin").projectDir = file("ktfmt_idea_plugin")
 
 dependencyResolutionManagement {
   versionCatalogs {
-    create("libs") {
-      val ktfmtVersion = providers.gradleProperty("ktfmt.version").get()
-      version("ktfmt", ktfmtVersion)
-    }
     create("nativeImageLibs") { from(files("gradle/native-image.versions.toml")) }
   }
   repositories {

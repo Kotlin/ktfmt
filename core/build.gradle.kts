@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.ktfmt.GenerateKtfmtFileTask
@@ -29,11 +28,6 @@ plugins {
   id("signing")
   id("ktfmt.ktfmt-file-generator")
   id("ktfmt.native-image")
-}
-
-repositories {
-  mavenLocal()
-  mavenCentral()
 }
 
 dependencies {
@@ -76,7 +70,7 @@ tasks {
 
   // Sources
   register("sourcesJar", Jar::class) {
-    archiveClassifier.set("sources")
+    archiveClassifier = "sources"
     from(sourceSets["main"].allSource)
   }
 
@@ -88,7 +82,7 @@ tasks {
     )
     dependsOn(dokkaJavadocTask)
     from(dokkaJavadocTask.flatMap { it.outputDirectory })
-    archiveClassifier.set("javadoc")
+    archiveClassifier = "javadoc"
   }
 
   // Fat jar
