@@ -1,0 +1,1 @@
+expect enum class ExpectedEnum

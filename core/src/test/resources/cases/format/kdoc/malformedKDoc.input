@@ -1,0 +1,2 @@
+/** Surprise ``` */
+class MyClass {}

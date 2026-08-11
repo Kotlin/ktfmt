@@ -1,0 +1,5 @@
+// MAX_WIDTH 13
+
+z12.shine()
+    .bright()
+    .z { it }

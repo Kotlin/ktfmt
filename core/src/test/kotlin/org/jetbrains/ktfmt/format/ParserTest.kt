@@ -16,7 +16,10 @@
 
 package org.jetbrains.ktfmt.format
 
+import org.jetbrains.ktfmt.testutil.assertContains
+import org.jetbrains.ktfmt.testutil.assertContainsMatch
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
 
 class ParserTest {
@@ -30,5 +33,65 @@ class ParserTest {
   fun `parsing sets idea_use_native_fs_for_win to false`() {
     Parser.parse("val a = 1")
     assertEquals("false", System.getProperty("idea.use.native.fs.for.win"))
+  }
+
+  @Test
+  fun `ParseError contains correct line and column numbers`() {
+    val code =
+        """
+        |// Foo
+        |fun good() {
+        |  //
+        |}
+        |
+        |fn (
+        |"""
+            .trimMargin()
+    try {
+      Formatter.format(code)
+      fail()
+    } catch (e: ParseError) {
+      assertEquals(6, e.lineColumn.line)
+      assertEquals(0, e.lineColumn.column)
+      assertContainsMatch(e.errorDescription, "Expecting an (expression|argument)")
+    }
+  }
+
+  @Test
+  fun `Code with tombstones is not supported`() {
+    val code =
+        """
+        |fun good() {
+        |  // ${'\u0003'}
+        |}
+        |"""
+            .trimMargin()
+    try {
+      Formatter.format(code)
+      fail()
+    } catch (e: ParseError) {
+      assertContains(e.errorDescription, "\\u0003")
+      assertEquals(1, e.lineColumn.line)
+      assertEquals(5, e.lineColumn.column)
+    }
+  }
+
+  @Test
+  fun `fail() reports line+column number`() {
+    val code =
+        """
+        |// Foo
+        |fun good() {
+        |  return@ 5
+        |}
+        |"""
+            .trimMargin()
+    try {
+      Formatter.format(code)
+      fail()
+    } catch (e: ParseError) {
+      assertEquals(2, e.lineColumn.line)
+      assertEquals(8, e.lineColumn.column)
+    }
   }
 }

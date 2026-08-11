@@ -1,0 +1,30 @@
+fun f() {
+  // Static method calls are attached to the class name.
+  ImmutableList.newBuilder()
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .build()
+
+  // Multiple call expressions --> each on its own line.
+  ImmutableList()
+      .newBuilder()
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .add(1)
+      .build()
+}

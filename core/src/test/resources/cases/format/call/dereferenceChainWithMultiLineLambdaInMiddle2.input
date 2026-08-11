@@ -1,0 +1,10 @@
+rainbow.red.orange.yellow.green.blue
+    .z {
+      it
+      it
+    }
+    .indigo
+    .violet
+    .cyan
+    .magenta
+    .key
