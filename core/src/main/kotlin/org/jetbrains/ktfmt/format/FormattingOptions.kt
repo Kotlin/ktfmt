@@ -156,6 +156,7 @@ data class FormattingOptions(
           .removeUnusedImports(removeUnusedImports)
           .preserveLambdaBreaks(preserveLambdaBreaks)
           .debuggingPrintOpsAfterFormatting(debuggingPrintOpsAfterFormatting)
+          .useExperimentalEngine(experimentalEngine)
 
   /**
    * A fluent builder for [FormattingOptions].
@@ -183,6 +184,7 @@ data class FormattingOptions(
     private var removeUnusedImports: Boolean = true
     private var preserveLambdaBreaks: Boolean = true
     private var debuggingPrintOpsAfterFormatting: Boolean = false
+    private var useExperimentalEngine: Boolean = false
 
     /** @see FormattingOptions.maxWidth */
     fun maxWidth(maxWidth: Int): Builder = apply { this.maxWidth = maxWidth }
@@ -216,6 +218,11 @@ data class FormattingOptions(
           this.debuggingPrintOpsAfterFormatting = debuggingPrintOpsAfterFormatting
         }
 
+    /** @see FormattingOptions.experimentalEngine */
+    internal fun useExperimentalEngine(useExperimentalEngine: Boolean): Builder = apply {
+      this.useExperimentalEngine = useExperimentalEngine
+    }
+
     /** Builds a new [FormattingOptions] from the current builder state. */
     fun build(): FormattingOptions = FormattingOptions(
         maxWidth = maxWidth,
@@ -225,6 +232,7 @@ data class FormattingOptions(
         removeUnusedImports = removeUnusedImports,
         preserveLambdaBreaks = preserveLambdaBreaks,
         debuggingPrintOpsAfterFormatting = debuggingPrintOpsAfterFormatting,
+        experimentalEngine = useExperimentalEngine,
     )
   }
 }

@@ -1,15 +1,16 @@
-package org.jetbrains.ktfmt.format
+package org.jetbrains.ktfmt.testutil
 
 import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.extension
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
 import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.readText
+import kotlin.io.path.walk
 import kotlin.io.path.writeText
+import org.jetbrains.ktfmt.format.Formatter
+import org.jetbrains.ktfmt.format.FormattingOptions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DynamicContainer
 import org.junit.jupiter.api.DynamicNode
@@ -20,25 +21,34 @@ import org.junit.jupiter.api.TestFactory
  * Base class for a group of file-based formatter cases.
  *
  * Usage:
- * 1) Create a folder with the test group in resources, e.g. "cases/enums/"
+ * 1) Create a folder with the test group in resources, e.g. "cases/format/". Nested folders are
+ *    walked too, and the case name is the path relative to the group, e.g. "annotation/basic"
  * 2) Populate it with tests: `Foo.input` is an input for the formatter, `Foo.output` is an expected
  *    output. If an .output is not present, it is assumed that formatting `.input` is an idempotent
  *    op. A `Foo.new.output` file additionally runs the case with [NEW_FORMAT]
- * 3) Create a test class in Tests.kt:
+ * 3) Create a test class:
  * ```
- * class EnumsTest() : FormatterTestFactory()
+ * class FormatTest() : FormatterTestFactory()
  * ```
  *
  * For each case, two tests are generated -- one for the formatting and one for the idempotency.
- * Customization currently supported only on the [options] level per class, though later we can
- * support directives as well.
+ *
+ * The group-wide [options] can be overridden per case by a directive header: a block of comments at
+ * the very top of the `.input`, e.g.
+ *
+ * ```
+ * // MAX_WIDTH 50
+ * // CHECK_IDEMPOTENCY false
+ * ```
+ *
+ * See [CaseConfig.DIRECTIVES] for supported directives.
  *
  * You can specify [group] explicitly or it will be deduced from the test class name, and test cases
  * will be looked for in `resources/cases/$group`.
  *
  * Using in IDE:
  * 1) Enable IJ-based test execution: Settings -> Build, Execution, Deployment -> Build Tools ->
- *    Gradle -> Run Tests using Intellij. It will make test navigation work. See IDEA-361423
+ *    Gradle -> Run Tests using IntelliJ. It will make test navigation work. See IDEA-361423
  *
  * 2) To run all tests, the gutter button is in FormatterTestFactory, not in Tests.kt
  *
@@ -50,11 +60,8 @@ abstract class FormatterTestFactory(
 ) {
   private val group: String = group ?: javaClass.simpleName.removeSuffix("Test").lowercase()
 
-  private companion object {
-    val DEFAULT_CASE_FORMAT: FormattingOptions =
-        Formatter.META_FORMAT.copy(
-            trailingCommaManagementStrategy = TrailingCommaManagementStrategy.NONE,
-        )
+  companion object {
+    val DEFAULT_CASE_FORMAT: FormattingOptions = Formatter.META_FORMAT
 
     val NEW_FORMAT =
         Formatter.KOTLINLANG_FORMAT.copy(
@@ -65,7 +72,7 @@ abstract class FormatterTestFactory(
     val FORMAT_VARIANTS = mapOf("new" to NEW_FORMAT)
 
     // Without this, neither 'overwrite' nor navigation in IJ will work
-    val ROOT = run {
+    val ROOT: Path = run {
       val location = javaClass.protectionDomain?.codeSource?.location!!
       val root = URI(location.toURI().toString().substringBefore("build/classes/kotlin/test"))
       Path.of(root).resolve("src/test/resources/cases")
@@ -74,7 +81,7 @@ abstract class FormatterTestFactory(
 
   @TestFactory
   fun cases(): List<DynamicNode> {
-    // Loads e.g. cases/enums/, all cases from the folder at once
+    // Loads e.g. cases/format/, all cases from the folder at once
     val cases = load(group)
     check(cases.isNotEmpty()) {
       "No '.input' files in ${ROOT.resolve(group)}"
@@ -94,12 +101,12 @@ abstract class FormatterTestFactory(
     require(directory.isDirectory()) { "No such directory: $directory" }
 
     return directory
-        .listDirectoryEntries()
+        .walk()
         .filter { it.extension == "input" }
-        .sortedBy { it.name }
+        .sortedBy { it.toString() }
         .map { input ->
-          val name = input.nameWithoutExtension
-          val output = input.resolveSibling("$name.output")
+          val name = directory.relativize(input).joinToString("/").removeSuffix(".input")
+          val output = input.resolveSibling("${input.nameWithoutExtension}.output")
           TestDescription(
               group = group,
               name = name,
@@ -108,6 +115,7 @@ abstract class FormatterTestFactory(
               output = output.takeIf { it.isRegularFile() },
           )
         }
+        .toList()
   }
 
   private fun tests(expectation: TestCase): List<DynamicTest> {
@@ -122,7 +130,7 @@ abstract class FormatterTestFactory(
         },
     )
     // format(format(expected)) == format(expected)
-    if (expectation.output != null) {
+    if (expectation.output != null && expectation.config.checkIdempotency) {
       checks +=
           DynamicTest.dynamicTest("${expectation.label} Format is idempotent", uri) {
             outputIsIdempotent(expectation)
@@ -132,7 +140,7 @@ abstract class FormatterTestFactory(
   }
 
   private fun formatsAsExpected(expectation: TestCase, overwrite: Boolean = false) {
-    val actual = Formatter.format(expectation.options, expectation.description.input)
+    val actual = Formatter.format(expectation.config.options, expectation.description.input)
 
     if (actual == expectation.expected) {
       return
@@ -143,11 +151,11 @@ abstract class FormatterTestFactory(
       return
     }
 
-    assertEquals(expectation.expected, actual, failureMessage(expectation, actual))
+    assertEquals(expectation.expected, actual, failureMessage(expectation))
   }
 
   private fun outputIsIdempotent(expectation: TestCase) {
-    val reformatted = Formatter.format(expectation.options, expectation.expected)
+    val reformatted = Formatter.format(expectation.config.options, expectation.expected)
     assertEquals(
         expectation.expected,
         reformatted,
@@ -163,7 +171,7 @@ abstract class FormatterTestFactory(
     )
   }
 
-  private fun failureMessage(expectation: TestCase, actual: String): String = buildString {
+  private fun failureMessage(expectation: TestCase): String = buildString {
     append(
         expectation.label,
         expectation.description.displayName,
@@ -200,12 +208,25 @@ abstract class FormatterTestFactory(
       get() = "$group/$name"
 
     fun expectations(groupOptions: FormattingOptions): List<TestCase> = buildList {
-      add(testCase(variant = null, output = output, options = groupOptions))
+      val directives = CaseConfig.parse(input, inputPath)
+      add(
+          testCase(
+              variant = null,
+              output = output,
+              config = directives.configure(groupOptions),
+          ),
+      )
 
-      FORMAT_VARIANTS.forEach { (variant, options) ->
+      FORMAT_VARIANTS.forEach { (variant, variantOptions) ->
         val variantOutput = expectation(variant).takeIf { it.isRegularFile() }
         if (variantOutput != null) {
-          add(testCase(variant = variant, output = variantOutput, options = options))
+          add(
+              testCase(
+                  variant = variant,
+                  output = variantOutput,
+                  config = directives.configure(variantOptions),
+              ),
+          )
         }
       }
     }
@@ -213,18 +234,18 @@ abstract class FormatterTestFactory(
     private fun testCase(
         variant: String?,
         output: Path?,
-        options: FormattingOptions,
+        config: CaseConfig,
     ): TestCase = TestCase(
         description = this,
         variant = variant,
         output = output,
         expected = output?.readText(Charsets.UTF_8) ?: input, // No .output, idempotency
-        options = options,
+        config = config,
     )
 
     fun expectation(variant: String?): Path {
       val suffix = if (variant == null) "" else ".$variant"
-      return inputPath.resolveSibling("$name$suffix.output")
+      return inputPath.resolveSibling("${inputPath.nameWithoutExtension}$suffix.output")
     }
   }
 
@@ -232,8 +253,8 @@ abstract class FormatterTestFactory(
       val description: TestDescription,
       val variant: String?,
       val output: Path?, // null if idempotent
-      val expected: String, // expected formatted .kt
-      val options: FormattingOptions,
+      val expected: String, // expected formatted.kt
+      val config: CaseConfig,
   ) {
     val label: String
       get() = if (variant == null) "" else " [$variant]"
