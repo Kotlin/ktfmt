@@ -1708,24 +1708,31 @@ open class KotlinInputAstVisitor(
    * operator (instead of breaking and indenting after it), and any chained selectors break onto
    * their own line, mirroring how scoping functions and lambdas are handled.
    */
-  @OptIn(ExperimentalContracts::class)
   private fun isBlockLikeCall(expression: KtExpression?): Boolean {
-    contract { returns(true) implies (expression is KtCallExpression) }
-
     if (expression == null) return false
     val prev = expression.getPrevSiblingIgnoringWhitespace()
     if (prev is PsiComment) {
       return false // Leading comments cause weird indentation; keep the default layout.
     }
 
-    if (expression !is KtCallExpression) return false
-    val valueArgumentList = expression.valueArgumentList ?: return false
-    if (valueArgumentList.trailingComma != null) return true
-    return valueArgumentList.arguments.any { argument ->
-      val argumentExpression = argument.getArgumentExpression()
-      argumentExpression != null &&
-          (isBlockLikeCall(argumentExpression) || isChainedBlockLikeCall(argumentExpression))
+    if (expression is KtCollectionLiteralExpression) {
+      return expression.trailingComma != null ||
+          expression.innerExpressions.any {
+            isBlockLikeCall(it) || isChainedBlockLikeCall(it)
+          }
     }
+
+    if (expression is KtCallExpression) {
+      val valueArgumentList = expression.valueArgumentList ?: return false
+      if (valueArgumentList.trailingComma != null) return true
+      return valueArgumentList.arguments.any { argument ->
+        val argumentExpression = argument.getArgumentExpression()
+        argumentExpression != null &&
+            (isBlockLikeCall(argumentExpression) || isChainedBlockLikeCall(argumentExpression))
+      }
+    }
+
+    return false
   }
 
   /** Returns true when [expression] is a chain whose innermost receiver is a [isBlockLikeCall]. */
