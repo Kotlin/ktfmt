@@ -8131,7 +8131,8 @@ class FormatterTest {
       |            someItem,
       |            andAnother,
       |            withTrailingComma,
-      |        ])
+      |        ]
+      |)
       |class Host
       |
       |@Anno(
@@ -9686,6 +9687,159 @@ class FormatterTest {
       |          .fold { it.boom() }
       |  )
       |      .baz()
+      |}
+      |"""
+          .trimMargin(),
+  )
+
+  // endregion
+
+  // region brackets with chained call(s) (#631)
+
+  @Test
+  fun `multiline brackets without chained call (#631)`() = assertFormatted(
+      """
+      |fun f() {
+      |  [
+      |      1,
+      |      2,
+      |  ]
+      |}
+      |"""
+          .trimMargin(),
+  )
+
+  @Test
+  fun `multiline brackets with chained call same line closing paren (#631)`() = assertThatFormatting(
+      """
+      |fun f() {
+      |  [
+      |      1,
+      |      2,
+      |  ].bar()
+      |}
+      |"""
+          .trimMargin(),
+  )
+      .isEqualTo(
+          """
+          |fun f() {
+          |  [
+          |      1,
+          |      2,
+          |  ]
+          |      .bar()
+          |}
+          |"""
+              .trimMargin(),
+      )
+
+  @Test
+  fun `multiline brackets with chained call next line selector (#631)`() = assertFormatted(
+      """
+      |fun f() {
+      |  [
+      |      1,
+      |      2,
+      |  ]
+      |      .bar()
+      |}
+      |"""
+          .trimMargin(),
+  )
+
+  @Test
+  fun `multiline brackets in property initializer (#631)`() = assertFormatted(
+      """
+      |val x = [
+      |    1,
+      |    2,
+      |]
+      |"""
+          .trimMargin(),
+  )
+
+  @Test
+  fun `multiline brackets in property initializer with chain (#631)`() = assertFormatted(
+      """
+      |val x = [
+      |    1,
+      |    2,
+      |]
+      |    .bar()
+      |"""
+          .trimMargin(),
+  )
+
+  @Test
+  fun `multiline brackets in property delegate (#631)`() = assertFormatted(
+      """
+      |val x by [
+      |    1,
+      |    2,
+      |]
+      |"""
+          .trimMargin(),
+  )
+
+  @Test
+  fun `multiline brackets in property delegate with chain (#631)`() = assertFormatted(
+      """
+      |val x by [
+      |    1,
+      |    2,
+      |]
+      |    .bar()
+      |"""
+          .trimMargin(),
+  )
+
+  @Test
+  fun `inner multiline brackets (#633)`() = assertFormatted(
+      """
+      |val x = [
+      |    [
+      |        1,
+      |        2,
+      |    ],
+      |    3,
+      |]
+      |"""
+          .trimMargin(),
+  )
+
+  @Test
+  fun `inner multiline brackets with chain (#633)`() = assertFormatted(
+      """
+      |val x = [
+      |    [
+      |        1,
+      |        2,
+      |    ]
+      |        .baz(),
+      |    3,
+      |]
+      |"""
+          .trimMargin(),
+  )
+
+  @Test
+  fun `multiline brackets in call (#633)`() = assertFormatted(
+      """
+      |fun f() {
+      |  test(
+      |      [
+      |          1,
+      |          2,
+      |      ]
+      |  )
+      |  test(
+      |      [
+      |          1,
+      |          2,
+      |      ]
+      |          .baz(),
+      |  )
       |}
       |"""
           .trimMargin(),
