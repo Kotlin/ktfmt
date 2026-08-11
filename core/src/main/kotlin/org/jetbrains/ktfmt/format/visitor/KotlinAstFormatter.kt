@@ -96,10 +96,6 @@ interface KotlinAstFormatter {
   /** A record of whether we have visited into an expression. */
   val inExpression: ArrayDeque<Boolean>
 
-  // TODO: move this
-  val forceAnnotationBreaks: Boolean
-    get() = false
-
   fun format(element: PsiElement?) {}
 
   fun formatKtFile(file: KtFile) {}

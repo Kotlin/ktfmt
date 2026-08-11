@@ -35,7 +35,6 @@ import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
 import org.jetbrains.kotlin.com.intellij.psi.stubs.PsiFileStubImpl
-import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtAnnotation
@@ -66,18 +65,13 @@ import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
 import org.jetbrains.kotlin.psi.KtDestructuringDeclarationEntry
 import org.jetbrains.kotlin.psi.KtDoWhileExpression
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
-import org.jetbrains.kotlin.psi.KtDynamicType
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtEnumEntry
 import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.kotlin.psi.KtFileAnnotationList
 import org.jetbrains.kotlin.psi.KtFinallySection
 import org.jetbrains.kotlin.psi.KtForExpression
-import org.jetbrains.kotlin.psi.KtFunctionType
 import org.jetbrains.kotlin.psi.KtIfExpression
 import org.jetbrains.kotlin.psi.KtImportDirective
-import org.jetbrains.kotlin.psi.KtImportList
-import org.jetbrains.kotlin.psi.KtIntersectionType
 import org.jetbrains.kotlin.psi.KtIsExpression
 import org.jetbrains.kotlin.psi.KtLabelReferenceExpression
 import org.jetbrains.kotlin.psi.KtLabeledExpression
@@ -85,7 +79,6 @@ import org.jetbrains.kotlin.psi.KtLambdaArgument
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtModifierList
 import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.KtNullableType
 import org.jetbrains.kotlin.psi.KtPackageDirective
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtParameterList
@@ -93,7 +86,6 @@ import org.jetbrains.kotlin.psi.KtParenthesizedExpression
 import org.jetbrains.kotlin.psi.KtPostfixExpression
 import org.jetbrains.kotlin.psi.KtPrefixExpression
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
-import org.jetbrains.kotlin.psi.KtProjectionKind
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.jetbrains.kotlin.psi.KtPropertyDelegate
@@ -105,19 +97,14 @@ import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
 import org.jetbrains.kotlin.psi.KtSuperExpression
 import org.jetbrains.kotlin.psi.KtSuperTypeCallEntry
-import org.jetbrains.kotlin.psi.KtSuperTypeList
 import org.jetbrains.kotlin.psi.KtThisExpression
 import org.jetbrains.kotlin.psi.KtThrowExpression
 import org.jetbrains.kotlin.psi.KtTryExpression
 import org.jetbrains.kotlin.psi.KtTypeAlias
 import org.jetbrains.kotlin.psi.KtTypeArgumentList
-import org.jetbrains.kotlin.psi.KtTypeConstraint
 import org.jetbrains.kotlin.psi.KtTypeConstraintList
-import org.jetbrains.kotlin.psi.KtTypeParameter
 import org.jetbrains.kotlin.psi.KtTypeParameterList
-import org.jetbrains.kotlin.psi.KtTypeProjection
 import org.jetbrains.kotlin.psi.KtTypeReference
-import org.jetbrains.kotlin.psi.KtUserType
 import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.KtWhenConditionInRange
@@ -133,20 +120,21 @@ import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 import org.jetbrains.kotlin.psi.stubs.impl.KotlinPlaceHolderStubImpl
 import org.jetbrains.ktfmt.format.visitor.AbstractFormatterVisitor
 import org.jetbrains.ktfmt.format.visitor.FileFormatter
+import org.jetbrains.ktfmt.format.visitor.ListFormatter
+import org.jetbrains.ktfmt.format.visitor.TypeFormatter
 import org.jetbrains.ktfmt.format.visitor.asIndent
 import org.jetbrains.ktfmt.format.visitor.block
 import org.jetbrains.ktfmt.format.visitor.fenceComments
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
 import org.jetbrains.ktfmt.util.CONTEXT_PARAMETER_LIST
-import org.jetbrains.ktfmt.util.listToVisit
 import org.jetbrains.ktfmt.util.ownValOrVarKeywordText
 
 /** An AST visitor that builds a stream of {@link Op}s to format. */
 open class KotlinInputAstVisitor(
     override val options: FormattingOptions,
     override val builder: OpsBuilder,
-) : AbstractFormatterVisitor(), FileFormatter {
+) : AbstractFormatterVisitor(), FileFormatter, TypeFormatter, ListFormatter {
 
   /** Standard indentation for a block */
   private val blockIndent: Indent.Const = options.blockIndent.asIndent
@@ -187,107 +175,6 @@ open class KotlinInputAstVisitor(
           bodyExpression = function.bodyBlockExpression ?: function.bodyExpression,
           typeOrDelegationCall = function.typeReference,
       )
-    }
-  }
-
-  /** Example `Int`, `(String)` or `() -> Int` */
-  override fun visitTypeReference(typeReference: KtTypeReference) {
-    builder.sync(typeReference)
-    // Normally we'd visit the children nodes through accessors on 'typeReference', and  we wouldn't
-    // loop over children.
-    // But, in this case the modifier list can either be inside the parenthesis:
-    // ... (@Composable (x) -> Unit)
-    // or outside of them:
-    // ... @Composable ((x) -> Unit)
-    val modifierList = typeReference.modifierList
-    val typeElement = typeReference.typeElement
-    for (child in typeReference.node.children()) {
-      when {
-        child.psi == modifierList -> visit(modifierList)
-        child.psi == typeElement -> visit(typeElement)
-        child.elementType == KtTokens.LPAR -> builder.token("(")
-        child.elementType == KtTokens.RPAR -> builder.token(")")
-      }
-    }
-  }
-
-  override fun visitDynamicType(type: KtDynamicType) {
-    builder.token("dynamic")
-  }
-
-  /** Example: `String?` or `((Int) -> Unit)?` */
-  override fun visitNullableType(nullableType: KtNullableType) {
-    builder.sync(nullableType)
-
-    // Normally we wouldn't loop over children, but there can be multiple layers of parens.
-    val modifierList = nullableType.modifierList
-    val innerType = nullableType.innerType
-    for (child in nullableType.node.children()) {
-      when {
-        child.psi == modifierList -> visit(modifierList)
-        child.psi == innerType -> visit(innerType)
-        child.elementType == KtTokens.LPAR -> builder.token("(")
-        child.elementType == KtTokens.RPAR -> builder.token(")")
-      }
-    }
-    builder.token("?")
-  }
-
-  /** Example: `String` or `List<Int>`, */
-  override fun visitUserType(type: KtUserType) {
-    builder.sync(type)
-
-    if (type.qualifier != null) {
-      visit(type.qualifier)
-      builder.token(".")
-    }
-    visit(type.referenceExpression)
-    val typeArgumentList = type.typeArgumentList
-    if (typeArgumentList != null) {
-      builder.block(expressionBreakIndent) { visit(typeArgumentList) }
-    }
-  }
-
-  /** Example: `A & B`, */
-  override fun visitIntersectionType(type: KtIntersectionType) {
-    builder.sync(type)
-
-    // TODO(strulovich): Should this have the same indentation behaviour as `x && y`?
-    visit(type.getLeftTypeRef())
-    builder.space()
-    builder.token("&")
-    builder.space()
-    visit(type.getRightTypeRef())
-  }
-
-  /** Example `<Int, String>` in `List<Int, String>` */
-  override fun visitTypeArgumentList(typeArgumentList: KtTypeArgumentList) {
-    builder.sync(typeArgumentList)
-    visitEachCommaSeparated(
-        typeArgumentList.arguments,
-        typeArgumentList.trailingComma != null,
-        wrapInBlock = !options.manageTrailingCommas,
-        prefix = "<",
-        postfix = ">",
-    )
-  }
-
-  override fun visitTypeProjection(typeProjection: KtTypeProjection) {
-    builder.sync(typeProjection)
-    val typeReference = typeProjection.typeReference
-    when (typeProjection.projectionKind) {
-      KtProjectionKind.IN -> {
-        builder.token("in")
-        builder.space()
-        visit(typeReference)
-      }
-      KtProjectionKind.OUT -> {
-        builder.token("out")
-        builder.space()
-        visit(typeReference)
-      }
-      KtProjectionKind.STAR -> builder.token("*")
-      KtProjectionKind.NONE -> visit(typeReference)
     }
   }
 
@@ -363,7 +250,7 @@ open class KotlinInputAstVisitor(
       } else {
         builder.block(expressionBreakIndent) {
           if (parameterList != null) {
-            visitEachCommaSeparated(
+            formatCommaSeparatedList(
                 list = parameterList.parameters,
                 hasTrailingComma = parameterList.trailingComma != null,
                 prefix = "(",
@@ -810,7 +697,7 @@ open class KotlinInputAstVisitor(
         builder.block(argumentsIndent) {
           builder.block(ZERO) { visit(typeArgumentList) }
           if (argumentList != null) {
-            brokeBeforeBrace = visitValueArgumentListInternal(argumentList)
+            brokeBeforeBrace = formatValueArgumentList(argumentList)
           }
         }
       }
@@ -827,68 +714,6 @@ open class KotlinInputAstVisitor(
         else -> throw ParseError("Maximum one trailing lambda is allowed", lambdaArguments[1])
       }
     }
-  }
-
-  /** Example (`1, "hi"`) in a function call */
-  override fun visitValueArgumentList(list: KtValueArgumentList) {
-    visitValueArgumentListInternal(list)
-  }
-
-  /**
-   * Example (`1, "hi"`) in a function call
-   *
-   * @return a [BreakTag] which can tell you if a break was taken, but only when the list doesn't
-   *   terminate in a negative closing indent. See [visitEachCommaSeparated] for examples.
-   */
-  private fun visitValueArgumentListInternal(list: KtValueArgumentList): BreakTag? {
-    builder.sync(list)
-
-    val arguments = list.arguments
-    val isSingleUnnamedLambda =
-        arguments.size == 1 &&
-            arguments.first().getArgumentExpression() is KtLambdaExpression &&
-            arguments.first().getArgumentName() == null
-    val hasTrailingComma = list.trailingComma != null
-    val hasEmptyParens = list.hasEmptyParens
-
-    val wrapInBlock: Boolean
-    val breakBeforePostfix: Boolean
-    val leadingBreak: Boolean
-    val breakAfterPrefix: Boolean
-    if (isSingleUnnamedLambda) {
-      wrapInBlock = true
-      breakBeforePostfix = false
-      leadingBreak = !hasEmptyParens && hasTrailingComma
-      breakAfterPrefix = false
-    } else {
-      // A call without a trailing comma that is nonetheless forced onto multiple lines (because one
-      // of its arguments is itself a block-like multiline call) is rendered "exploded", with its
-      // closing parenthesis on its own line, just like a call with a trailing comma.
-      val contentForcesMultiline =
-          !hasTrailingComma &&
-              arguments.any { argument ->
-                val argumentExpression = argument.getArgumentExpression()
-                argumentExpression != null &&
-                    (argumentExpression.isBlockLikeCall ||
-                        argumentExpression.isChainedBlockLikeCall)
-              }
-      wrapInBlock = !options.manageTrailingCommas
-      breakBeforePostfix =
-          (options.manageTrailingCommas || contentForcesMultiline) && !hasEmptyParens
-      leadingBreak = !hasEmptyParens
-      breakAfterPrefix = !hasEmptyParens
-    }
-
-    return visitEachCommaSeparated(
-        arguments,
-        hasTrailingComma,
-        wrapInBlock = wrapInBlock,
-        breakBeforePostfix = breakBeforePostfix,
-        leadingBreak = leadingBreak,
-        prefix = "(",
-        postfix = ")",
-        breakAfterPrefix = breakAfterPrefix,
-    )
   }
 
   /** Example `{ 1 + 1 }` (as lambda) or `{ (x, y) -> x + y }` */
@@ -950,7 +775,7 @@ open class KotlinInputAstVisitor(
 
     if (hasParams || hasArrow) {
       builder.space()
-      builder.block(bracePlusExpressionIndent) { visitEachCommaSeparated(valueParams) }
+      builder.block(bracePlusExpressionIndent) { formatCommaSeparatedList(valueParams) }
       builder.block(bracePlusBlockIndent) {
         if (lambdaExpression.functionLiteral.valueParameterList?.trailingComma != null) {
           builder.token(",")
@@ -1043,152 +868,6 @@ open class KotlinInputAstVisitor(
         }
       }
     }
-  }
-
-  /** e.g., `a: Int, b: Int, c: Int` in `fun foo(a: Int, b: Int, c: Int) { ... }`. */
-  override fun visitParameterList(list: KtParameterList) {
-    visitEachCommaSeparated(list.parameters, list.trailingComma != null, wrapInBlock = false)
-  }
-
-  /**
-   * Visit each element in [list], with comma (,) tokens in-between.
-   *
-   * Example:
-   * ```
-   * a, b, c, 3, 4, 5
-   * ```
-   *
-   * Either the entire list fits in one line, or each element is put on its own line:
-   * ```
-   * a,
-   * b,
-   * c,
-   * 3,
-   * 4,
-   * 5
-   * ```
-   *
-   * Optionally include a prefix and postfix:
-   * ```
-   *   (
-   *     a,
-   *     b,
-   *     c,
-   * )
-   * ```
-   *
-   * @param hasTrailingComma if true, each element is placed on its own line (even if they could've
-   *   fit in a single line), and a trailing comma is emitted.
-   *
-   * Example:
-   * ```
-   * a,
-   * b,
-   * ```
-   *
-   * @param wrapInBlock if true, place all the elements in a block. When there's no [leadingBreak],
-   *   this will be negatively indented. Note that the [prefix] and [postfix] aren't included in the
-   *   block.
-   * @param leadingBreak if true, break before the first element.
-   * @param prefix if provided, emit this before the first element.
-   * @param postfix if provided, emit this after the last element (or trailing comma).
-   * @param breakAfterPrefix if true, emit a break after [prefix], but before the start of the
-   *   block.
-   * @param breakBeforePostfix if true, place a break after the last element. Redundant when
-   *   [hasTrailingComma] is true.
-   * @return a [BreakTag] which can tell you if a break was taken, but only when the list doesn't
-   *   terminate in a negative closing indent.
-   *
-   * Example 1, this returns a BreakTag which tells you a break wasn't taken:
-   * ```
-   * (arg1, arg2)
-   * ```
-   *
-   * Example 2, this returns a BreakTag which tells you a break WAS taken:
-   * ```
-   * (
-   *     arg1,
-   *     arg2)
-   * ```
-   *
-   * Example 3, this returns null:
-   * ```
-   * (
-   *     arg1,
-   *     arg2,
-   * )
-   * ```
-   *
-   * Example 4, this also returns null (similar to example 2, but Google style):
-   * ```
-   * (
-   *     arg1,
-   *     arg2
-   * )
-   * ```
-   */
-  private fun visitEachCommaSeparated(
-      list: Iterable<PsiElement>,
-      hasTrailingComma: Boolean = false,
-      wrapInBlock: Boolean = true,
-      leadingBreak: Boolean = true,
-      prefix: String? = null,
-      postfix: String? = null,
-      breakAfterPrefix: Boolean = true,
-      breakBeforePostfix: Boolean = options.manageTrailingCommas,
-  ): BreakTag? {
-    val breakAfterLastElement = hasTrailingComma || (postfix != null && breakBeforePostfix)
-    val nameTag = if (breakAfterLastElement) null else genSym()
-
-    if (prefix != null) {
-      builder.token(prefix)
-      if (breakAfterPrefix) {
-        builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, Optional.ofNullable(nameTag))
-      }
-    }
-
-    val breakType = if (hasTrailingComma) Doc.FillMode.FORCED else Doc.FillMode.UNIFIED
-    fun emitComma() {
-      builder.token(",")
-      builder.breakOp(breakType, " ", ZERO)
-    }
-
-    val indent = if (leadingBreak) ZERO else expressionBreakNegativeIndent
-    builder.block(indent, isEnabled = wrapInBlock) {
-      if (leadingBreak) {
-        builder.breakOp(breakType, "", ZERO)
-      }
-
-      var first = true
-      for (value in list) {
-        if (!first) emitComma()
-        first = false
-        visit(value)
-      }
-
-      if (hasTrailingComma) {
-        emitComma()
-      }
-    }
-
-    if (breakAfterLastElement) {
-      // a negative closing indent places the postfix to the left of the elements
-      // see examples 2 and 4 in the docstring
-      builder.breakOp(breakType, "", expressionBreakNegativeIndent)
-    }
-
-    if (postfix != null) {
-      if (breakAfterLastElement) {
-        builder.block(expressionBreakNegativeIndent) {
-          builder.fenceComments()
-          builder.token(postfix, expressionBreakIndent)
-        }
-      } else {
-        builder.token(postfix)
-      }
-    }
-
-    return nameTag
   }
 
   /** Example `a` in `foo(a)`, or `*a`, or `limit = 50` */
@@ -2012,12 +1691,6 @@ open class KotlinInputAstVisitor(
     builder.forcedBreak()
   }
 
-  /** Example `import com.foo.A; import com.bar.B` */
-  override fun visitImportList(importList: KtImportList) {
-    builder.sync(importList)
-    importList.imports.forEach { visit(it) }
-  }
-
   /** Example `import com.foo.A` */
   override fun visitImportDirective(directive: KtImportDirective) {
     builder.sync(directive)
@@ -2047,64 +1720,6 @@ open class KotlinInputAstVisitor(
     // Force a newline afterwards.
     builder.guessToken(";")
     builder.forcedBreak()
-  }
-
-  /**
-   * Example `context(logger: Logger, raise: Raise<Error>)`
-   *
-   * Note this also supports the legacy receiver format of `context(Logger, Raise<Error>)` for
-   * backward compatibility and for function types
-   */
-  private fun handleContextReceiverList(contextReceiverList: KtContextReceiverList) {
-    builder.sync(contextReceiverList)
-    builder.token("context")
-    visitEachCommaSeparated(
-        contextReceiverList.listToVisit(),
-        prefix = "(",
-        postfix = ")",
-        breakAfterPrefix = false,
-        breakBeforePostfix = false,
-    )
-  }
-
-  override fun visitContextReceiverList(contextReceiverList: KtContextReceiverList) {
-    handleContextReceiverList(contextReceiverList)
-    builder.forcedBreak()
-  }
-
-  /** For example `@Magic private final` */
-  override fun visitModifierList(list: KtModifierList) {
-    builder.sync(list)
-    var onlyAnnotationsSoFar = true
-
-    for (child in list.node.children()) {
-      val psi = child.psi
-      if (psi is PsiWhiteSpace) {
-        continue
-      }
-
-      // In Kotlin 2.3+, context receiver lists are children of the modifier list.
-      // Handle them directly to avoid issues with the visitor dispatch.
-      if (psi is KtContextReceiverList) {
-        visitContextReceiverList(psi)
-        continue
-      }
-
-      if (child.elementType is KtModifierKeywordToken) {
-        onlyAnnotationsSoFar = false
-        builder.token(child.text)
-      } else {
-        visit(psi)
-      }
-
-      if (onlyAnnotationsSoFar && forceAnnotationBreaks && psi is KtAnnotationEntry) {
-        builder.forcedBreak()
-      } else if (onlyAnnotationsSoFar) {
-        builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
-      } else {
-        builder.space()
-      }
-    }
   }
 
   /**
@@ -2216,26 +1831,6 @@ open class KotlinInputAstVisitor(
         annotationEntry.valueArgumentList,
         listOf(),
     )
-  }
-
-  override fun visitFileAnnotationList(
-      fileAnnotationList: KtFileAnnotationList,
-      data: Void?,
-  ): Void? {
-    for (child in fileAnnotationList.node.children()) {
-      if (child is PsiElement) {
-        continue
-      }
-      visit(child.psi)
-      builder.forcedBreak()
-    }
-
-    return null
-  }
-
-  override fun visitSuperTypeList(list: KtSuperTypeList) {
-    builder.sync(list)
-    builder.block(expressionBreakIndent) { visitEachCommaSeparated(list.entries) }
   }
 
   override fun visitSuperTypeCallEntry(call: KtSuperTypeCallEntry) {
@@ -2455,10 +2050,9 @@ open class KotlinInputAstVisitor(
       builder.token("[")
       builder.breakOp(Doc.FillMode.UNIFIED, "", expressionBreakIndent)
       builder.block(expressionBreakIndent) {
-        visitEachCommaSeparated(
+        formatCommaSeparatedList(
             expression.indexExpressions,
-            expression.trailingComma != null,
-            wrapInBlock = true,
+            hasTrailingComma = expression.trailingComma != null,
         )
       }
     }
@@ -2480,10 +2074,9 @@ open class KotlinInputAstVisitor(
       builder.token(openingDelimiter)
       builder.breakOp(Doc.FillMode.UNIFIED, "", expressionBreakIndent)
       builder.block(expressionBreakIndent) {
-        visitEachCommaSeparated(
+        formatCommaSeparatedList(
             destructuringDeclaration.entries,
             hasTrailingComma,
-            wrapInBlock = true,
         )
       }
     }
@@ -2533,57 +2126,6 @@ open class KotlinInputAstVisitor(
       builder.token(">")
     }
     visit(expression.labelQualifier)
-  }
-
-  /** Example `<T, S>` */
-  override fun visitTypeParameterList(list: KtTypeParameterList) {
-    builder.sync(list)
-    builder.block(expressionBreakIndent) {
-      visitEachCommaSeparated(
-          list = list.parameters,
-          hasTrailingComma = list.trailingComma != null,
-          prefix = "<",
-          postfix = ">",
-          wrapInBlock = !options.manageTrailingCommas,
-      )
-    }
-  }
-
-  override fun visitTypeParameter(parameter: KtTypeParameter) {
-    builder.sync(parameter)
-    visit(parameter.modifierList)
-    builder.token(parameter.nameIdentifier?.text ?: "")
-    val extendsBound = parameter.extendsBound
-    if (extendsBound != null) {
-      builder.space()
-      builder.token(":")
-      builder.space()
-      visit(extendsBound)
-    }
-  }
-
-  /** Example `where T : View, T : Listener` */
-  override fun visitTypeConstraintList(list: KtTypeConstraintList) {
-    builder.block(expressionBreakIndent) {
-      builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO)
-      builder.token("where")
-      builder.block(expressionBreakIndent) {
-        builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
-        builder.sync(list)
-        visitEachCommaSeparated(list.constraints, wrapInBlock = false)
-      }
-    }
-  }
-
-  /** Example `T : Foo` */
-  override fun visitTypeConstraint(constraint: KtTypeConstraint) {
-    builder.sync(constraint)
-    // TODO(nreid260): What about annotations on the type reference? `where @A T : Int`
-    visit(constraint.subjectTypeParameterName)
-    builder.space()
-    builder.token(":")
-    builder.space()
-    visit(constraint.boundTypeReference)
   }
 
   /** Example `for (i in items) { ... }` */
@@ -2705,36 +2247,6 @@ open class KotlinInputAstVisitor(
     builder.token("class")
   }
 
-  override fun visitFunctionType(type: KtFunctionType) {
-    builder.sync(type)
-
-    type.contextReceiverList?.let { functionTypeContextReceiverList ->
-      handleContextReceiverList(functionTypeContextReceiverList)
-      builder.space()
-    }
-
-    val receiver = type.receiver
-    if (receiver != null) {
-      visit(receiver)
-      builder.token(".")
-    }
-    builder.block(expressionBreakIndent) {
-      val parameterList = type.parameterList
-      if (parameterList != null) {
-        visitEachCommaSeparated(
-            parameterList.parameters,
-            prefix = "(",
-            postfix = ")",
-            hasTrailingComma = parameterList.trailingComma != null,
-        )
-      }
-    }
-    builder.space()
-    builder.token("->")
-    builder.space()
-    builder.block(expressionBreakIndent) { visit(type.returnTypeReference) }
-  }
-
   /** Example `a is Int` or `b !is Int` */
   override fun visitIsExpression(expression: KtIsExpression) {
     builder.sync(expression)
@@ -2783,9 +2295,9 @@ open class KotlinInputAstVisitor(
   override fun visitCollectionLiteralExpression(expression: KtCollectionLiteralExpression) {
     builder.sync(expression)
     builder.block(expressionBreakIndent) {
-      visitEachCommaSeparated(
+      formatCommaSeparatedList(
           expression.getInnerExpressions(),
-          expression.trailingComma != null,
+          hasTrailingComma = expression.trailingComma != null,
           prefix = "[",
           postfix = "]",
           wrapInBlock = !options.manageTrailingCommas,
