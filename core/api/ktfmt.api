@@ -183,8 +183,10 @@ public final class org/jetbrains/ktfmt/format/KotlinInput : com/google/googlejav
 	public fun getkN ()I
 }
 
-public class org/jetbrains/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/ktfmt/format/visitor/AbstractFormatterVisitor {
+public class org/jetbrains/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/ktfmt/format/visitor/AbstractFormatterVisitor, org/jetbrains/ktfmt/format/visitor/FileFormatter {
 	public fun <init> (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/OpsBuilder;)V
+	public fun formatKtFile (Lorg/jetbrains/kotlin/psi/KtFile;)V
+	public fun formatKtScript (Lorg/jetbrains/kotlin/psi/KtScript;)V
 	public fun getBuilder ()Lcom/google/googlejavaformat/OpsBuilder;
 	public fun getExpressionBreakIndent ()Lcom/google/googlejavaformat/Indent$Const;
 	public fun getExpressionBreakNegativeIndent ()Lcom/google/googlejavaformat/Indent$Const;
@@ -230,7 +232,6 @@ public class org/jetbrains/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/kt
 	public fun visitImportList (Lorg/jetbrains/kotlin/psi/KtImportList;)V
 	public fun visitIntersectionType (Lorg/jetbrains/kotlin/psi/KtIntersectionType;)V
 	public fun visitIsExpression (Lorg/jetbrains/kotlin/psi/KtIsExpression;)V
-	public fun visitKtFile (Lorg/jetbrains/kotlin/psi/KtFile;)V
 	public fun visitLabeledExpression (Lorg/jetbrains/kotlin/psi/KtLabeledExpression;)V
 	public fun visitLambdaExpression (Lorg/jetbrains/kotlin/psi/KtLambdaExpression;)V
 	public fun visitModifierList (Lorg/jetbrains/kotlin/psi/KtModifierList;)V
@@ -247,7 +248,6 @@ public class org/jetbrains/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/kt
 	public fun visitQualifiedExpression (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;)V
 	public fun visitReferenceExpression (Lorg/jetbrains/kotlin/psi/KtReferenceExpression;)V
 	public fun visitReturnExpression (Lorg/jetbrains/kotlin/psi/KtReturnExpression;)V
-	public fun visitScript (Lorg/jetbrains/kotlin/psi/KtScript;)V
 	public fun visitSecondaryConstructor (Lorg/jetbrains/kotlin/psi/KtSecondaryConstructor;)V
 	public fun visitSimpleNameExpression (Lorg/jetbrains/kotlin/psi/KtSimpleNameExpression;)V
 	public fun visitStringTemplateExpression (Lorg/jetbrains/kotlin/psi/KtStringTemplateExpression;)V

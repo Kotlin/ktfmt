@@ -70,7 +70,6 @@ import org.jetbrains.kotlin.psi.KtDynamicType
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtEnumEntry
 import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtFileAnnotationList
 import org.jetbrains.kotlin.psi.KtFinallySection
 import org.jetbrains.kotlin.psi.KtForExpression
@@ -101,8 +100,6 @@ import org.jetbrains.kotlin.psi.KtPropertyDelegate
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtReturnExpression
-import org.jetbrains.kotlin.psi.KtScript
-import org.jetbrains.kotlin.psi.KtScriptInitializer
 import org.jetbrains.kotlin.psi.KtSecondaryConstructor
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
@@ -149,7 +146,7 @@ import org.jetbrains.ktfmt.util.ownValOrVarKeywordText
 open class KotlinInputAstVisitor(
     override val options: FormattingOptions,
     override val builder: OpsBuilder,
-) : AbstractFormatterVisitor() {
+) : AbstractFormatterVisitor(), FileFormatter {
 
   /** Standard indentation for a block */
   private val blockIndent: Indent.Const = options.blockIndent.asIndent
@@ -2895,66 +2892,6 @@ open class KotlinInputAstVisitor(
       inExpression.removeLast()
     }
     builder.checkClosed(previous)
-  }
-
-  override fun visitKtFile(file: KtFile) {
-    markForPartialFormat()
-    val importListEmpty = file.importList?.text?.isBlank() ?: true
-
-    var isFirst = true
-    for (child in file.children) {
-      if (child.text.isBlank()) {
-        continue
-      }
-
-      builder.blankLineWanted(
-        when {
-          isFirst -> OpsBuilder.BlankLineWanted.NO
-          child is PsiComment -> continue
-          child is KtScript && importListEmpty -> OpsBuilder.BlankLineWanted.PRESERVE
-          else -> OpsBuilder.BlankLineWanted.YES
-        },
-      )
-
-      builder.markForPartialFormat()
-      visit(child)
-      builder.markForPartialFormat()
-      isFirst = false
-    }
-    markForPartialFormat()
-  }
-
-  override fun visitScript(script: KtScript) {
-    markForPartialFormat()
-    var lastChildHadBlankLineBefore = false
-    var lastChildIsContextReceiver = false
-    var first = true
-    for (child in script.blockExpression.children) {
-      if (child.text.isBlank()) {
-        continue
-      }
-      builder.forcedBreak()
-      val childGetsBlankLineBefore = child !is KtProperty
-      if (first) {
-        builder.blankLineWanted(OpsBuilder.BlankLineWanted.PRESERVE)
-      } else if (lastChildIsContextReceiver) {
-        builder.blankLineWanted(OpsBuilder.BlankLineWanted.NO)
-      } else if (
-        child !is PsiComment && (childGetsBlankLineBefore || lastChildHadBlankLineBefore)
-      ) {
-        builder.blankLineWanted(OpsBuilder.BlankLineWanted.YES)
-      }
-      builder.markForPartialFormat()
-      visit(child)
-      builder.guessToken(";")
-      builder.markForPartialFormat()
-      lastChildHadBlankLineBefore = childGetsBlankLineBefore
-      lastChildIsContextReceiver =
-        child is KtScriptInitializer &&
-                child.firstChild?.firstChild?.firstChild?.text == "context"
-      first = false
-    }
-    markForPartialFormat()
   }
 
   /**
