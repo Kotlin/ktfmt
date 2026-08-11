@@ -1,0 +1,367 @@
+package org.jetbrains.ktfmt.format.visitor
+
+import com.google.googlejavaformat.Indent
+import com.google.googlejavaformat.OpsBuilder
+import com.google.googlejavaformat.Output.BreakTag
+import java.util.ArrayDeque
+import org.jetbrains.kotlin.com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.psi.KtAnnotatedExpression
+import org.jetbrains.kotlin.psi.KtAnnotation
+import org.jetbrains.kotlin.psi.KtAnnotationEntry
+import org.jetbrains.kotlin.psi.KtAnnotationUseSiteTarget
+import org.jetbrains.kotlin.psi.KtArrayAccessExpression
+import org.jetbrains.kotlin.psi.KtBinaryExpression
+import org.jetbrains.kotlin.psi.KtBinaryExpressionWithTypeRHS
+import org.jetbrains.kotlin.psi.KtBlockExpression
+import org.jetbrains.kotlin.psi.KtBreakExpression
+import org.jetbrains.kotlin.psi.KtCallExpression
+import org.jetbrains.kotlin.psi.KtCallableReferenceExpression
+import org.jetbrains.kotlin.psi.KtCatchClause
+import org.jetbrains.kotlin.psi.KtClassBody
+import org.jetbrains.kotlin.psi.KtClassInitializer
+import org.jetbrains.kotlin.psi.KtClassLiteralExpression
+import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtCollectionLiteralExpression
+import org.jetbrains.kotlin.psi.KtConstantExpression
+import org.jetbrains.kotlin.psi.KtConstructorDelegationCall
+import org.jetbrains.kotlin.psi.KtContextReceiverList
+import org.jetbrains.kotlin.psi.KtContinueExpression
+import org.jetbrains.kotlin.psi.KtDelegatedSuperTypeEntry
+import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
+import org.jetbrains.kotlin.psi.KtDestructuringDeclarationEntry
+import org.jetbrains.kotlin.psi.KtDoWhileExpression
+import org.jetbrains.kotlin.psi.KtDynamicType
+import org.jetbrains.kotlin.psi.KtEnumEntry
+import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtFileAnnotationList
+import org.jetbrains.kotlin.psi.KtFinallySection
+import org.jetbrains.kotlin.psi.KtForExpression
+import org.jetbrains.kotlin.psi.KtFunctionType
+import org.jetbrains.kotlin.psi.KtIfExpression
+import org.jetbrains.kotlin.psi.KtImportDirective
+import org.jetbrains.kotlin.psi.KtImportList
+import org.jetbrains.kotlin.psi.KtIntersectionType
+import org.jetbrains.kotlin.psi.KtIsExpression
+import org.jetbrains.kotlin.psi.KtLabeledExpression
+import org.jetbrains.kotlin.psi.KtLambdaExpression
+import org.jetbrains.kotlin.psi.KtModifierList
+import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.kotlin.psi.KtNullableType
+import org.jetbrains.kotlin.psi.KtPackageDirective
+import org.jetbrains.kotlin.psi.KtParameter
+import org.jetbrains.kotlin.psi.KtParameterList
+import org.jetbrains.kotlin.psi.KtParenthesizedExpression
+import org.jetbrains.kotlin.psi.KtPostfixExpression
+import org.jetbrains.kotlin.psi.KtPrefixExpression
+import org.jetbrains.kotlin.psi.KtPrimaryConstructor
+import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.KtQualifiedExpression
+import org.jetbrains.kotlin.psi.KtReferenceExpression
+import org.jetbrains.kotlin.psi.KtReturnExpression
+import org.jetbrains.kotlin.psi.KtScript
+import org.jetbrains.kotlin.psi.KtSecondaryConstructor
+import org.jetbrains.kotlin.psi.KtSimpleNameExpression
+import org.jetbrains.kotlin.psi.KtStringTemplateExpression
+import org.jetbrains.kotlin.psi.KtSuperExpression
+import org.jetbrains.kotlin.psi.KtSuperTypeCallEntry
+import org.jetbrains.kotlin.psi.KtSuperTypeList
+import org.jetbrains.kotlin.psi.KtThisExpression
+import org.jetbrains.kotlin.psi.KtThrowExpression
+import org.jetbrains.kotlin.psi.KtTryExpression
+import org.jetbrains.kotlin.psi.KtTypeAlias
+import org.jetbrains.kotlin.psi.KtTypeArgumentList
+import org.jetbrains.kotlin.psi.KtTypeConstraint
+import org.jetbrains.kotlin.psi.KtTypeConstraintList
+import org.jetbrains.kotlin.psi.KtTypeParameter
+import org.jetbrains.kotlin.psi.KtTypeParameterList
+import org.jetbrains.kotlin.psi.KtTypeProjection
+import org.jetbrains.kotlin.psi.KtTypeReference
+import org.jetbrains.kotlin.psi.KtUserType
+import org.jetbrains.kotlin.psi.KtValueArgument
+import org.jetbrains.kotlin.psi.KtValueArgumentList
+import org.jetbrains.kotlin.psi.KtWhenConditionInRange
+import org.jetbrains.kotlin.psi.KtWhenConditionIsPattern
+import org.jetbrains.kotlin.psi.KtWhenConditionWithExpression
+import org.jetbrains.kotlin.psi.KtWhenExpression
+import org.jetbrains.kotlin.psi.KtWhileExpression
+import org.jetbrains.ktfmt.format.FormattingOptions
+
+interface KotlinAstFormatter {
+  val options: FormattingOptions
+  val builder: OpsBuilder
+
+  val expressionBreakIndent: Indent.Const
+  val expressionBreakNegativeIndent: Indent.Const
+
+  /** A record of whether we have visited into an expression. */
+  val inExpression: ArrayDeque<Boolean>
+
+  // TODO: move this
+  val forceAnnotationBreaks: Boolean
+    get() = false
+
+  fun format(element: PsiElement?) {}
+
+  fun formatKtFile(file: KtFile) {}
+
+  fun formatKtScript(script: KtScript) {}
+
+  fun formatNamedFunction(function: KtNamedFunction) {}
+
+  fun formatTypeReference(type: KtTypeReference) {}
+
+  fun formatDynamicType(type: KtDynamicType) {}
+
+  fun formatNullableType(type: KtNullableType) {}
+
+  fun formatUserType(type: KtUserType) {}
+
+  fun formatIntersectionType(type: KtIntersectionType) {}
+
+  fun formatTypeProjection(type: KtTypeProjection) {}
+
+  fun formatTypeArgumentList(list: KtTypeArgumentList) {}
+
+  fun formatTypeParameterList(list: KtTypeParameterList) {}
+
+  fun formatTypeParameter(parameter: KtTypeParameter) {}
+
+  fun formatTypeConstraintList(list: KtTypeConstraintList) {}
+
+  fun formatTypeConstraint(constraint: KtTypeConstraint) {}
+
+  fun formatFunctionType(type: KtFunctionType) {}
+
+  fun formatClassOrObject(classOrObject: KtClassOrObject) {}
+
+  fun formatProperty(property: KtProperty) {}
+
+  fun formatPrimaryConstructor(constructor: KtPrimaryConstructor) {}
+
+  fun formatSecondaryConstructor(constructor: KtSecondaryConstructor) {}
+
+  fun formatConstructorDelegationCall(call: KtConstructorDelegationCall) {}
+
+  fun formatClassInitializer(initializer: KtClassInitializer) {}
+
+  fun formatArgument(argument: KtValueArgument) {}
+
+  fun formatSuperTypeList(list: KtSuperTypeList) {}
+
+  fun formatSuperTypeCallEntry(call: KtSuperTypeCallEntry) {}
+
+  fun formatDelegatedSuperTypeEntry(specifier: KtDelegatedSuperTypeEntry) {}
+
+  fun formatClassBody(body: KtClassBody) {}
+
+  fun formatValueArgumentList(list: KtValueArgumentList): BreakTag? {
+    return null
+  }
+
+  fun formatModifierList(list: KtModifierList) {}
+
+  fun formatContextReceiverList(contextReceiverList: KtContextReceiverList) {}
+
+  fun formatParameterList(list: KtParameterList) {}
+
+  fun formatParameter(parameter: KtParameter) {}
+
+  fun formatQualifiedExpression(expression: KtQualifiedExpression) {}
+
+  fun formatCallExpression(callExpression: KtCallExpression) {}
+
+  fun formatLambdaExpression(lambdaExpression: KtLambdaExpression) {}
+
+  fun formatThisExpression(expression: KtThisExpression) {}
+
+  fun formatSimpleNameExpression(expression: KtSimpleNameExpression) {}
+
+  fun formatReferenceExpression(expression: KtReferenceExpression) {}
+
+  fun formatReturnExpression(expression: KtReturnExpression) {}
+
+  fun formatBinaryExpression(expression: KtBinaryExpression) {}
+
+  fun formatPostfixExpression(expression: KtPostfixExpression) {}
+
+  fun formatPrefixExpression(expression: KtPrefixExpression) {}
+
+  fun formatLabeledExpression(expression: KtLabeledExpression) {}
+
+  fun formatConstantExpression(expression: KtConstantExpression) {}
+
+  fun formatParenthesizedExpression(expression: KtParenthesizedExpression) {}
+
+  fun formatWhenExpression(expression: KtWhenExpression) {}
+
+  fun formatBlockExpression(expression: KtBlockExpression) {}
+
+  fun formatWhenConditionWithExpression(condition: KtWhenConditionWithExpression) {}
+
+  fun formatWhenConditionIsPattern(condition: KtWhenConditionIsPattern) {}
+
+  fun formatWhenConditionInRange(condition: KtWhenConditionInRange) {}
+
+  fun formatIfExpression(expression: KtIfExpression) {}
+
+  fun formatArrayAccessExpression(expression: KtArrayAccessExpression) {}
+
+  fun formatStringTemplateExpression(expression: KtStringTemplateExpression) {}
+
+  fun formatSuperExpression(expression: KtSuperExpression) {}
+
+  fun formatForExpression(expression: KtForExpression) {}
+
+  fun formatWhileExpression(expression: KtWhileExpression) {}
+
+  fun formatDoWhileExpression(expression: KtDoWhileExpression) {}
+
+  fun formatBreakExpression(expression: KtBreakExpression) {}
+
+  fun formatContinueExpression(expression: KtContinueExpression) {}
+
+  fun formatCallableReferenceExpression(expression: KtCallableReferenceExpression) {}
+
+  fun formatClassLiteralExpression(expression: KtClassLiteralExpression) {}
+
+  fun formatIsExpression(expression: KtIsExpression) {}
+
+  fun formatBinaryWithTypeRHSExpression(expression: KtBinaryExpressionWithTypeRHS) {}
+
+  fun formatCollectionLiteralExpression(expression: KtCollectionLiteralExpression) {}
+
+  fun formatTryExpression(expression: KtTryExpression) {}
+
+  fun formatCatchSection(catchClause: KtCatchClause) {}
+
+  fun formatFinallySection(finallySection: KtFinallySection) {}
+
+  fun formatThrowExpression(expression: KtThrowExpression) {}
+
+  fun formatEnumEntry(enumEntry: KtEnumEntry) {}
+
+  fun formatTypeAlias(typeAlias: KtTypeAlias) {}
+
+  fun formatDestructuringDeclaration(destructuringDeclaration: KtDestructuringDeclaration) {}
+
+  fun formatDestructuringDeclarationEntry(multiDeclarationEntry: KtDestructuringDeclarationEntry) {}
+
+  fun formatPackageDirective(directive: KtPackageDirective) {}
+
+  fun formatImportList(importList: KtImportList) {}
+
+  fun formatImportDirective(directive: KtImportDirective) {}
+
+  fun formatAnnotatedExpression(expression: KtAnnotatedExpression) {}
+
+  fun formatAnnotation(annotation: KtAnnotation) {}
+
+  fun formatAnnotationUseSiteTarget(annotationTarget: KtAnnotationUseSiteTarget) {}
+
+  fun formatAnnotationEntry(annotationEntry: KtAnnotationEntry) {}
+
+  fun formatFileAnnotationList(fileAnnotationList: KtFileAnnotationList) {}
+
+  /**
+   * format each element in [list], with comma (,) {} tokens in-between.
+   *
+   * Example:
+   * ```
+   * a, b, c, 3, 4, 5
+   * ```
+   *
+   * Either the entire list fits in one line, or each element is put on its own line:
+   * ```
+   * a,
+   * b,
+   * c,
+   * 3,
+   * 4,
+   * 5
+   * ```
+   *
+   * Optionally include a prefix and postfix:
+   * ```
+   *   (
+   *     a,
+   *     b,
+   *     c,
+   * ) {}
+   * ```
+   *
+   * @param hasTrailingComma if true, each element is placed on its own line (even if they could've
+   *   fit in a single line) {}, and a trailing comma is emitted.
+   *
+   * Example:
+   * ```
+   * a,
+   * b,
+   * ```
+   *
+   * @param wrapInBlock if true, place all the elements in a block. When there's no [leadingBreak],
+   *   this will be negatively indented. Note that the [prefix] and [postfix] aren't included in the
+   *   block.
+   * @param leadingBreak if true, break before the first element.
+   * @param prefix if provided, emit this before the first element.
+   * @param postfix if provided, emit this after the last element (or trailing comma) {}.
+   * @param breakAfterPrefix if true, emit a break after [prefix], but before the start of the
+   *   block.
+   * @param breakBeforePostfix if true, place a break after the last element. Redundant when
+   *   [hasTrailingComma] is true.
+   * @return a [BreakTag] which can tell you if a break was taken, but only when the list doesn't
+   *   terminate in a negative closing indent.
+   *
+   * Example 1, this returns a BreakTag which tells you a break wasn't taken:
+   * ```
+   * (arg1, arg2) {}
+   * ```
+   *
+   * Example 2, this returns a BreakTag which tells you a break WAS taken:
+   * ```
+   * (
+   *     arg1,
+   *     arg2) {}
+   * ```
+   *
+   * Example 3, this returns null:
+   * ```
+   * (
+   *     arg1,
+   *     arg2,
+   * ) {}
+   * ```
+   *
+   * Example 4, this also returns null (similar to example 2, but Google style) {}:
+   * ```
+   * (
+   *     arg1,
+   *     arg2
+   * ) {}
+   * ```
+   */
+  fun formatCommaSeparatedList(
+      list: Iterable<PsiElement>,
+      hasTrailingComma: Boolean = false,
+      wrapInBlock: Boolean = true,
+      leadingBreak: Boolean = true,
+      prefix: String? = null,
+      postfix: String? = null,
+      breakAfterPrefix: Boolean = true,
+      breakBeforePostfix: Boolean = options.manageTrailingCommas,
+  ): BreakTag? {
+    return null
+  }
+
+  /**
+   * markForPartialFormat is used to delineate the smallest areas of code that must be formatted
+   * together.
+   *
+   * When only parts of the code are being formatted, the requested area is expanded until it's
+   * covered by an area marked by this method.
+   */
+  fun markForPartialFormat() {
+    if (!inExpression.last()) {
+      builder.markForPartialFormat()
+    }
+  }
+}

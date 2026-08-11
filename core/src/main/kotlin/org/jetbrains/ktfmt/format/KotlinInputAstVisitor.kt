@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package org.jetbrains.ktfmt.format
 
 import com.google.common.base.Throwables
 import com.google.common.collect.ImmutableList
 import com.google.googlejavaformat.Doc
-import com.google.googlejavaformat.Doc.Level
 import com.google.googlejavaformat.FormattingError
 import com.google.googlejavaformat.Indent
 import com.google.googlejavaformat.Indent.Const.ZERO
@@ -110,7 +111,6 @@ import org.jetbrains.kotlin.psi.KtSuperTypeCallEntry
 import org.jetbrains.kotlin.psi.KtSuperTypeList
 import org.jetbrains.kotlin.psi.KtThisExpression
 import org.jetbrains.kotlin.psi.KtThrowExpression
-import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import org.jetbrains.kotlin.psi.KtTryExpression
 import org.jetbrains.kotlin.psi.KtTypeAlias
 import org.jetbrains.kotlin.psi.KtTypeArgumentList
@@ -134,38 +134,41 @@ import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlin.psi.psiUtil.startsWithComment
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 import org.jetbrains.kotlin.psi.stubs.impl.KotlinPlaceHolderStubImpl
+import org.jetbrains.ktfmt.format.visitor.AbstractFormatterVisitor
+import org.jetbrains.ktfmt.format.visitor.FileFormatter
+import org.jetbrains.ktfmt.format.visitor.asIndent
+import org.jetbrains.ktfmt.format.visitor.block
+import org.jetbrains.ktfmt.format.visitor.fenceComments
+import org.jetbrains.ktfmt.format.visitor.sync
+import org.jetbrains.ktfmt.format.visitor.token
 import org.jetbrains.ktfmt.util.CONTEXT_PARAMETER_LIST
 import org.jetbrains.ktfmt.util.listToVisit
 import org.jetbrains.ktfmt.util.ownValOrVarKeywordText
 
 /** An AST visitor that builds a stream of {@link Op}s to format. */
 open class KotlinInputAstVisitor(
-    private val options: FormattingOptions,
-    private val builder: OpsBuilder,
-) : KtTreeVisitorVoid() {
-
-  internal open val forceAnnotationBreaks: Boolean = false
+    override val options: FormattingOptions,
+    override val builder: OpsBuilder,
+) : AbstractFormatterVisitor() {
 
   /** Standard indentation for a block */
-  private val blockIndent: Indent.Const = Indent.Const.make(options.blockIndent, 1)
+  private val blockIndent: Indent.Const = options.blockIndent.asIndent
 
   /**
    * Standard indentation for a long expression or function call, it is different than block
    * indentation on purpose
    */
-  private val expressionBreakIndent: Indent.Const = Indent.Const.make(options.continuationIndent, 1)
+  override val expressionBreakIndent: Indent.Const = options.continuationIndent.asIndent
 
   private val blockPlusExpressionBreakIndent: Indent.Const =
-      Indent.Const.make(options.blockIndent + options.continuationIndent, 1)
+      (options.blockIndent + options.continuationIndent).asIndent
 
-  private val doubleExpressionBreakIndent: Indent.Const =
-      Indent.Const.make(options.continuationIndent, 2)
+  private val doubleExpressionBreakIndent: Indent.Const = (options.continuationIndent * 2).asIndent
 
-  private val expressionBreakNegativeIndent: Indent.Const =
-      Indent.Const.make(-options.continuationIndent, 1)
+  override val expressionBreakNegativeIndent: Indent.Const = (-options.continuationIndent).asIndent
 
   /** A record of whether we have visited into an expression. */
-  private val inExpression = ArrayDeque(ImmutableList.of(false))
+  override val inExpression = ArrayDeque(ImmutableList.of(false))
 
   /** Tracks whether we are handling an import directive */
   private var inImport = false
@@ -324,6 +327,7 @@ open class KotlinInputAstVisitor(
     builder.block(ZERO, isEnabled = forceTrailingBreak) {
       if (contextReceiverList != null) {
         visitContextReceiverList(contextReceiverList)
+        builder.forcedBreak()
       }
       if (modifierList != null) {
         visitModifierList(modifierList)
@@ -392,10 +396,10 @@ open class KotlinInputAstVisitor(
             visitLambdaOrScopingFunction(bodyExpression)
           } else if (isChainedScopingFunction(bodyExpression)) {
             visitChainedScopingFunction(bodyExpression, emitLeadingBreak = true)
-          } else if (isBlockLikeCall(bodyExpression)) {
+          } else if (bodyExpression.isBlockLikeCall) {
             builder.space()
             visit(bodyExpression)
-          } else if (isChainedBlockLikeCall(bodyExpression)) {
+          } else if (bodyExpression.isChainedBlockLikeCall) {
             visitChainedBlockLikeCall(bodyExpression, emitLeadingBreak = true)
           } else {
             builder.block(expressionBreakIndent) {
@@ -478,10 +482,6 @@ open class KotlinInputAstVisitor(
     }
   }
 
-  fun visitBackingField(backingField: KtBackingField) {
-    emitBackingField(backingField)
-  }
-
   /**
    * Example: "com.facebook.bla.bla" in imports or "a.b.c.d" in expressions.
    *
@@ -517,11 +517,11 @@ open class KotlinInputAstVisitor(
         }
       }
       isChainedScopingFunction(expression) &&
-          isMultilineScopingFunction(chainRoot(expression)) &&
+          isMultilineScopingFunction(expression.chainRoot) &&
           chainedSelectorsHaveNoValueArguments(expression) -> {
         visitChainedScopingFunction(expression, emitLeadingBreak = false)
       }
-      isChainedBlockLikeCall(expression) -> {
+      expression.isChainedBlockLikeCall -> {
         visitChainedBlockLikeCall(expression, emitLeadingBreak = false)
       }
       else -> {
@@ -549,7 +549,7 @@ open class KotlinInputAstVisitor(
   private fun emitQualifiedExpression(expression: KtExpression) {
     val parts = breakIntoParts(expression)
     // whether we want to make a lambda look like a block, this make Kotlin DSLs look as expected
-    val useBlockLikeLambdaStyle = parts.last().isLambda() && parts.count { it.isLambda() } == 1
+    val useBlockLikeLambdaStyle = parts.last().isLambda && parts.count { it.isLambda } == 1
     val groupingInfos = computeGroupingInfo(parts, useBlockLikeLambdaStyle)
     builder.block(expressionBreakIndent) {
       val nameTag = genSym() // allows adjusting arguments indentation if a break will be made
@@ -588,7 +588,7 @@ open class KotlinInputAstVisitor(
               // manages trailing commas, exploded chained calls keep the regular extra indent.
               val isLastPartOrBlockLikeCall =
                   index == parts.size - 1 ||
-                      !options.manageTrailingCommas && isBlockLikeCall(selectorExpression)
+                      !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
               val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
               val lambdaIndentElse = if (isTrailingLambda) expressionBreakNegativeIndent else ZERO
               val negativeLambdaIndentElse = if (isTrailingLambda) expressionBreakIndent else ZERO
@@ -852,7 +852,7 @@ open class KotlinInputAstVisitor(
             arguments.first().getArgumentExpression() is KtLambdaExpression &&
             arguments.first().getArgumentName() == null
     val hasTrailingComma = list.trailingComma != null
-    val hasEmptyParens = list.hasEmptyParens()
+    val hasEmptyParens = list.hasEmptyParens
 
     val wrapInBlock: Boolean
     val breakBeforePostfix: Boolean
@@ -872,8 +872,8 @@ open class KotlinInputAstVisitor(
               arguments.any { argument ->
                 val argumentExpression = argument.getArgumentExpression()
                 argumentExpression != null &&
-                    (isBlockLikeCall(argumentExpression) ||
-                        isChainedBlockLikeCall(argumentExpression))
+                    (argumentExpression.isBlockLikeCall ||
+                        argumentExpression.isChainedBlockLikeCall)
               }
       wrapInBlock = !options.manageTrailingCommas
       breakBeforePostfix =
@@ -1479,10 +1479,10 @@ open class KotlinInputAstVisitor(
           visit(delegate)
         } else if (delegateExpr != null && isChainedScopingFunction(delegateExpr)) {
           visitChainedScopingFunction(delegateExpr, emitLeadingBreak = true)
-        } else if (isBlockLikeCall(delegateExpr)) {
+        } else if (delegateExpr.isBlockLikeCall) {
           builder.space()
           visit(delegate)
-        } else if (delegateExpr != null && isChainedBlockLikeCall(delegateExpr)) {
+        } else if (delegateExpr != null && delegateExpr.isChainedBlockLikeCall) {
           visitChainedBlockLikeCall(delegateExpr, emitLeadingBreak = true)
         } else {
           builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
@@ -1498,10 +1498,10 @@ open class KotlinInputAstVisitor(
           visitLambdaOrScopingFunction(initializer)
         } else if (isChainedScopingFunction(initializer)) {
           visitChainedScopingFunction(initializer, emitLeadingBreak = true)
-        } else if (isBlockLikeCall(initializer)) {
+        } else if (initializer.isBlockLikeCall) {
           builder.space()
           visit(initializer)
-        } else if (isChainedBlockLikeCall(initializer)) {
+        } else if (initializer.isChainedBlockLikeCall) {
           visitChainedBlockLikeCall(initializer, emitLeadingBreak = true)
         } else {
           builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
@@ -1584,10 +1584,10 @@ open class KotlinInputAstVisitor(
           visitLambdaOrScopingFunction(initializer)
         } else if (isChainedScopingFunction(initializer)) {
           visitChainedScopingFunction(initializer, emitLeadingBreak = true)
-        } else if (isBlockLikeCall(initializer)) {
+        } else if (initializer.isBlockLikeCall) {
           builder.space()
           visit(initializer)
-        } else if (isChainedBlockLikeCall(initializer)) {
+        } else if (initializer.isChainedBlockLikeCall) {
           visitChainedBlockLikeCall(initializer, emitLeadingBreak = true)
         } else {
           builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
@@ -1687,54 +1687,7 @@ open class KotlinInputAstVisitor(
     contract { returns(true) implies (expression is KtQualifiedExpression) }
 
     if (expression !is KtQualifiedExpression) return false
-    return isLambdaOrScopingFunction(chainRoot(expression))
-  }
-
-  /** Returns the innermost receiver of a (possibly nested) qualified [expression]. */
-  private fun chainRoot(expression: KtExpression): KtExpression {
-    var root: KtExpression = expression
-    while (root is KtQualifiedExpression) {
-      root = root.receiverExpression
-    }
-    return root
-  }
-
-  /**
-   * Returns true when [expression] is a call that is forced onto multiple lines regardless of the
-   * line width, either because its value argument list has a trailing comma (e.g. `foo(\n 1,\n
-   * 2,\n)`) or because one of its arguments is itself a block-like multiline call.
-   *
-   * Such calls are rendered "block-like": they stay on the same line as the preceding `=`/`by`
-   * operator (instead of breaking and indenting after it), and any chained selectors break onto
-   * their own line, mirroring how scoping functions and lambdas are handled.
-   */
-  @OptIn(ExperimentalContracts::class)
-  private fun isBlockLikeCall(expression: KtExpression?): Boolean {
-    contract { returns(true) implies (expression is KtCallExpression) }
-
-    if (expression == null) return false
-    val prev = expression.getPrevSiblingIgnoringWhitespace()
-    if (prev is PsiComment) {
-      return false // Leading comments cause weird indentation; keep the default layout.
-    }
-
-    if (expression !is KtCallExpression) return false
-    val valueArgumentList = expression.valueArgumentList ?: return false
-    if (valueArgumentList.trailingComma != null) return true
-    return valueArgumentList.arguments.any { argument ->
-      val argumentExpression = argument.getArgumentExpression()
-      argumentExpression != null &&
-          (isBlockLikeCall(argumentExpression) || isChainedBlockLikeCall(argumentExpression))
-    }
-  }
-
-  /** Returns true when [expression] is a chain whose innermost receiver is a [isBlockLikeCall]. */
-  @OptIn(ExperimentalContracts::class)
-  private fun isChainedBlockLikeCall(expression: KtExpression): Boolean {
-    contract { returns(true) implies (expression is KtQualifiedExpression) }
-
-    if (expression !is KtQualifiedExpression) return false
-    return isBlockLikeCall(chainRoot(expression))
+    return isLambdaOrScopingFunction(expression.chainRoot)
   }
 
   /**
@@ -1923,6 +1876,7 @@ open class KotlinInputAstVisitor(
     builder.block(ZERO) {
       if (contextReceiverList != null) {
         visitContextReceiverList(contextReceiverList)
+        builder.forcedBreak()
       }
       if (modifierList != null) {
         visitModifierList(modifierList)
@@ -2954,12 +2908,12 @@ open class KotlinInputAstVisitor(
       }
 
       builder.blankLineWanted(
-          when {
-            isFirst -> OpsBuilder.BlankLineWanted.NO
-            child is PsiComment -> continue
-            child is KtScript && importListEmpty -> OpsBuilder.BlankLineWanted.PRESERVE
-            else -> OpsBuilder.BlankLineWanted.YES
-          },
+        when {
+          isFirst -> OpsBuilder.BlankLineWanted.NO
+          child is PsiComment -> continue
+          child is KtScript && importListEmpty -> OpsBuilder.BlankLineWanted.PRESERVE
+          else -> OpsBuilder.BlankLineWanted.YES
+        },
       )
 
       builder.markForPartialFormat()
@@ -2986,7 +2940,7 @@ open class KotlinInputAstVisitor(
       } else if (lastChildIsContextReceiver) {
         builder.blankLineWanted(OpsBuilder.BlankLineWanted.NO)
       } else if (
-          child !is PsiComment && (childGetsBlankLineBefore || lastChildHadBlankLineBefore)
+        child !is PsiComment && (childGetsBlankLineBefore || lastChildHadBlankLineBefore)
       ) {
         builder.blankLineWanted(OpsBuilder.BlankLineWanted.YES)
       }
@@ -2996,72 +2950,11 @@ open class KotlinInputAstVisitor(
       builder.markForPartialFormat()
       lastChildHadBlankLineBefore = childGetsBlankLineBefore
       lastChildIsContextReceiver =
-          child is KtScriptInitializer &&
-              child.firstChild?.firstChild?.firstChild?.text == "context"
+        child is KtScriptInitializer &&
+                child.firstChild?.firstChild?.firstChild?.text == "context"
       first = false
     }
     markForPartialFormat()
-  }
-
-  /**
-   * markForPartialFormat is used to delineate the smallest areas of code that must be formatted
-   * together.
-   *
-   * When only parts of the code are being formatted, the requested area is expanded until it's
-   * covered by an area marked by this method.
-   */
-  private fun markForPartialFormat() {
-    if (!inExpression.last()) {
-      builder.markForPartialFormat()
-    }
-  }
-
-  /**
-   * Emit a [Doc.Token].
-   *
-   * @param token the [String] to wrap in a [Doc.Token]
-   * @param plusIndentCommentsBefore extra block for comments before this token
-   */
-  private fun OpsBuilder.token(token: String, plusIndentCommentsBefore: Indent = ZERO) {
-    token(
-        token,
-        Doc.Token.RealOrImaginary.REAL,
-        plusIndentCommentsBefore,
-        /* breakAndIndentTrailingComment */ Optional.empty(),
-    )
-  }
-
-  /**
-   * Opens a new level, emits into it and closes it.
-   *
-   * This is a helper method to make it easier to keep track of [OpsBuilder.open] and
-   * [OpsBuilder.close] calls
-   *
-   * @param plusIndent the block level to pass to the block
-   * @param block a code block to be run in this block level
-   */
-  private fun OpsBuilder.block(
-      plusIndent: Indent = ZERO,
-      isEnabled: Boolean = true,
-      block: () -> Unit,
-  ) {
-    if (isEnabled) {
-      open(plusIndent)
-    }
-    block()
-    if (isEnabled) {
-      close()
-    }
-  }
-
-  /** Helper method to sync the current offset to match any element in the AST */
-  private fun OpsBuilder.sync(psiElement: PsiElement) {
-    sync(psiElement.startOffset)
-  }
-
-  /** Prevent subsequent comments from being moved ahead of this point, into parent [Level]s. */
-  private fun OpsBuilder.fenceComments() {
-    addAll(FenceCommentsOp.AS_LIST)
   }
 
   /**
