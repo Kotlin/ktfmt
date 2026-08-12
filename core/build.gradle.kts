@@ -15,6 +15,7 @@
  */
 
 import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.ktfmt.GenerateKtfmtFileTask
 
@@ -100,6 +101,8 @@ tasks {
 
 kotlin {
   @OptIn(ExperimentalAbiValidation::class) abiValidation { enabled = true }
+
+  compilerOptions { jvmDefault = JvmDefaultMode.NO_COMPATIBILITY }
 
   val javaVersion: String = rootProject.libs.versions.java.get()
   jvmToolchain(javaVersion.toInt())
