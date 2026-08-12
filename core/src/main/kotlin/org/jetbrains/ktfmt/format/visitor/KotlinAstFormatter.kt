@@ -85,7 +85,40 @@ import org.jetbrains.kotlin.psi.KtWhenConditionWithExpression
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.KtWhileExpression
 import org.jetbrains.ktfmt.format.FormattingOptions
+import org.jetbrains.ktfmt.format.KotlinLangInputAstVisitor
+import org.jetbrains.ktfmt.format.KotlinInputAstVisitor
 
+/**
+ * Super-interface for gradual evolution of ktfmt.
+ *
+ * Impl note:
+ * Before that, it was a single 3k LOC KotlinInputAstVisitor which was fine as it's the only implementation.
+ *
+ * Now we are gradually experimenting with new kotlinlang style, so we need an independent yet not-fully-copypasted reusable
+ * implementation, hence the current approach:
+ *
+ * - KotlinAstFormatter is the base interface for everything. It's fully abstract
+ * - We branch it out into specialized interfaces, for example:
+ *     - TypeFormatter
+ *     - ListFormatter
+ *     - AnnotationFormatter
+ * - They provide (using default implementations in interfaces) the formatting
+ *     only for specific parts of Kotlin. It just makes thing more maintainable/separable
+ * - We have two final implementations:
+ *     - [Original ktfmt][KotlinInputAstVisitor] implementation: it just implements all the interfaces.
+ *          Ovderrides everything, the old implementation is still here
+ *     - [KotlinLang one][KotlinLangInputAstVisitor] that, if needed, re-implements some specific subinterfaces (e.g. KotlinLangListFormatter)
+ *         and overrides things that don't have a subinterface
+ *
+ * - To make it work with clashing declaration, we are introducing a one more intermediate vistior layer (the current one),
+ *      so things like ListFormatter can actually redefine the behaviour of KotlinInputAstVisitor
+ *
+ *  Viola, we can evolve KLIAV incrementally!
+ *
+ *  Another important thing:
+ *  - We have an intermediary AbstractFormatterVisitor to have less dependencies on PSI and be able
+ *    to gradually switch to lighttree or a KMP parser
+ */
 interface KotlinAstFormatter {
   val options: FormattingOptions
   val builder: OpsBuilder
