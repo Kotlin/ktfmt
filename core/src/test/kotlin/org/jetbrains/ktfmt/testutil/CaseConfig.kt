@@ -42,14 +42,25 @@ class CaseConfig(val options: FormattingOptions, val checkIdempotency: Boolean) 
 
     fun parse(code: String, origin: Path? = null): ParsedDirectives {
       val header = code.lines().takeWhile { it.startsWith("//") }
+      var directivesEnded = false
       val parsedDirectives =
           header
               .mapIndexedNotNull { lineNumber, line ->
-                val (name, value) =
-                    DIRECTIVE_REGEX.matchEntire(line)?.destructured ?: return@mapIndexedNotNull null
+                val matchResult = DIRECTIVE_REGEX.matchEntire(line)
+                if (matchResult == null) {
+                  directivesEnded = true
+                  return@mapIndexedNotNull null
+                }
+                val (name, value) = matchResult.destructured
                 val directive =
                     DIRECTIVES[name]
-                        ?: error("$origin:${lineNumber + 1}: unknown directive '$name'. ")
+                        ?: when {
+                          directivesEnded ->
+                              error(
+                                  "$origin:${lineNumber + 1}: directive '$name' should be listed first in the file",
+                              )
+                          else -> error("$origin:${lineNumber + 1}: unknown directive '$name'")
+                        }
                 directive to value
               }
               .toMap()

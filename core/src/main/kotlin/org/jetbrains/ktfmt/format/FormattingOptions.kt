@@ -218,7 +218,6 @@ data class FormattingOptions(
           this.debuggingPrintOpsAfterFormatting = debuggingPrintOpsAfterFormatting
         }
 
-    /** @see FormattingOptions.experimentalEngine */
     internal fun useExperimentalEngine(useExperimentalEngine: Boolean): Builder = apply {
       this.useExperimentalEngine = useExperimentalEngine
     }
