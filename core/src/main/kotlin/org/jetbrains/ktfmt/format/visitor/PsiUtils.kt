@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jetbrains.ktfmt.format
+package org.jetbrains.ktfmt.format.visitor
 
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract

@@ -129,37 +129,37 @@ interface KotlinAstFormatter {
   /** A record of whether we have visited into an expression. */
   val inExpression: ArrayDeque<Boolean>
 
-  fun format(element: PsiElement?) {}
+  fun format(element: PsiElement?)
 
-  fun formatKtFile(file: KtFile) {}
+  fun formatKtFile(file: KtFile)
 
-  fun formatKtScript(script: KtScript) {}
+  fun formatKtScript(script: KtScript)
 
   fun formatNamedFunction(function: KtNamedFunction) {}
 
-  fun formatTypeReference(type: KtTypeReference) {}
+  fun formatTypeReference(type: KtTypeReference)
 
-  fun formatDynamicType(type: KtDynamicType) {}
+  fun formatDynamicType(type: KtDynamicType)
 
-  fun formatNullableType(type: KtNullableType) {}
+  fun formatNullableType(type: KtNullableType)
 
-  fun formatUserType(type: KtUserType) {}
+  fun formatUserType(type: KtUserType)
 
-  fun formatIntersectionType(type: KtIntersectionType) {}
+  fun formatIntersectionType(type: KtIntersectionType)
 
-  fun formatTypeProjection(type: KtTypeProjection) {}
+  fun formatTypeProjection(type: KtTypeProjection)
 
-  fun formatTypeArgumentList(list: KtTypeArgumentList) {}
+  fun formatTypeArgumentList(list: KtTypeArgumentList)
 
-  fun formatTypeParameterList(list: KtTypeParameterList) {}
+  fun formatTypeParameterList(list: KtTypeParameterList)
 
-  fun formatTypeParameter(parameter: KtTypeParameter) {}
+  fun formatTypeParameter(parameter: KtTypeParameter)
 
-  fun formatTypeConstraintList(list: KtTypeConstraintList) {}
+  fun formatTypeConstraintList(list: KtTypeConstraintList)
 
-  fun formatTypeConstraint(constraint: KtTypeConstraint) {}
+  fun formatTypeConstraint(constraint: KtTypeConstraint)
 
-  fun formatFunctionType(type: KtFunctionType) {}
+  fun formatFunctionType(type: KtFunctionType)
 
   fun formatClassOrObject(classOrObject: KtClassOrObject) {}
 
@@ -175,7 +175,7 @@ interface KotlinAstFormatter {
 
   fun formatArgument(argument: KtValueArgument) {}
 
-  fun formatSuperTypeList(list: KtSuperTypeList) {}
+  fun formatSuperTypeList(list: KtSuperTypeList)
 
   fun formatSuperTypeCallEntry(call: KtSuperTypeCallEntry) {}
 
@@ -183,15 +183,13 @@ interface KotlinAstFormatter {
 
   fun formatClassBody(body: KtClassBody) {}
 
-  fun formatValueArgumentList(list: KtValueArgumentList): BreakTag? {
-    return null
-  }
+  fun formatValueArgumentList(list: KtValueArgumentList): BreakTag?
 
-  fun formatModifierList(list: KtModifierList) {}
+  fun formatModifierList(list: KtModifierList)
 
-  fun formatContextReceiverList(contextReceiverList: KtContextReceiverList) {}
+  fun formatContextReceiverList(contextReceiverList: KtContextReceiverList)
 
-  fun formatParameterList(list: KtParameterList) {}
+  fun formatParameterList(list: KtParameterList)
 
   fun formatParameter(parameter: KtParameter) {}
 
@@ -277,7 +275,7 @@ interface KotlinAstFormatter {
 
   fun formatPackageDirective(directive: KtPackageDirective) {}
 
-  fun formatImportList(importList: KtImportList) {}
+  fun formatImportList(importList: KtImportList)
 
   fun formatImportDirective(directive: KtImportDirective) {}
 
@@ -289,7 +287,7 @@ interface KotlinAstFormatter {
 
   fun formatAnnotationEntry(annotationEntry: KtAnnotationEntry) {}
 
-  fun formatFileAnnotationList(fileAnnotationList: KtFileAnnotationList) {}
+  fun formatFileAnnotationList(fileAnnotationList: KtFileAnnotationList)
 
   /**
    * format each element in [list], with comma (,) {} tokens in-between.
@@ -377,9 +375,7 @@ interface KotlinAstFormatter {
       postfix: String? = null,
       breakAfterPrefix: Boolean = true,
       breakBeforePostfix: Boolean = options.manageTrailingCommas,
-  ): BreakTag? {
-    return null
-  }
+  ): BreakTag?
 
   /**
    * markForPartialFormat is used to delineate the smallest areas of code that must be formatted

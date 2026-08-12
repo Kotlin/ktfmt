@@ -124,6 +124,12 @@ import org.jetbrains.ktfmt.format.visitor.ListFormatter
 import org.jetbrains.ktfmt.format.visitor.TypeFormatter
 import org.jetbrains.ktfmt.format.visitor.asIndent
 import org.jetbrains.ktfmt.format.visitor.block
+import org.jetbrains.ktfmt.format.visitor.callExpression
+import org.jetbrains.ktfmt.format.visitor.chainRoot
+import org.jetbrains.ktfmt.format.visitor.hasEmptyParens
+import org.jetbrains.ktfmt.format.visitor.isBlockLikeCall
+import org.jetbrains.ktfmt.format.visitor.isChainedBlockLikeCall
+import org.jetbrains.ktfmt.format.visitor.isLambda
 import org.jetbrains.ktfmt.format.visitor.fenceComments
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token

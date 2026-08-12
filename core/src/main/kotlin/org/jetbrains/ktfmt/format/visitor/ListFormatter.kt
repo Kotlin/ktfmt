@@ -19,9 +19,6 @@ import org.jetbrains.kotlin.psi.KtTypeConstraintList
 import org.jetbrains.kotlin.psi.KtTypeParameterList
 import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.psiUtil.children
-import org.jetbrains.ktfmt.format.hasEmptyParens
-import org.jetbrains.ktfmt.format.isBlockLikeCall
-import org.jetbrains.ktfmt.format.isChainedBlockLikeCall
 import org.jetbrains.ktfmt.util.listToVisit
 
 interface ListFormatter : KotlinAstFormatter {
