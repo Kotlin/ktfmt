@@ -138,7 +138,7 @@ publishing {
             "A program that reformats Kotlin source code to comply with the common community standard for Kotlin code conventions."
         url = "https://github.com/Kotlin/ktfmt"
         inceptionYear = "2019"
-        developers { developer { name = "Kotlin./g" } }
+        developers { developer { name = "Kotlin" } }
         licenses {
           license {
             name = "The Apache License, Version 2.0"
