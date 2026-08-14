@@ -33,10 +33,6 @@ import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.stubs.PsiFileStubImpl
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.psi.KtAnnotatedExpression
-import org.jetbrains.kotlin.psi.KtAnnotation
-import org.jetbrains.kotlin.psi.KtAnnotationEntry
-import org.jetbrains.kotlin.psi.KtAnnotationUseSiteTarget
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtBackingField
 import org.jetbrains.kotlin.psi.KtBinaryExpression
@@ -115,6 +111,7 @@ import org.jetbrains.kotlin.psi.psiUtil.startsWithComment
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
 import org.jetbrains.kotlin.psi.stubs.impl.KotlinPlaceHolderStubImpl
 import org.jetbrains.ktfmt.format.visitor.AbstractFormatterVisitor
+import org.jetbrains.ktfmt.format.visitor.AnnotationFormatter
 import org.jetbrains.ktfmt.format.visitor.ExpressionFormatter
 import org.jetbrains.ktfmt.format.visitor.FileFormatter
 import org.jetbrains.ktfmt.format.visitor.ListFormatter
@@ -143,7 +140,13 @@ import org.jetbrains.ktfmt.util.ownValOrVarKeywordText
 open class KotlinInputAstVisitor(
     override val options: FormattingOptions,
     override val builder: OpsBuilder,
-) : AbstractFormatterVisitor(), FileFormatter, TypeFormatter, ListFormatter, ExpressionFormatter {
+) :
+    AbstractFormatterVisitor(),
+    AnnotationFormatter,
+    ExpressionFormatter,
+    FileFormatter,
+    ListFormatter,
+    TypeFormatter {
 
   /** Standard indentation for a block */
   private val blockIndent: Indent.Const = options.blockIndent.asIndent
@@ -635,6 +638,26 @@ open class KotlinInputAstVisitor(
           lambdaArguments,
       )
     }
+  }
+
+  override fun formatCallElement(
+      callee: KtExpression?,
+      typeArgumentList: KtTypeArgumentList?,
+      argumentList: KtValueArgumentList?,
+      lambdaArguments: List<KtLambdaArgument>,
+      argumentsIndent: Indent,
+      lambdaIndent: Indent,
+      negativeLambdaIndent: Indent,
+  ) {
+    visitCallElement(
+        callee,
+        typeArgumentList,
+        argumentList,
+        lambdaArguments,
+        argumentsIndent,
+        lambdaIndent,
+        negativeLambdaIndent,
+    )
   }
 
   /**
@@ -1515,117 +1538,6 @@ open class KotlinInputAstVisitor(
     // Force a newline afterwards.
     builder.guessToken(";")
     builder.forcedBreak()
-  }
-
-  /**
-   * Example:
-   * ```
-   * @SuppressLint("MagicNumber")
-   * print(10)
-   * ```
-   *
-   * in
-   *
-   * ```
-   * fun f() {
-   *   @SuppressLint("MagicNumber")
-   *   print(10)
-   * }
-   * ```
-   */
-  override fun visitAnnotatedExpression(expression: KtAnnotatedExpression) {
-    builder.sync(expression)
-    builder.block(ZERO) {
-      val baseExpression = expression.baseExpression
-
-      builder.block(ZERO) {
-        val annotationEntries = expression.annotationEntries
-        for (annotationEntry in annotationEntries) {
-          if (annotationEntry !== annotationEntries.first()) {
-            builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
-          }
-          visit(annotationEntry)
-        }
-      }
-
-      // Binary expressions in a block have a different meaning according to their formatting.
-      // If there in the line above, they refer to the entire expression, if they're in the same
-      // line then only to the first operand of the operator.
-      // We force a break to avoid such semantic changes
-      when {
-        (baseExpression is KtBinaryExpression || baseExpression is KtBinaryExpressionWithTypeRHS) &&
-            expression.parent is KtBlockExpression -> builder.forcedBreak()
-        baseExpression is KtLambdaExpression -> builder.space()
-        baseExpression is KtReturnExpression -> builder.forcedBreak()
-        else -> builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
-      }
-
-      visit(expression.baseExpression)
-    }
-  }
-
-  /**
-   * For example, @field:[Inject Named("WEB_VIEW")]
-   *
-   * A KtAnnotation is used only to group multiple annotations with the same use-site-target. It
-   * only appears in a modifier list since annotated expressions do not have use-site-targets.
-   */
-  override fun visitAnnotation(annotation: KtAnnotation) {
-    builder.sync(annotation)
-    builder.block(ZERO) {
-      builder.token("@")
-      val useSiteTarget = annotation.useSiteTarget
-      if (useSiteTarget != null) {
-        visit(useSiteTarget)
-        builder.token(":")
-      }
-      builder.block(expressionBreakIndent) {
-        builder.token("[")
-
-        builder.block(ZERO) {
-          var first = true
-          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
-          for (value in annotation.entries) {
-            if (!first) {
-              builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
-            }
-            first = false
-
-            visit(value)
-          }
-        }
-      }
-      builder.token("]")
-    }
-    builder.forcedBreak()
-  }
-
-  /** For example, 'field' in @field:[Inject Named("WEB_VIEW")] */
-  override fun visitAnnotationUseSiteTarget(
-      annotationTarget: KtAnnotationUseSiteTarget,
-      data: Void?,
-  ): Void? {
-    builder.token(annotationTarget.getAnnotationUseSiteTarget().renderName)
-    return null
-  }
-
-  /** For example `@Magic` or `@Fred(1, 5)` */
-  override fun visitAnnotationEntry(annotationEntry: KtAnnotationEntry) {
-    builder.sync(annotationEntry)
-    if (annotationEntry.atSymbol != null) {
-      builder.token("@")
-    }
-    val useSiteTarget = annotationEntry.useSiteTarget
-    if (useSiteTarget != null && useSiteTarget.parent == annotationEntry) {
-      visit(useSiteTarget)
-      builder.token(":")
-    }
-    visitCallElement(
-        annotationEntry.calleeExpression,
-        null, // Type-arguments are included in the annotation's callee expression.
-        annotationEntry.valueArgumentList,
-        listOf(),
-    )
   }
 
   override fun visitSuperTypeCallEntry(call: KtSuperTypeCallEntry) {

@@ -1,0 +1,36 @@
+private fun Window.asWindowAnimationQueue(): WindowAnimationQueue =
+    @Suppress("UnsafeCastFromDynamic") asDynamic().coroutineAnimationQueue
+        ?: WindowAnimationQueue(this).also {
+          asDynamic().coroutineAnimationQueue = it
+        }
+
+fun multipleAnnotations(): Int = @Suppress("A") @Suppress("B") compute()
+
+fun annotationOnLambda() {
+  runCatching(@Suppress("UNUSED") { println("hi") })
+}
+
+fun annotationOnBinaryExpression() {
+  @Suppress("DEPRECATION") a + b
+
+  @Suppress("DEPRECATION")
+  a + b
+}
+
+fun annotationOnReturn(): Int {
+  @Suppress("RETURN")
+  return 42
+}
+
+val annotationOnWhen =
+    @Suppress("WHEN")
+    when (value) {
+      1 -> "one"
+      else -> "many"
+    }
+
+val annotationOnObject =
+    @Suppress("UNUSED") @MyCustomAnnotation
+    object {
+      fun foo() = 42
+    }

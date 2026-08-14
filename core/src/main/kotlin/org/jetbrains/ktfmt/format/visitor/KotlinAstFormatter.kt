@@ -1,6 +1,7 @@
 package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.Indent
+import com.google.googlejavaformat.Indent.Const.ZERO
 import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.Output.BreakTag
 import java.util.ArrayDeque
@@ -44,6 +45,7 @@ import org.jetbrains.kotlin.psi.KtImportList
 import org.jetbrains.kotlin.psi.KtIntersectionType
 import org.jetbrains.kotlin.psi.KtIsExpression
 import org.jetbrains.kotlin.psi.KtLabeledExpression
+import org.jetbrains.kotlin.psi.KtLambdaArgument
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtModifierList
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -390,21 +392,13 @@ interface KotlinAstFormatter {
     TODO("Unreachable code path")
   }
 
-  fun formatAnnotatedExpression(expression: KtAnnotatedExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatAnnotatedExpression(expression: KtAnnotatedExpression)
 
-  fun formatAnnotation(annotation: KtAnnotation) {
-    TODO("Unreachable code path")
-  }
+  fun formatAnnotation(annotation: KtAnnotation)
 
-  fun formatAnnotationUseSiteTarget(annotationTarget: KtAnnotationUseSiteTarget) {
-    TODO("Unreachable code path")
-  }
+  fun formatAnnotationUseSiteTarget(annotationTarget: KtAnnotationUseSiteTarget)
 
-  fun formatAnnotationEntry(annotationEntry: KtAnnotationEntry) {
-    TODO("Unreachable code path")
-  }
+  fun formatAnnotationEntry(annotationEntry: KtAnnotationEntry)
 
   fun formatFileAnnotationList(fileAnnotationList: KtFileAnnotationList)
 
@@ -540,4 +534,20 @@ interface KotlinAstFormatter {
       builder.markForPartialFormat()
     }
   }
+
+  /**
+   * Examples `foo<T>(a, b)`, `foo(a)`, `boo()`, `super(a)`
+   *
+   * @param lambdaIndent how to indent [lambdaArguments], if present
+   * @param negativeLambdaIndent the negative indentation of [lambdaIndent]
+   */
+  fun formatCallElement(
+      callee: KtExpression?,
+      typeArgumentList: KtTypeArgumentList?,
+      argumentList: KtValueArgumentList?,
+      lambdaArguments: List<KtLambdaArgument>,
+      argumentsIndent: Indent = expressionBreakIndent,
+      lambdaIndent: Indent = ZERO,
+      negativeLambdaIndent: Indent = ZERO,
+  )
 }
