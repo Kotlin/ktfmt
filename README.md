@@ -93,6 +93,12 @@ following subset of editorconfig properties:
 | `ij_continuation_indent_size`                             | will override the continuation indent                                                            |
 | `ktfmt_trailing_comma_management_strategy`                | one of `none`, `only_add` or `complete`<br/>will override the trailing comma management strategy |
 
+When formatting source from stdin, pass `--stdin-name=<path>` to resolve EditorConfig settings as if the input were located at that path. The named file does not need to exist and is not read or modified.
+
+```shell
+ktfmt --enable-editorconfig --stdin-name="$PWD/src/Foo.kt" -
+```
+
 #### Preserving Lambda Line Breaks
 
 By default, `ktfmt` respects user-authored line breaks inside lambda bodies. This is useful for DSLs

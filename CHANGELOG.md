@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Support selected-range formatting in the IntelliJ plugin.
 - GraalVM native image support
 - Support val/var keywords in destructuring entries (https://github.com/facebook/ktfmt/pull/637)
+- Use `--stdin-name` as the EditorConfig lookup path when formatting source from stdin.
 
 ### Changed
 
