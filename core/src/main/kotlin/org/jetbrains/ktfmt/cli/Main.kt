@@ -146,9 +146,16 @@ class Main(
   private fun format(file: File?, args: ParsedArgs): Boolean {
     val fileName = file?.toString() ?: args.stdinName ?: "<stdin>"
     try {
+      val editorConfigFile = file ?: args.stdinName?.takeIf { it.isNotEmpty() }?.let(::File)
       val formattingOptions =
-          if (file == null || !args.editorConfig) args.formattingOptions
-          else EditorConfigResolver.resolveFormattingOptions(file, args.formattingOptions)
+          if (!args.editorConfig || editorConfigFile == null) {
+            args.formattingOptions
+          } else {
+            EditorConfigResolver.resolveFormattingOptions(
+              editorConfigFile,
+              args.formattingOptions,
+            )
+          }
       val bytes = if (file == null) input else FileInputStream(file)
       val code = BufferedReader(InputStreamReader(bytes, UTF_8)).readText().removePrefix(UTF8_BOM)
       val formattedCode =
