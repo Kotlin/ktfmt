@@ -28,7 +28,9 @@ import org.jetbrains.ktfmt.testutil.assertContains
 import org.jetbrains.ktfmt.testutil.assertDoesNotContain
 import org.jetbrains.ktfmt.testutil.assertStartsWith
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -253,7 +255,7 @@ class MainTest {
   }
 
   @Test
-  fun `kotlinlang-style is passed to formatter (stdin)`() {
+  fun `kotlinlang-style is used for stdin without an EditorConfig path`() {
     val code =
         """
         |fun f() {
@@ -278,11 +280,57 @@ class MainTest {
         code.byteInputStream(),
         PrintStream(out),
         PrintStream(err),
-        arrayOf("--kotlinlang-style", "-"),
+        arrayOf("--kotlinlang-style", "--enable-editorconfig", "-"),
     )
         .run()
 
     assertEquals(formatted, out.toString(UTF_8))
+  }
+
+  @Test
+  fun `stdin-name is used for EditorConfig without reading the named file`() {
+    root
+        .resolve(".editorconfig")
+        .writeText(
+            """
+            root = true
+            [src/Foo.kt]
+            indent_size = 4
+            """
+                .trimIndent(),
+            UTF_8,
+        )
+    val namedFile = root.resolve("src/Foo.kt")
+    namedFile.parentFile.mkdirs()
+    val namedFileContent = byteArrayOf(0, 1, 2, 3)
+    namedFile.writeBytes(namedFileContent)
+    val code =
+        """
+        |fun test() {
+        |println("stdin")
+        |}
+        |"""
+            .trimMargin()
+
+    val exitCode = Main(
+        code.byteInputStream(),
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf("--enable-editorconfig", "--stdin-name=$namedFile", "-"),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun test() {
+        |    println("stdin")
+        |}
+        |"""
+            .trimMargin(),
+        out.toString(UTF_8),
+    )
+    assertArrayEquals(namedFileContent, namedFile.readBytes())
   }
 
   @Test
@@ -622,6 +670,56 @@ class MainTest {
             .trimMargin(),
         out.toString(UTF_8),
     )
+  }
+
+  @Test
+  fun `--lines uses stdin-name for EditorConfig when the named file does not exist`() {
+    root
+        .resolve(".editorconfig")
+        .writeText(
+            """
+            root = true
+            [src/Generated.kt]
+            indent_size = 4
+            """
+                .trimIndent(),
+            UTF_8,
+        )
+    val namedFile = root.resolve("src/Generated.kt")
+    val code =
+        """
+        |fun test() {
+        |  val selected    =   2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin()
+
+    val exitCode = Main(
+        code.byteInputStream(),
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--enable-editorconfig",
+            "--stdin-name=$namedFile",
+            "--lines=2",
+            "-",
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun test() {
+        |    val selected = 2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin(),
+        out.toString(UTF_8),
+    )
+    assertFalse(namedFile.exists())
   }
 
   @Test
