@@ -183,8 +183,11 @@ public final class org/jetbrains/ktfmt/format/KotlinInput : com/google/googlejav
 	public fun getkN ()I
 }
 
-public class org/jetbrains/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/ktfmt/format/visitor/AbstractFormatterVisitor, org/jetbrains/ktfmt/format/visitor/FileFormatter, org/jetbrains/ktfmt/format/visitor/ListFormatter, org/jetbrains/ktfmt/format/visitor/TypeFormatter {
+public class org/jetbrains/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/ktfmt/format/visitor/AbstractFormatterVisitor, org/jetbrains/ktfmt/format/visitor/ExpressionFormatter, org/jetbrains/ktfmt/format/visitor/FileFormatter, org/jetbrains/ktfmt/format/visitor/ListFormatter, org/jetbrains/ktfmt/format/visitor/TypeFormatter {
 	public fun <init> (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/OpsBuilder;)V
+	public fun formatChainedBlockLikeCall (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;Z)V
+	public fun formatChainedScopingFunction (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;Z)V
+	public fun formatLambdaOrScopingFunction (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;Z)V
 	public fun getBuilder ()Lcom/google/googlejavaformat/OpsBuilder;
 	public fun getExpressionBreakIndent ()Lcom/google/googlejavaformat/Indent$Const;
 	public fun getExpressionBreakNegativeIndent ()Lcom/google/googlejavaformat/Indent$Const;
@@ -439,6 +442,10 @@ public abstract class org/jetbrains/ktfmt/format/visitor/AbstractFormatterVisito
 	public fun visitWhileExpression (Lorg/jetbrains/kotlin/psi/KtWhileExpression;)V
 }
 
+public abstract interface class org/jetbrains/ktfmt/format/visitor/ExpressionFormatter : org/jetbrains/ktfmt/format/visitor/KotlinAstFormatter {
+	public fun formatInitializerExpression (Lorg/jetbrains/kotlin/psi/KtExpression;)V
+}
+
 public abstract interface class org/jetbrains/ktfmt/format/visitor/FileFormatter : org/jetbrains/ktfmt/format/visitor/KotlinAstFormatter {
 	public fun formatKtFile (Lorg/jetbrains/kotlin/psi/KtFile;)V
 	public fun formatKtScript (Lorg/jetbrains/kotlin/psi/KtScript;)V
@@ -459,6 +466,8 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/KotlinAstForm
 	public fun formatCallExpression (Lorg/jetbrains/kotlin/psi/KtCallExpression;)V
 	public fun formatCallableReferenceExpression (Lorg/jetbrains/kotlin/psi/KtCallableReferenceExpression;)V
 	public fun formatCatchSection (Lorg/jetbrains/kotlin/psi/KtCatchClause;)V
+	public abstract fun formatChainedBlockLikeCall (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;Z)V
+	public abstract fun formatChainedScopingFunction (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;Z)V
 	public fun formatClassBody (Lorg/jetbrains/kotlin/psi/KtClassBody;)V
 	public fun formatClassInitializer (Lorg/jetbrains/kotlin/psi/KtClassInitializer;)V
 	public fun formatClassLiteralExpression (Lorg/jetbrains/kotlin/psi/KtClassLiteralExpression;)V
@@ -483,12 +492,15 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/KotlinAstForm
 	public fun formatIfExpression (Lorg/jetbrains/kotlin/psi/KtIfExpression;)V
 	public fun formatImportDirective (Lorg/jetbrains/kotlin/psi/KtImportDirective;)V
 	public abstract fun formatImportList (Lorg/jetbrains/kotlin/psi/KtImportList;)V
+	public abstract fun formatInitializerExpression (Lorg/jetbrains/kotlin/psi/KtExpression;)V
 	public abstract fun formatIntersectionType (Lorg/jetbrains/kotlin/psi/KtIntersectionType;)V
 	public fun formatIsExpression (Lorg/jetbrains/kotlin/psi/KtIsExpression;)V
 	public abstract fun formatKtFile (Lorg/jetbrains/kotlin/psi/KtFile;)V
 	public abstract fun formatKtScript (Lorg/jetbrains/kotlin/psi/KtScript;)V
 	public fun formatLabeledExpression (Lorg/jetbrains/kotlin/psi/KtLabeledExpression;)V
 	public fun formatLambdaExpression (Lorg/jetbrains/kotlin/psi/KtLambdaExpression;)V
+	public abstract fun formatLambdaOrScopingFunction (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;Z)V
+	public static synthetic fun formatLambdaOrScopingFunction$default (Lorg/jetbrains/ktfmt/format/visitor/KotlinAstFormatter;Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;ZILjava/lang/Object;)V
 	public abstract fun formatModifierList (Lorg/jetbrains/kotlin/psi/KtModifierList;)V
 	public fun formatNamedFunction (Lorg/jetbrains/kotlin/psi/KtNamedFunction;)V
 	public abstract fun formatNullableType (Lorg/jetbrains/kotlin/psi/KtNullableType;)V
@@ -560,11 +572,14 @@ public final class org/jetbrains/ktfmt/format/visitor/OpsUtilsKt {
 }
 
 public final class org/jetbrains/ktfmt/format/visitor/PsiUtilsKt {
+	public static final fun chainedSelectorsHaveValueArguments (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
 	public static final fun getCallExpression (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/psi/KtCallExpression;
+	public static final fun getChainParts (Lorg/jetbrains/kotlin/psi/KtExpression;)Ljava/util/List;
 	public static final fun getChainRoot (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/psi/KtExpression;
 	public static final fun getHasEmptyParenthesis (Lorg/jetbrains/kotlin/psi/KtParameterList;)Z
 	public static final fun getHasEmptyParenthesis (Lorg/jetbrains/kotlin/psi/KtValueArgumentList;)Z
 	public static final fun getHasLineBreakingCommentBefore (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)Z
+	public static final fun getHasSourceNewlineInLambdaBody (Lorg/jetbrains/kotlin/psi/KtLambdaExpression;)Z
 	public static final fun getScopingLambda (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/psi/KtLambdaExpression;
 	public static final fun isBlockLikeArgument (Lorg/jetbrains/kotlin/psi/KtValueArgument;)Z
 	public static final fun isBlockLikeCall (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
@@ -572,6 +587,7 @@ public final class org/jetbrains/ktfmt/format/visitor/PsiUtilsKt {
 	public static final fun isChainedScopingFunction (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
 	public static final fun isLambda (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
 	public static final fun isLambdaOrScopingFunction (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
+	public static final fun isMultilineScopingFunction (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
 	public static final fun isUnnamedLambda (Lorg/jetbrains/kotlin/psi/KtValueArgument;)Z
 }
 

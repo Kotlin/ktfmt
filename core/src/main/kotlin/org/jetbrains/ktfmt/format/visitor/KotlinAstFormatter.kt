@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.psi.KtDestructuringDeclarationEntry
 import org.jetbrains.kotlin.psi.KtDoWhileExpression
 import org.jetbrains.kotlin.psi.KtDynamicType
 import org.jetbrains.kotlin.psi.KtEnumEntry
+import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtFileAnnotationList
 import org.jetbrains.kotlin.psi.KtFinallySection
@@ -494,6 +495,38 @@ interface KotlinAstFormatter {
       breakAfterPrefix: Boolean = true,
       breakBeforePostfix: Boolean = options.manageTrailingCommas,
   ): BreakTag?
+
+  /**
+   * Format the right-hand side of an initializer expression, i.e. the expression after `=`
+   * (inclusively)
+   */
+  fun formatInitializerExpression(initializer: KtExpression)
+
+  /** See [isLambdaOrScopingFunction] for examples. */
+  fun formatLambdaOrScopingFunction(expr: PsiElement?, emitLeadingBreak: Boolean = true)
+
+  /**
+   * Emit a `foo(\n ...,\n).bar().baz()` style chain whose innermost receiver is a block-like
+   * multiline call: render the receiver call normally (so its closing paren sits at the surrounding
+   * indent), then emit each `.selector` on its own line, indented by [expressionBreakIndent].
+   */
+  fun formatChainedBlockLikeCall(
+      expression: KtQualifiedExpression,
+      emitLeadingBreak: Boolean,
+  )
+
+  /**
+   * Emit `runnnnn { ... }.baz().qux()` style: render the innermost scoping-function receiver
+   * block-like (so the lambda braces sit at the surrounding indent), then emit each `.selector`
+   * after the closing brace as a chained continuation indented by [blockIndent].
+   *
+   * When the receiver lambda spans multiple lines in the source we force the chained selectors onto
+   * their own line; a single-line lambda stays joined to its chained call.
+   */
+  fun formatChainedScopingFunction(
+      expression: KtQualifiedExpression,
+      emitLeadingBreak: Boolean,
+  )
 
   /**
    * markForPartialFormat is used to delineate the smallest areas of code that must be formatted

@@ -21,17 +21,21 @@ import kotlin.contracts.contract
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
+import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtLabeledExpression
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtParameterList
+import org.jetbrains.kotlin.psi.KtPostfixExpression
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtValueArgumentList
+import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.kotlin.psi.psiUtil.getNextSiblingIgnoringWhitespace
 import org.jetbrains.kotlin.psi.psiUtil.getPrevSiblingIgnoringWhitespace
+import org.jetbrains.ktfmt.format.FormattingOptions
 import org.jetbrains.ktfmt.format.KotlinInputAstVisitor
 
 /** Returns true if the expression represents an invocation that is also a lambda */
@@ -109,6 +113,26 @@ val KtExpression.chainRoot: KtExpression
     }
     return root
   }
+
+/**
+ * Decomposes a qualified expression into parts, so `rainbow.red.orange.yellow` becomes `[rainbow,
+ * rainbow.red, rainbow.red.orange, rainbow.orange.yellow]`
+ */
+val KtExpression.chainParts: List<KtExpression>
+  get() = buildList {
+    var node: KtExpression? = this@chainParts
+    while (node != null) {
+      add(node)
+      node =
+          when (node) {
+            is KtQualifiedExpression -> node.receiverExpression
+            is KtArrayAccessExpression -> node.arrayExpression
+            is KtPostfixExpression -> node.baseExpression
+            else -> null
+          }
+    }
+  }
+      .asReversed()
 
 /**
  * Checks if a line-breaking comment precedes [PsiElement] in the PSI tree.
@@ -200,4 +224,44 @@ val KtExpression.isChainedScopingFunction: Boolean
   get() {
     contract { returns(true) implies (this@isChainedScopingFunction is KtQualifiedExpression) }
     return this is KtQualifiedExpression && this.chainRoot.isLambdaOrScopingFunction
+  }
+
+/**
+ * Returns true when any chained selector after the innermost scoping-function receiver carries
+ * value arguments (i.e. `.foo(a)` or `.fold({ ... }, { ... })`). Used to decide formatting style
+ * for property initializers: value-arg chains stay on same line as `=`, while no-arg chains break.
+ */
+fun chainedSelectorsHaveValueArguments(expression: KtExpression): Boolean {
+  var current: KtExpression = expression
+  while (current is KtQualifiedExpression) {
+    val selector = current.selectorExpression
+    if (selector is KtCallExpression && !selector.valueArgumentList?.arguments.isNullOrEmpty()) {
+      return true
+    }
+    current = current.receiverExpression
+  }
+  return false
+}
+
+/**
+ * Returns true when [KtExpression] is a scoping-function call whose lambda body has source-level
+ * newlines (i.e. spans multiple lines). Used to decide whether chained selectors after the lambda's
+ * closing brace must break onto a new line.
+ */
+val KtExpression.isMultilineScopingFunction: Boolean
+  get() = scopingLambda?.hasSourceNewlineInLambdaBody ?: false
+
+/**
+ * Returns true if the source code contains a newline anywhere inside the body of
+ * [KtLambdaExpression] — that is, between the opening `{` and the closing `}` of the function
+ * literal. Used by [FormattingOptions.preserveLambdaBreaks] to keep user-authored multi-line
+ * lambdas multi-line.
+ */
+val KtLambdaExpression.hasSourceNewlineInLambdaBody: Boolean
+  get() {
+    val functionLiteral = this.functionLiteral
+    for (child in functionLiteral.node.children()) {
+      if (child.psi is PsiWhiteSpace && child.textContains('\n')) return true
+    }
+    return false
   }
