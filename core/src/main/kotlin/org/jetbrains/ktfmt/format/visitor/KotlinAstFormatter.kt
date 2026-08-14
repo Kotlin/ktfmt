@@ -434,7 +434,7 @@ interface KotlinAstFormatter {
    * ) {}
    * ```
    *
-   * @param hasTrailingComma if true, each element is placed on its own line (even if they could've
+   * @param forceMultiline if true, each element is placed on its own line (even if they could've
    *   fit in a single line) {}, and a trailing comma is emitted.
    *
    * Example:
@@ -443,16 +443,16 @@ interface KotlinAstFormatter {
    * b,
    * ```
    *
-   * @param wrapInBlock if true, place all the elements in a block. When there's no [leadingBreak],
-   *   this will be negatively indented. Note that the [prefix] and [postfix] aren't included in the
-   *   block.
-   * @param leadingBreak if true, break before the first element.
+   * @param wrapInBlock if true, place all the elements in a block. When there's no
+   *   [emitLeadingBreak], this will be negatively indented. Note that the [prefix] and [postfix]
+   *   aren't included in the block.
+   * @param emitLeadingBreak if true, break before the first element.
    * @param prefix if provided, emit this before the first element.
    * @param postfix if provided, emit this after the last element (or trailing comma) {}.
    * @param breakAfterPrefix if true, emit a break after [prefix], but before the start of the
    *   block.
    * @param breakBeforePostfix if true, place a break after the last element. Redundant when
-   *   [hasTrailingComma] is true.
+   *   [forceMultiline] is true.
    * @return a [BreakTag] which can tell you if a break was taken, but only when the list doesn't
    *   terminate in a negative closing indent.
    *
@@ -486,9 +486,9 @@ interface KotlinAstFormatter {
    */
   fun formatCommaSeparatedList(
       list: Iterable<PsiElement>,
-      hasTrailingComma: Boolean = false,
+      forceMultiline: Boolean = false,
       wrapInBlock: Boolean = true,
-      leadingBreak: Boolean = true,
+      emitLeadingBreak: Boolean = true,
       prefix: String? = null,
       postfix: String? = null,
       breakAfterPrefix: Boolean = true,

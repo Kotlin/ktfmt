@@ -257,7 +257,7 @@ open class KotlinInputAstVisitor(
           if (parameterList != null) {
             formatCommaSeparatedList(
                 list = parameterList.parameters,
-                hasTrailingComma = parameterList.trailingComma != null,
+                forceMultiline = parameterList.trailingComma != null,
                 prefix = "(",
                 postfix = ")",
                 wrapInBlock = false,
@@ -1968,17 +1968,16 @@ open class KotlinInputAstVisitor(
    * expression (`a[3]`) and from within a qualified chain (`a[3].b)
    */
   private fun visitArrayAccessBrackets(expression: KtArrayAccessExpression) {
-    builder.block(ZERO) {
-      builder.token("[")
-      builder.breakOp(Doc.FillMode.UNIFIED, "", expressionBreakIndent)
-      builder.block(expressionBreakIndent) {
-        formatCommaSeparatedList(
-            expression.indexExpressions,
-            hasTrailingComma = expression.trailingComma != null,
-        )
-      }
+    builder.block(expressionBreakIndent) {
+      formatCommaSeparatedList(
+          expression.indexExpressions,
+          forceMultiline = expression.trailingComma != null,
+          wrapInBlock = true,
+          prefix = "[",
+          postfix = "]",
+          breakBeforePostfix = false,
+      )
     }
-    builder.token("]")
   }
 
   /** Example `val (a, b: Int) = Pair(1, 2)` or `val [a, b] = Pair(1, 2)` */
@@ -1992,17 +1991,15 @@ open class KotlinInputAstVisitor(
     val hasTrailingComma = destructuringDeclaration.trailingComma != null
     val openingDelimiter = destructuringDeclaration.lPar?.text ?: "("
     val closingDelimiter = destructuringDeclaration.rPar?.text ?: ")"
-    builder.block(ZERO) {
-      builder.token(openingDelimiter)
-      builder.breakOp(Doc.FillMode.UNIFIED, "", expressionBreakIndent)
-      builder.block(expressionBreakIndent) {
-        formatCommaSeparatedList(
-            destructuringDeclaration.entries,
-            hasTrailingComma,
-        )
-      }
+    builder.block(expressionBreakIndent) {
+      formatCommaSeparatedList(
+          destructuringDeclaration.entries,
+          forceMultiline = hasTrailingComma,
+          prefix = openingDelimiter,
+          postfix = closingDelimiter,
+          breakBeforePostfix = false,
+      )
     }
-    builder.token(closingDelimiter)
     val initializer = destructuringDeclaration.initializer
     if (initializer != null) {
       builder.space()
@@ -2219,7 +2216,7 @@ open class KotlinInputAstVisitor(
     builder.block(expressionBreakIndent) {
       formatCommaSeparatedList(
           expression.getInnerExpressions(),
-          hasTrailingComma = expression.trailingComma != null,
+          forceMultiline = expression.trailingComma != null,
           prefix = "[",
           postfix = "]",
           wrapInBlock = !options.manageTrailingCommas,

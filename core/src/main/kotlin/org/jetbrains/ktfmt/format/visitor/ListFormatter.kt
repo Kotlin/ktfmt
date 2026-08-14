@@ -10,7 +10,6 @@ import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
 import org.jetbrains.kotlin.psi.KtContextReceiverList
 import org.jetbrains.kotlin.psi.KtFileAnnotationList
 import org.jetbrains.kotlin.psi.KtImportList
-import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtModifierList
 import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtSuperTypeList
@@ -26,7 +25,7 @@ interface ListFormatter : KotlinAstFormatter {
     builder.sync(list)
     formatCommaSeparatedList(
         list.arguments,
-        hasTrailingComma = list.trailingComma != null,
+        forceMultiline = list.trailingComma != null,
         wrapInBlock = !options.manageTrailingCommas,
         prefix = "<",
         postfix = ">",
@@ -38,10 +37,10 @@ interface ListFormatter : KotlinAstFormatter {
     builder.block(expressionBreakIndent) {
       formatCommaSeparatedList(
           list.parameters,
-          hasTrailingComma = list.trailingComma != null,
+          forceMultiline = list.trailingComma != null,
+          wrapInBlock = !options.manageTrailingCommas,
           prefix = "<",
           postfix = ">",
-          wrapInBlock = !options.manageTrailingCommas,
       )
     }
   }
@@ -88,14 +87,7 @@ interface ListFormatter : KotlinAstFormatter {
       // A call without a trailing comma that is nonetheless forced onto multiple lines (because one
       // of its arguments is itself a block-like multiline call) is rendered "exploded", with its
       // closing parenthesis on its own line, just like a call with a trailing comma.
-      val contentForcesMultiline =
-          !hasTrailingComma &&
-              arguments.any { argument ->
-                val argumentExpression = argument.getArgumentExpression()
-                argumentExpression != null &&
-                    (argumentExpression.isBlockLikeCall ||
-                        argumentExpression.isChainedBlockLikeCall)
-              }
+      val contentForcesMultiline = !hasTrailingComma && arguments.any { it.isBlockLikeArgument }
       wrapInBlock = !options.manageTrailingCommas
       breakBeforePostfix =
           (options.manageTrailingCommas || contentForcesMultiline) && !hasEmptyParens
@@ -105,13 +97,13 @@ interface ListFormatter : KotlinAstFormatter {
 
     return formatCommaSeparatedList(
         arguments,
-        hasTrailingComma = hasTrailingComma,
+        forceMultiline = hasTrailingComma,
         wrapInBlock = wrapInBlock,
-        breakBeforePostfix = breakBeforePostfix,
-        leadingBreak = leadingBreak,
+        emitLeadingBreak = leadingBreak,
         prefix = "(",
         postfix = ")",
         breakAfterPrefix = breakAfterPrefix,
+        breakBeforePostfix = breakBeforePostfix,
     )
   }
 
@@ -165,7 +157,11 @@ interface ListFormatter : KotlinAstFormatter {
   }
 
   override fun formatParameterList(list: KtParameterList) {
-    formatCommaSeparatedList(list.parameters, list.trailingComma != null, wrapInBlock = false)
+    formatCommaSeparatedList(
+        list.parameters,
+        forceMultiline = list.trailingComma != null,
+        wrapInBlock = false,
+    )
   }
 
   override fun formatImportList(importList: KtImportList) {
@@ -185,16 +181,17 @@ interface ListFormatter : KotlinAstFormatter {
 
   override fun formatCommaSeparatedList(
       list: Iterable<PsiElement>,
-      hasTrailingComma: Boolean,
+      forceMultiline: Boolean,
       wrapInBlock: Boolean,
-      leadingBreak: Boolean,
+      emitLeadingBreak: Boolean,
       prefix: String?,
       postfix: String?,
       breakAfterPrefix: Boolean,
       breakBeforePostfix: Boolean,
   ): BreakTag? {
-    val breakAfterLastElement = hasTrailingComma || (postfix != null && breakBeforePostfix)
+    val breakAfterLastElement = forceMultiline || (postfix != null && breakBeforePostfix)
     val nameTag = if (breakAfterLastElement) null else BreakTag()
+    val breakType = if (forceMultiline) Doc.FillMode.FORCED else Doc.FillMode.UNIFIED
 
     if (prefix != null) {
       builder.token(prefix)
@@ -203,15 +200,14 @@ interface ListFormatter : KotlinAstFormatter {
       }
     }
 
-    val breakType = if (hasTrailingComma) Doc.FillMode.FORCED else Doc.FillMode.UNIFIED
     fun emitComma() {
       builder.token(",")
       builder.breakOp(breakType, " ", ZERO)
     }
 
-    val indent = if (leadingBreak) ZERO else expressionBreakNegativeIndent
+    val indent = if (emitLeadingBreak) ZERO else expressionBreakNegativeIndent
     builder.block(indent, isEnabled = wrapInBlock) {
-      if (leadingBreak) {
+      if (emitLeadingBreak) {
         builder.breakOp(breakType, "", ZERO)
       }
 
@@ -220,7 +216,7 @@ interface ListFormatter : KotlinAstFormatter {
         format(value)
       }
 
-      if (hasTrailingComma) {
+      if (forceMultiline) {
         emitComma()
       }
     }

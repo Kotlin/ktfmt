@@ -142,9 +142,9 @@ interface TypeFormatter : KotlinAstFormatter {
       if (parameterList != null) {
         formatCommaSeparatedList(
             parameterList.parameters,
+            forceMultiline = parameterList.trailingComma != null,
             prefix = "(",
             postfix = ")",
-            hasTrailingComma = parameterList.trailingComma != null,
         )
       }
     }
