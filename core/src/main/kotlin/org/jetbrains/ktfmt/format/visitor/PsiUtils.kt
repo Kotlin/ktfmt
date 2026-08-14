@@ -19,32 +19,35 @@ package org.jetbrains.ktfmt.format.visitor
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
+import org.jetbrains.kotlin.com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtLabeledExpression
+import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
+import org.jetbrains.kotlin.psi.KtSimpleNameExpression
+import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.psiUtil.getNextSiblingIgnoringWhitespace
 import org.jetbrains.kotlin.psi.psiUtil.getPrevSiblingIgnoringWhitespace
+import org.jetbrains.ktfmt.format.KotlinInputAstVisitor
 
 /** Returns true if the expression represents an invocation that is also a lambda */
 val KtExpression.isLambda: Boolean
   get() = this.callExpression?.lambdaArguments?.isNotEmpty() ?: false
 
-/** Does this list have parens with only whitespace between them? */
-fun KtParameterList.hasEmptyParens(): Boolean {
-  val left = this.leftParenthesis ?: return false
-  val right = this.rightParenthesis ?: return false
-  return left.getNextSiblingIgnoringWhitespace() == right
-}
+/** @return true when a list has only empty parenthesis with only whitespace between them */
+val KtParameterList.hasEmptyParenthesis: Boolean
+  get() = onlyEmptyParenthesis(this.leftParenthesis, this.rightParenthesis)
 
-/** Does this list have parens with only whitespace between them? */
-val KtValueArgumentList.hasEmptyParens: Boolean
-  get() {
-    val left = this.leftParenthesis ?: return false
-    val right = this.rightParenthesis ?: return false
-    return left.getNextSiblingIgnoringWhitespace() == right
-  }
+/** @return true when a list has only empty parenthesis with only whitespace between them */
+val KtValueArgumentList.hasEmptyParenthesis: Boolean
+  get() = onlyEmptyParenthesis(this.leftParenthesis, this.rightParenthesis)
+
+private fun onlyEmptyParenthesis(left: PsiElement?, right: PsiElement?): Boolean =
+    left != null && right != null && left.getNextSiblingIgnoringWhitespace() == right
 
 /**
  * [KotlinInputAstVisitor.emitQualifiedExpression] formats call expressions that are either part of
@@ -55,9 +58,9 @@ val KtExpression.callExpression: KtCallExpression?
   get() = ((this as? KtQualifiedExpression)?.selectorExpression ?: this) as? KtCallExpression
 
 /**
- * Returns true when [this@isBlockLikeCall] is a call that is forced onto multiple lines regardless
- * of the line width, either because its value argument list has a trailing comma (e.g. `foo(\n 1,\n
- * 2,\n)`) or because one of its arguments is itself a block-like multiline call.
+ * @return true when [KtExpression] is a call that is forced onto multiple lines regardless of the
+ *   line width, either because its value argument list has a trailing comma (e.g. `foo(\n 1,\n
+ *   2,\n)`) or because one of its arguments is itself a block-like multiline call.
  *
  * Such calls are rendered "block-like": they stay on the same line as the preceding `=`/`by`
  * operator (instead of breaking and indenting after it), and any chained selectors break onto their
@@ -69,25 +72,27 @@ val KtExpression?.isBlockLikeCall: Boolean
     contract { returns(true) implies (this@isBlockLikeCall is KtCallExpression) }
 
     if (this == null) return false
-    val prev = this.getPrevSiblingIgnoringWhitespace()
-    if (prev is PsiComment) {
-      return false // Leading comments cause weird indentation; keep the default layout.
-    }
+    // Leading comments cause weird indentation; keep the default layout.
+    if (this.getPrevSiblingIgnoringWhitespace() is PsiComment) return false
 
     if (this !is KtCallExpression) return false
-    val valueArgumentList = this.valueArgumentList ?: return false
+
+    val valueArgumentList = valueArgumentList ?: return false
     return valueArgumentList.trailingComma != null ||
-        valueArgumentList.arguments.any { argument ->
-          val argumentExpression = argument.getArgumentExpression()
-          argumentExpression != null &&
-              (argumentExpression.isBlockLikeCall || argumentExpression.isChainedBlockLikeCall)
-        }
+        valueArgumentList.arguments.any { it.isBlockLikeArgument }
   }
 
-/**
- * Returns true when [this@isChainedBlockLikeCall] is a chain whose innermost receiver is a
- * [isBlockLikeCall].
- */
+val KtValueArgument.isBlockLikeArgument: Boolean
+  get() {
+    val argumentExpression = getArgumentExpression()
+    return argumentExpression != null &&
+        (argumentExpression.isBlockLikeCall || argumentExpression.isChainedBlockLikeCall)
+  }
+
+val KtValueArgument.isUnnamedLambda: Boolean
+  get() = getArgumentExpression() is KtLambdaExpression && getArgumentName() == null
+
+/** Returns true when [KtExpression] is a chain whose innermost receiver is a [isBlockLikeCall]. */
 @OptIn(ExperimentalContracts::class)
 val KtExpression.isChainedBlockLikeCall: Boolean
   get() {
@@ -95,7 +100,7 @@ val KtExpression.isChainedBlockLikeCall: Boolean
     return this is KtQualifiedExpression && this.chainRoot.isBlockLikeCall
   }
 
-/** Returns the innermost receiver of a (possibly nested) qualified [this@chainRoot]. */
+/** Returns the innermost receiver of a (possibly nested) qualified [KtExpression]. */
 val KtExpression.chainRoot: KtExpression
   get() {
     var root: KtExpression = this
@@ -103,4 +108,96 @@ val KtExpression.chainRoot: KtExpression
       root = root.receiverExpression
     }
     return root
+  }
+
+/**
+ * Checks if a line-breaking comment precedes [PsiElement] in the PSI tree.
+ *
+ * Line comments (`//`) always force a break. Block comments (`/* */`) only count if they are on
+ * their own line (preceded by whitespace with a newline). Inline block comments like `x /*tag*/ ||`
+ * do not force a break and should not trigger INDEPENDENT fill mode.
+ */
+val PsiElement.hasLineBreakingCommentBefore: Boolean
+  get() {
+    val comment = getPrevSiblingIgnoringWhiteSpace<PsiComment>() ?: return false
+
+    // Line comments always force a line break
+    if (comment.text.startsWith("//")) return true
+
+    // Block comments force a break only if on their own line
+    val beforeComment = comment.prevSibling
+    return beforeComment is PsiWhiteSpace && beforeComment.text.contains('\n')
+  }
+
+inline fun <reified T : PsiElement> PsiElement?.getPrevSiblingIgnoringWhiteSpace(): T? {
+  var prev = this?.prevSibling
+  while (prev is PsiWhiteSpace) {
+    prev = prev.prevSibling
+  }
+  return prev as? T
+}
+
+/**
+ * Returns an unwrapped lambda expression or scoping function of an expression
+ *
+ * Examples:
+ * 1. '... = { ... }' is a lambda expression
+ * 2. '... = Runnable { ... }' is considered a scoping function
+ * 3. '... = scope { ... }' '... = apply { ... }' is a scoping function
+ * 4. '... = scope.launch { ... }' is a dot-qualified scoping function
+ *
+ * but not:
+ * 1. '... = foo() { ... }' due to the empty parenthesis
+ * 2. '... = Runnable @Annotation { ... }' due to the annotation
+ */
+val KtExpression?.scopingLambda: KtLambdaExpression?
+  get() {
+    if (this == null) return null
+    var carry = this
+    if (carry is KtQualifiedExpression && carry.receiverExpression is KtSimpleNameExpression) {
+      carry = carry.selectorExpression
+    }
+    if (carry is KtCallExpression) {
+      if (
+          carry.valueArgumentList?.leftParenthesis == null &&
+              carry.lambdaArguments.isNotEmpty() &&
+              carry.typeArgumentList?.arguments.isNullOrEmpty()
+      ) {
+        carry = carry.lambdaArguments[0].getArgumentExpression()
+      } else {
+        return null
+      }
+    }
+    if (carry is KtLabeledExpression) {
+      carry = carry.baseExpression
+    }
+    return carry as? KtLambdaExpression
+  }
+
+/**
+ * Returns whether an expression is a lambda or an initializer expression, in which case we will
+ * want to avoid indenting the lambda block
+ */
+val KtExpression?.isLambdaOrScopingFunction: Boolean
+  get() {
+    if (this == null) return false
+    val comment = this.getPrevSiblingIgnoringWhiteSpace<PsiComment>()
+    // Leading line comments cause weird indentation; block comments are ok.
+    if (comment != null && comment.text.startsWith("//")) return false
+
+    return this.scopingLambda != null
+  }
+
+/**
+ * Returns true when [KtExpression] is a chain whose innermost receiver is a scoping function call.
+ *
+ * For example, this matches `runnnnn { ... }.baz()` (innermost receiver `runnnnn { ... }` is a
+ * scoping function). It does not match a chain whose root is a plain identifier or a non-scoping
+ * call, since those don't have a block-like opener to anchor the chain against.
+ */
+@OptIn(ExperimentalContracts::class)
+val KtExpression.isChainedScopingFunction: Boolean
+  get() {
+    contract { returns(true) implies (this@isChainedScopingFunction is KtQualifiedExpression) }
+    return this is KtQualifiedExpression && this.chainRoot.isLambdaOrScopingFunction
   }

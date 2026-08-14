@@ -71,12 +71,9 @@ interface ListFormatter : KotlinAstFormatter {
     builder.sync(list)
 
     val arguments = list.arguments
-    val isSingleUnnamedLambda =
-        arguments.size == 1 &&
-            arguments.first().getArgumentExpression() is KtLambdaExpression &&
-            arguments.first().getArgumentName() == null
+    val isSingleUnnamedLambda = arguments.singleOrNull()?.isUnnamedLambda ?: false
     val hasTrailingComma = list.trailingComma != null
-    val hasEmptyParens = list.hasEmptyParens
+    val hasEmptyParens = list.hasEmptyParenthesis
 
     val wrapInBlock: Boolean
     val breakBeforePostfix: Boolean

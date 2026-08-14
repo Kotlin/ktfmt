@@ -28,8 +28,6 @@ import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.Output.BreakTag
 import java.util.ArrayDeque
 import java.util.Optional
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
 import kotlin.jvm.optionals.getOrNull
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
@@ -113,7 +111,6 @@ import org.jetbrains.kotlin.psi.KtWhenConditionWithExpression
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.KtWhileExpression
 import org.jetbrains.kotlin.psi.psiUtil.children
-import org.jetbrains.kotlin.psi.psiUtil.getPrevSiblingIgnoringWhitespace
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlin.psi.psiUtil.startsWithComment
 import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
@@ -124,13 +121,15 @@ import org.jetbrains.ktfmt.format.visitor.ListFormatter
 import org.jetbrains.ktfmt.format.visitor.TypeFormatter
 import org.jetbrains.ktfmt.format.visitor.asIndent
 import org.jetbrains.ktfmt.format.visitor.block
-import org.jetbrains.ktfmt.format.visitor.callExpression
 import org.jetbrains.ktfmt.format.visitor.chainRoot
 import org.jetbrains.ktfmt.format.visitor.fenceComments
-import org.jetbrains.ktfmt.format.visitor.hasEmptyParens
+import org.jetbrains.ktfmt.format.visitor.hasEmptyParenthesis
+import org.jetbrains.ktfmt.format.visitor.hasLineBreakingCommentBefore
 import org.jetbrains.ktfmt.format.visitor.isBlockLikeCall
 import org.jetbrains.ktfmt.format.visitor.isChainedBlockLikeCall
+import org.jetbrains.ktfmt.format.visitor.isChainedScopingFunction
 import org.jetbrains.ktfmt.format.visitor.isLambda
+import org.jetbrains.ktfmt.format.visitor.isLambdaOrScopingFunction
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
 import org.jetbrains.ktfmt.util.CONTEXT_PARAMETER_LIST
@@ -244,7 +243,7 @@ open class KotlinInputAstVisitor(
         }
       }
 
-      if (parameterList != null && parameterList.hasEmptyParens()) {
+      if (parameterList != null && parameterList.hasEmptyParenthesis) {
         builder.block(ZERO) {
           builder.token("(")
           builder.token(")")
@@ -282,9 +281,9 @@ open class KotlinInputAstVisitor(
         builder.space()
         builder.block(ZERO) {
           builder.token("=")
-          if (isLambdaOrScopingFunction(bodyExpression)) {
+          if (bodyExpression.isLambdaOrScopingFunction) {
             visitLambdaOrScopingFunction(bodyExpression)
-          } else if (isChainedScopingFunction(bodyExpression)) {
+          } else if (bodyExpression.isChainedScopingFunction) {
             visitChainedScopingFunction(bodyExpression, emitLeadingBreak = true)
           } else if (bodyExpression.isBlockLikeCall) {
             builder.space()
@@ -406,7 +405,7 @@ open class KotlinInputAstVisitor(
           visit(expression.selectorExpression)
         }
       }
-      isChainedScopingFunction(expression) &&
+      expression.isChainedScopingFunction &&
           isMultilineScopingFunction(expression.chainRoot) &&
           chainedSelectorsHaveNoValueArguments(expression) -> {
         visitChainedScopingFunction(expression, emitLeadingBreak = false)
@@ -953,7 +952,7 @@ open class KotlinInputAstVisitor(
     builder.sync(expression)
     val op = expression.operationToken
 
-    if (KtTokens.ALL_ASSIGNMENTS.contains(op) && isLambdaOrScopingFunction(expression.right)) {
+    if (KtTokens.ALL_ASSIGNMENTS.contains(op) && expression.right.isLambdaOrScopingFunction) {
       // Assignments are statements in Kotlin; we don't have to worry about compound assignment.
       visit(expression.left)
       builder.space()
@@ -999,7 +998,7 @@ open class KotlinInputAstVisitor(
           }
           builder.token(leftExpression.operationReference.text)
           val fillMode =
-              if (hasLineBreakingCommentBefore(leftExpression.operationReference))
+              if (leftExpression.operationReference.hasLineBreakingCommentBefore)
                   Doc.FillMode.INDEPENDENT
               else Doc.FillMode.UNIFIED
           builder.breakOp(fillMode, " ", ZERO)
@@ -1008,28 +1007,6 @@ open class KotlinInputAstVisitor(
       visit(leftExpression.right)
     }
     builder.close()
-  }
-
-  /**
-   * Checks if a line-breaking comment precedes [element] in the PSI tree.
-   *
-   * Line comments (`//`) always force a break. Block comments (`/* */`) only count if they are on
-   * their own line (preceded by whitespace with a newline). Inline block comments like `x /*tag*/
-   * ||` do not force a break and should not trigger INDEPENDENT fill mode.
-   */
-  private fun hasLineBreakingCommentBefore(element: PsiElement): Boolean {
-    var prev = element.prevSibling
-    while (prev is PsiWhiteSpace) {
-      prev = prev.prevSibling
-    }
-    if (prev !is PsiComment) return false
-
-    // Line comments always force a line break
-    if (prev.text.startsWith("//")) return true
-
-    // Block comments force a break only if on their own line
-    val beforeComment = prev.prevSibling
-    return beforeComment is PsiWhiteSpace && beforeComment.text.contains('\n')
   }
 
   override fun visitPostfixExpression(expression: KtPostfixExpression) {
@@ -1156,10 +1133,10 @@ open class KotlinInputAstVisitor(
         builder.space()
         builder.token("by")
         val delegateExpr = delegate.expression
-        if (isLambdaOrScopingFunction(delegateExpr)) {
+        if (delegateExpr.isLambdaOrScopingFunction) {
           builder.space()
           visit(delegate)
-        } else if (delegateExpr != null && isChainedScopingFunction(delegateExpr)) {
+        } else if (delegateExpr != null && delegateExpr.isChainedScopingFunction) {
           visitChainedScopingFunction(delegateExpr, emitLeadingBreak = true)
         } else if (delegateExpr.isBlockLikeCall) {
           builder.space()
@@ -1176,9 +1153,9 @@ open class KotlinInputAstVisitor(
       } else if (initializer != null) {
         builder.space()
         builder.token("=")
-        if (isLambdaOrScopingFunction(initializer)) {
+        if (initializer.isLambdaOrScopingFunction) {
           visitLambdaOrScopingFunction(initializer)
-        } else if (isChainedScopingFunction(initializer)) {
+        } else if (initializer.isChainedScopingFunction) {
           visitChainedScopingFunction(initializer, emitLeadingBreak = true)
         } else if (initializer.isBlockLikeCall) {
           builder.space()
@@ -1262,9 +1239,9 @@ open class KotlinInputAstVisitor(
       if (initializer != null) {
         builder.space()
         builder.token("=")
-        if (isLambdaOrScopingFunction(initializer)) {
+        if (initializer.isLambdaOrScopingFunction) {
           visitLambdaOrScopingFunction(initializer)
-        } else if (isChainedScopingFunction(initializer)) {
+        } else if (initializer.isChainedScopingFunction) {
           visitChainedScopingFunction(initializer, emitLeadingBreak = true)
         } else if (initializer.isBlockLikeCall) {
           builder.space()
@@ -1309,67 +1286,6 @@ open class KotlinInputAstVisitor(
         return accessor.parameterList?.rightParenthesis
       }
     }
-  }
-
-  /**
-   * Returns whether an expression is a lambda or initializer expression in which case we will want
-   * to avoid indenting the lambda block
-   *
-   * Examples:
-   * 1. '... = { ... }' is a lambda expression
-   * 2. '... = Runnable { ... }' is considered a scoping function
-   * 3. '... = scope { ... }' '... = apply { ... }' is a scoping function
-   * 4. '... = scope.launch { ... }' is a dot-qualified scoping function
-   *
-   * but not:
-   * 1. '... = foo() { ... }' due to the empty parenthesis
-   * 2. '... = Runnable @Annotation { ... }' due to the annotation
-   */
-  private fun isLambdaOrScopingFunction(expression: KtExpression?): Boolean {
-    if (expression == null) return false
-    val prev = expression.getPrevSiblingIgnoringWhitespace()
-    if (prev is PsiComment && prev.text.startsWith("//")) {
-      return false // Leading line comments cause weird indentation; block comments are ok.
-    }
-
-    var carry = expression
-    if (carry is KtQualifiedExpression && carry.receiverExpression is KtSimpleNameExpression) {
-      carry = carry.selectorExpression
-    }
-    if (carry is KtCallExpression) {
-      if (
-          carry.valueArgumentList?.leftParenthesis == null &&
-              carry.lambdaArguments.isNotEmpty() &&
-              carry.typeArgumentList?.arguments.isNullOrEmpty()
-      ) {
-        carry = carry.lambdaArguments[0].getArgumentExpression()
-      } else {
-        return false
-      }
-    }
-    if (carry is KtLabeledExpression) {
-      carry = carry.baseExpression
-    }
-    if (carry is KtLambdaExpression) {
-      return true
-    }
-
-    return false
-  }
-
-  /**
-   * Returns true when [expression] is a chain whose innermost receiver is a scoping function call.
-   *
-   * For example, this matches `runnnnn { ... }.baz()` (innermost receiver `runnnnn { ... }` is a
-   * scoping function). It does not match a chain whose root is a plain identifier or a non-scoping
-   * call, since those don't have a block-like opener to anchor the chain against.
-   */
-  @OptIn(ExperimentalContracts::class)
-  private fun isChainedScopingFunction(expression: KtExpression): Boolean {
-    contract { returns(true) implies (expression is KtQualifiedExpression) }
-
-    if (expression !is KtQualifiedExpression) return false
-    return isLambdaOrScopingFunction(expression.chainRoot)
   }
 
   /**

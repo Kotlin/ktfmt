@@ -562,11 +562,17 @@ public final class org/jetbrains/ktfmt/format/visitor/OpsUtilsKt {
 public final class org/jetbrains/ktfmt/format/visitor/PsiUtilsKt {
 	public static final fun getCallExpression (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/psi/KtCallExpression;
 	public static final fun getChainRoot (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/psi/KtExpression;
-	public static final fun getHasEmptyParens (Lorg/jetbrains/kotlin/psi/KtValueArgumentList;)Z
-	public static final fun hasEmptyParens (Lorg/jetbrains/kotlin/psi/KtParameterList;)Z
+	public static final fun getHasEmptyParenthesis (Lorg/jetbrains/kotlin/psi/KtParameterList;)Z
+	public static final fun getHasEmptyParenthesis (Lorg/jetbrains/kotlin/psi/KtValueArgumentList;)Z
+	public static final fun getHasLineBreakingCommentBefore (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)Z
+	public static final fun getScopingLambda (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/psi/KtLambdaExpression;
+	public static final fun isBlockLikeArgument (Lorg/jetbrains/kotlin/psi/KtValueArgument;)Z
 	public static final fun isBlockLikeCall (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
 	public static final fun isChainedBlockLikeCall (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
+	public static final fun isChainedScopingFunction (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
 	public static final fun isLambda (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
+	public static final fun isLambdaOrScopingFunction (Lorg/jetbrains/kotlin/psi/KtExpression;)Z
+	public static final fun isUnnamedLambda (Lorg/jetbrains/kotlin/psi/KtValueArgument;)Z
 }
 
 public abstract interface class org/jetbrains/ktfmt/format/visitor/TypeFormatter : org/jetbrains/ktfmt/format/visitor/KotlinAstFormatter {
