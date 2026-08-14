@@ -1,4 +1,4 @@
-package org.jetbrains.ktfmt.format.visitor
+package org.jetbrains.ktfmt.format.visitor.kotlinlang
 
 import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.Indent.Const.ZERO
@@ -8,6 +8,9 @@ import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtContextReceiverList
 import org.jetbrains.kotlin.psi.KtModifierList
 import org.jetbrains.kotlin.psi.psiUtil.children
+import org.jetbrains.ktfmt.format.visitor.ListFormatter
+import org.jetbrains.ktfmt.format.visitor.sync
+import org.jetbrains.ktfmt.format.visitor.token
 
 interface KotlinLangListFormatter : ListFormatter {
   override fun formatModifierList(list: KtModifierList) {

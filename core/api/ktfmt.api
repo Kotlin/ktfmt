@@ -535,10 +535,6 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/KotlinAstForm
 	public fun markForPartialFormat ()V
 }
 
-public abstract interface class org/jetbrains/ktfmt/format/visitor/KotlinLangListFormatter : org/jetbrains/ktfmt/format/visitor/ListFormatter {
-	public fun formatModifierList (Lorg/jetbrains/kotlin/psi/KtModifierList;)V
-}
-
 public abstract interface class org/jetbrains/ktfmt/format/visitor/ListFormatter : org/jetbrains/ktfmt/format/visitor/KotlinAstFormatter {
 	public fun formatCommaSeparatedList (Ljava/lang/Iterable;ZZZLjava/lang/String;Ljava/lang/String;ZZ)Lcom/google/googlejavaformat/Output$BreakTag;
 	public fun formatContextReceiverList (Lorg/jetbrains/kotlin/psi/KtContextReceiverList;)V
@@ -583,6 +579,10 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/TypeFormatter
 	public fun formatTypeProjection (Lorg/jetbrains/kotlin/psi/KtTypeProjection;)V
 	public fun formatTypeReference (Lorg/jetbrains/kotlin/psi/KtTypeReference;)V
 	public fun formatUserType (Lorg/jetbrains/kotlin/psi/KtUserType;)V
+}
+
+public abstract interface class org/jetbrains/ktfmt/format/visitor/kotlinlang/KotlinLangListFormatter : org/jetbrains/ktfmt/format/visitor/ListFormatter {
+	public fun formatModifierList (Lorg/jetbrains/kotlin/psi/KtModifierList;)V
 }
 
 public final class org/jetbrains/ktfmt/kdoc/CommentType : java/lang/Enum {
