@@ -4,11 +4,14 @@ package org.jetbrains.ktfmt.format.visitor
 
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtDynamicType
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFunctionType
 import org.jetbrains.kotlin.psi.KtIntersectionType
+import org.jetbrains.kotlin.psi.KtModifierList
 import org.jetbrains.kotlin.psi.KtNullableType
 import org.jetbrains.kotlin.psi.KtProjectionKind
 import org.jetbrains.kotlin.psi.KtTypeConstraint
+import org.jetbrains.kotlin.psi.KtTypeElement
 import org.jetbrains.kotlin.psi.KtTypeParameter
 import org.jetbrains.kotlin.psi.KtTypeProjection
 import org.jetbrains.kotlin.psi.KtTypeReference
@@ -17,23 +20,7 @@ import org.jetbrains.kotlin.psi.psiUtil.children
 
 interface TypeFormatter : KotlinAstFormatter {
   override fun formatTypeReference(type: KtTypeReference) {
-    builder.sync(type)
-    // Normally we'd visit the children nodes through accessors on 'typeReference', and  we wouldn't
-    // loop over children.
-    // But, in this case the modifier list can either be inside the parenthesis:
-    // ... (@Composable (x) -> Unit)
-    // or outside of them:
-    // ... @Composable ((x) -> Unit)
-    val modifierList = type.modifierList
-    val typeElement = type.typeElement
-    for (child in type.node.children()) {
-      when {
-        child.psi == modifierList -> format(modifierList)
-        child.psi == typeElement -> format(typeElement)
-        child.elementType == KtTokens.LPAR -> builder.token("(")
-        child.elementType == KtTokens.RPAR -> builder.token(")")
-      }
-    }
+    formatType(type, type.modifierList, type.typeElement)
   }
 
   override fun formatDynamicType(type: KtDynamicType) {
@@ -41,19 +28,7 @@ interface TypeFormatter : KotlinAstFormatter {
   }
 
   override fun formatNullableType(type: KtNullableType) {
-    builder.sync(type)
-
-    // Normally we wouldn't loop over children, but there can be multiple layers of parents.
-    val modifierList = type.modifierList
-    val innerType = type.innerType
-    for (child in type.node.children()) {
-      when {
-        child.psi == modifierList -> format(modifierList)
-        child.psi == innerType -> format(innerType)
-        child.elementType == KtTokens.LPAR -> builder.token("(")
-        child.elementType == KtTokens.RPAR -> builder.token(")")
-      }
-    }
+    formatType(type, type.modifierList, type.innerType)
     builder.token("?")
   }
 
@@ -137,20 +112,28 @@ interface TypeFormatter : KotlinAstFormatter {
       format(receiver)
       builder.token(".")
     }
-    builder.block(expressionBreakIndent) {
-      val parameterList = type.parameterList
-      if (parameterList != null) {
-        formatCommaSeparatedList(
-            parameterList.parameters,
-            forceMultiline = parameterList.trailingComma != null,
-            prefix = "(",
-            postfix = ")",
-        )
-      }
-    }
+    builder.block(expressionBreakIndent) { format(type.parameterList) }
     builder.space()
     builder.token("->")
     builder.space()
     builder.block(expressionBreakIndent) { format(type.returnTypeReference) }
+  }
+
+  fun formatType(type: KtElement, modifierList: KtModifierList?, typeElement: KtTypeElement?) {
+    builder.sync(type)
+    // Normally we'd visit the children nodes through accessors on 'typeReference', and  we wouldn't
+    // loop over children.
+    // But, in this case the modifier list can either be inside the parenthesis:
+    // ... (@Composable (x) -> Unit)
+    // or outside of them:
+    // ... @Composable ((x) -> Unit)
+    for (child in type.node.children()) {
+      when {
+        child.psi == modifierList -> format(modifierList)
+        child.psi == typeElement -> format(typeElement)
+        child.elementType == KtTokens.LPAR -> builder.token("(")
+        child.elementType == KtTokens.RPAR -> builder.token(")")
+      }
+    }
   }
 }

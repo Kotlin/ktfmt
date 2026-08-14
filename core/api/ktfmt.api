@@ -580,6 +580,7 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/TypeFormatter
 	public fun formatFunctionType (Lorg/jetbrains/kotlin/psi/KtFunctionType;)V
 	public fun formatIntersectionType (Lorg/jetbrains/kotlin/psi/KtIntersectionType;)V
 	public fun formatNullableType (Lorg/jetbrains/kotlin/psi/KtNullableType;)V
+	public fun formatType (Lorg/jetbrains/kotlin/psi/KtElement;Lorg/jetbrains/kotlin/psi/KtModifierList;Lorg/jetbrains/kotlin/psi/KtTypeElement;)V
 	public fun formatTypeConstraint (Lorg/jetbrains/kotlin/psi/KtTypeConstraint;)V
 	public fun formatTypeParameter (Lorg/jetbrains/kotlin/psi/KtTypeParameter;)V
 	public fun formatTypeProjection (Lorg/jetbrains/kotlin/psi/KtTypeProjection;)V

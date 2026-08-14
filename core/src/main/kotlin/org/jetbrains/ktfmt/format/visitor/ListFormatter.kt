@@ -160,7 +160,8 @@ interface ListFormatter : KotlinAstFormatter {
     formatCommaSeparatedList(
         list.parameters,
         forceMultiline = list.trailingComma != null,
-        wrapInBlock = false,
+        prefix = "(",
+        postfix = ")",
     )
   }
 
