@@ -1,0 +1,6 @@
+private fun Window.asWindowAnimationQueue(): WindowAnimationQueue =
+    @Suppress("UnsafeCastFromDynamic")
+    asDynamic().coroutineAnimationQueue
+        ?: WindowAnimationQueue(this).also {
+            asDynamic().coroutineAnimationQueue = it
+        }
