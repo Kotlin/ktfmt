@@ -152,8 +152,8 @@ class Main(
             args.formattingOptions
           } else {
             EditorConfigResolver.resolveFormattingOptions(
-              editorConfigFile,
-              args.formattingOptions,
+                editorConfigFile,
+                args.formattingOptions,
             )
           }
       val bytes = if (file == null) input else FileInputStream(file)
