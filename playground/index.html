@@ -3,6 +3,8 @@
 <head>
     <meta charset="utf-8">
     <title>ktfmt playground</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
     <style>
         body {
             margin: 2em;
@@ -97,7 +99,7 @@ public fun TestScope.runTest(
         let latestRequest = 0;
 
         function paint(pane, result) {
-            pane.textContent = result.text;
+            pane.innerHTML = hljs.highlight(result.text, {language: "kotlin"}).value;
         }
 
         async function format() {
