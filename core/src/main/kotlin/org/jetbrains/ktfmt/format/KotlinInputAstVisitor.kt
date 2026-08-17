@@ -121,6 +121,7 @@ import org.jetbrains.ktfmt.format.visitor.ListFormatter
 import org.jetbrains.ktfmt.format.visitor.TypeFormatter
 import org.jetbrains.ktfmt.format.visitor.asIndent
 import org.jetbrains.ktfmt.format.visitor.block
+import org.jetbrains.ktfmt.format.visitor.chainParts
 import org.jetbrains.ktfmt.format.visitor.chainRoot
 import org.jetbrains.ktfmt.format.visitor.chainedSelectorsHaveValueArguments
 import org.jetbrains.ktfmt.format.visitor.fenceComments
@@ -424,7 +425,7 @@ open class KotlinInputAstVisitor(
    * part, emitting it to the [builder] while closing and opening groups.
    */
   private fun emitQualifiedExpression(expression: KtExpression) {
-    val parts = breakIntoParts(expression)
+    val parts = expression.chainParts
     // whether we want to make a lambda look like a block, this make Kotlin DSLs look as expected
     val useBlockLikeLambdaStyle = parts.last().isLambda && parts.count { it.isLambda } == 1
     val groupingInfos = computeGroupingInfo(parts, useBlockLikeLambdaStyle)
@@ -497,31 +498,6 @@ open class KotlinInputAstVisitor(
         }
       }
     }
-  }
-
-  /**
-   * Decomposes a qualified expression into parts, so `rainbow.red.orange.yellow` becomes `[rainbow,
-   * rainbow.red, rainbow.red.orange, rainbow.orange.yellow]`
-   */
-  private fun breakIntoParts(expression: KtExpression): List<KtExpression> {
-    val parts = ArrayDeque<KtExpression>()
-
-    // use an ArrayDeque and add elements to the beginning so the innermost expression comes first
-    // foo.bar.yay -> [yay, bar.yay, foo.bar.yay]
-
-    var node: KtExpression? = expression
-    while (node != null) {
-      parts.addFirst(node)
-      node =
-          when (node) {
-            is KtQualifiedExpression -> node.receiverExpression
-            is KtArrayAccessExpression -> node.arrayExpression
-            is KtPostfixExpression -> node.baseExpression
-            else -> null
-          }
-    }
-
-    return parts.toList()
   }
 
   /**
@@ -1255,7 +1231,7 @@ open class KotlinInputAstVisitor(
       expression: KtQualifiedExpression,
       emitLeadingBreak: Boolean,
   ) {
-    val parts = breakIntoParts(expression)
+    val parts = expression.chainParts
     if (emitLeadingBreak) {
       builder.space()
     }
@@ -1293,7 +1269,7 @@ open class KotlinInputAstVisitor(
       expression: KtQualifiedExpression,
       emitLeadingBreak: Boolean,
   ) {
-    val parts = breakIntoParts(expression)
+    val parts = expression.chainParts
     val root = parts[0]
     val forceBreakBeforeChain = root.isMultilineScopingFunction
 
