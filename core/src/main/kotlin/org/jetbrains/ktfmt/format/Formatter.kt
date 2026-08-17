@@ -241,7 +241,7 @@ object Formatter {
     if (characterRanges != null) {
       selectedCharacterRanges.addAll(adjustCharacterRangesForShebang(characterRanges, shebang))
     }
-    return selectedCharacterRanges
+    return selectedCharacterRanges.subRangeSet(Range.closedOpen(0, code.length))
   }
 
   private fun adjustLineRangesForShebang(
@@ -270,12 +270,14 @@ object Formatter {
     val adjusted = TreeRangeSet.create<Int>()
     val kotlinCodeStart = shebang.length + 1
     for (characterRange in characterRanges.subRangeSet(Range.atLeast(kotlinCodeStart)).asRanges()) {
-      adjusted.add(
-          Range.closedOpen(
-              characterRange.lowerEndpoint() - kotlinCodeStart,
-              characterRange.upperEndpoint() - kotlinCodeStart,
-          ),
-      )
+      val lower = maxOf(0, characterRange.lowerEndpoint() - kotlinCodeStart)
+      val upper =
+          if (characterRange.hasUpperBound()) {
+            maxOf(lower, characterRange.upperEndpoint() - kotlinCodeStart)
+          } else {
+            Int.MAX_VALUE
+          }
+      adjusted.add(Range.closedOpen(lower, upper))
     }
     return adjusted
   }
