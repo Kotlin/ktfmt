@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>ktfmt playground</title>
+    <style>
+        body {
+            margin: 2em;
+            font-family: sans-serif;
+        }
+
+        h1 {
+            font-size: 1.2em;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.3em;
+        }
+
+        textarea,
+        pre {
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0.5em;
+            border: 1px solid #ccc;
+            background: #fafafa;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        textarea {
+            height: 40vh;
+        }
+
+        pre {
+            height: 40vh;
+            overflow: auto;
+        }
+
+        .outputs {
+            display: flex;
+            gap: 1em;
+            margin-top: 1em;
+        }
+
+        .outputs > div {
+            flex: 1;
+            min-width: 0;
+        }
+    </style>
+</head>
+<body>
+<h1>ktfmt playground</h1>
+
+<label for="input">Kotlin source</label>
+<textarea id="input" spellcheck="false" autofocus>
+        @Deprecated(
+    "Define a total timeout for the whole test instead of using dispatchTimeoutMs. " +
+        "Warning: the proposed replacement is not identical as it uses 'dispatchTimeoutMs' as the timeout for the whole test!",
+    ReplaceWith(
+        "this.runTest(timeout = dispatchTimeoutMs.milliseconds, testBody)",
+        "kotlin.time.Duration.Companion.milliseconds",
+    ),
+    DeprecationLevel.ERROR,
+) // Error since 1.11, warning since 1.7.0, was experimental in 1.6.x
+public fun TestScope.runTest(
+    dispatchTimeoutMs: Long,
+    testBody: suspend TestScope.() -> Unit,
+): TestResult =
+    asSpecificImplementation().let {}
+</textarea>
+
+<div class="outputs">
+    <div>
+        <label for="default-output">ktfmt</label>
+        <pre id="default-output"></pre>
+    </div>
+
+    <div>
+        <label for="experimental-output">ktfmt --experimental-engine</label>
+        <pre id="experimental-output"></pre>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const input = document.getElementById("input");
+        const panes = {
+            default: document.getElementById("default-output"),
+            experimental: document.getElementById("experimental-output"),
+        };
+
+        const DEBOUNCE_MS = 250;
+        let timer = null;
+        let latestRequest = 0;
+
+        function paint(pane, result) {
+            pane.textContent = result.text;
+        }
+
+        async function format() {
+            const request = ++latestRequest;
+            try {
+                const response = await fetch("/format", {method: "POST", body: input.value});
+                if (!response.ok) throw new Error("HTTP " + response.status);
+                const data = await response.json();
+                if (request !== latestRequest) return;
+
+                paint(panes.default, data.default);
+                paint(panes.experimental, data.experimental);
+            } catch (error) {
+                if (request !== latestRequest) return;
+                const failure = {ok: false, text: "Cannot reach the ktfmt server: " + error.message};
+                paint(panes.default, failure);
+                paint(panes.experimental, failure);
+            }
+        }
+
+        input.addEventListener("input", function () {
+            clearTimeout(timer);
+            timer = setTimeout(format, DEBOUNCE_MS);
+        });
+
+        format();
+    })();
+</script>
+</body>
+</html>
