@@ -1,6 +1,8 @@
 package org.jetbrains.ktfmt.format.visitor
 
+import com.google.googlejavaformat.FormattingError
 import com.google.googlejavaformat.Indent
+import com.google.googlejavaformat.Indent.Const.ZERO
 import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.Output.BreakTag
 import java.util.ArrayDeque
@@ -44,6 +46,7 @@ import org.jetbrains.kotlin.psi.KtImportList
 import org.jetbrains.kotlin.psi.KtIntersectionType
 import org.jetbrains.kotlin.psi.KtIsExpression
 import org.jetbrains.kotlin.psi.KtLabeledExpression
+import org.jetbrains.kotlin.psi.KtLambdaArgument
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtModifierList
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -126,17 +129,24 @@ interface KotlinAstFormatter {
   val options: FormattingOptions
   val builder: OpsBuilder
 
+  val blockIndent: Indent.Const
   val expressionBreakIndent: Indent.Const
   val expressionBreakNegativeIndent: Indent.Const
 
   /** A record of whether we have visited into an expression. */
   val inExpression: ArrayDeque<Boolean>
 
+  var inImport: Boolean
+
   fun format(element: PsiElement?)
 
   fun formatKtFile(file: KtFile)
 
   fun formatKtScript(script: KtScript)
+
+  fun formatStatement(statement: PsiElement)
+
+  fun formatStatements(statements: Array<PsiElement>)
 
   fun formatNamedFunction(function: KtNamedFunction) {
     TODO("Unreachable code path")
@@ -190,9 +200,12 @@ interface KotlinAstFormatter {
     TODO("Unreachable code path")
   }
 
-  fun formatArgument(argument: KtValueArgument) {
-    TODO("Unreachable code path")
-  }
+  /** @param wrapInBlock if true places the argument expression in a block. */
+  fun formatArgument(
+      argument: KtValueArgument,
+      wrapInBlock: Boolean,
+      brokeBeforeBrace: BreakTag?,
+  )
 
   fun formatSuperTypeList(list: KtSuperTypeList)
 
@@ -220,7 +233,7 @@ interface KotlinAstFormatter {
     TODO("Unreachable code path")
   }
 
-  fun formatQualifiedExpression(expression: KtQualifiedExpression) {
+  fun formatQualifiedExpression(expression: KtQualifiedExpression, extraRules: Boolean = true) {
     TODO("Unreachable code path")
   }
 
@@ -228,9 +241,23 @@ interface KotlinAstFormatter {
     TODO("Unreachable code path")
   }
 
-  fun formatLambdaExpression(lambdaExpression: KtLambdaExpression) {
-    TODO("Unreachable code path")
-  }
+  /**
+   * @param brokeBeforeBrace used for tracking if a break was taken right before the lambda
+   *   expression. Useful for scoping functions where we want good looking indentation. For example,
+   *   here we have correct indentation before `bar()` and `car()` because we can detect the break
+   *   after the equals:
+   * ```
+   * fun foo() =
+   *     coroutineScope { x ->
+   *       bar()
+   *       car()
+   *     }
+   * ```
+   */
+  fun formatLambdaExpression(
+      lambdaExpression: KtLambdaExpression,
+      brokeBeforeBrace: BreakTag?,
+  )
 
   fun formatThisExpression(expression: KtThisExpression) {
     TODO("Unreachable code path")
@@ -506,6 +533,22 @@ interface KotlinAstFormatter {
   fun formatLambdaOrScopingFunction(expr: PsiElement?, emitLeadingBreak: Boolean = true)
 
   /**
+   * Examples `foo<T>(a, b)`, `foo(a)`, `boo()`, `super(a)`
+   *
+   * @param lambdaIndent how to indent [lambdaArguments], if present
+   * @param negativeLambdaIndent the negative indentation of [lambdaIndent]
+   */
+  fun formatFunctionCall(
+      callee: KtExpression?,
+      typeArgumentList: KtTypeArgumentList?,
+      argumentList: KtValueArgumentList?,
+      lambdaArguments: List<KtLambdaArgument>,
+      argumentsIndent: Indent = expressionBreakIndent,
+      lambdaIndent: Indent = ZERO,
+      negativeLambdaIndent: Indent = ZERO,
+  )
+
+  /**
    * Emit a `foo(\n ...,\n).bar().baz()` style chain whose innermost receiver is a block-like
    * multiline call: render the receiver call normally (so its closing paren sits at the surrounding
    * indent), then emit each `.selector` on its own line, indented by [expressionBreakIndent].
@@ -539,5 +582,15 @@ interface KotlinAstFormatter {
     if (!inExpression.last()) {
       builder.markForPartialFormat()
     }
+  }
+
+  /**
+   * Throws a formatting error
+   *
+   * This is used as `expr ?: fail()` to avoid using the !! operator and provide better error
+   * messages.
+   */
+  fun fail(message: String = "Unexpected"): Nothing {
+    throw FormattingError(builder.diagnostic(message))
   }
 }

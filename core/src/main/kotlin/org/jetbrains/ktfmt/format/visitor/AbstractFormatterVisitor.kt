@@ -173,7 +173,7 @@ abstract class AbstractFormatterVisitor : KtTreeVisitorVoid(), KotlinAstFormatte
   }
 
   override fun visitArgument(argument: KtValueArgument) {
-    formatArgument(argument)
+    formatArgument(argument, wrapInBlock = true, brokeBeforeBrace = null)
   }
 
   override fun visitSuperTypeList(list: KtSuperTypeList) {
@@ -221,7 +221,7 @@ abstract class AbstractFormatterVisitor : KtTreeVisitorVoid(), KotlinAstFormatte
   }
 
   override fun visitLambdaExpression(lambdaExpression: KtLambdaExpression) {
-    formatLambdaExpression(lambdaExpression)
+    formatLambdaExpression(lambdaExpression, brokeBeforeBrace = null)
   }
 
   override fun visitThisExpression(expression: KtThisExpression) {
