@@ -164,12 +164,12 @@ interface CallFormatter : KotlinAstFormatter {
         val shouldForceMultiline =
             options.preserveLambdaBreaks && lambdaExpression.hasSourceNewlineInLambdaBody
 
-        if (
-            !shouldForceMultiline &&
-                expressionStatements.size == 1 &&
+        val singleLineStatement =
+            expressionStatements.size == 1 &&
                 expressionStatements.first() !is KtReturnExpression &&
                 !bodyExpression.startsWithComment()
-        ) {
+
+        if (!shouldForceMultiline && singleLineStatement) {
           formatStatement(expressionStatements[0])
         } else {
           formatStatements(expressionStatements)
@@ -183,15 +183,11 @@ interface CallFormatter : KotlinAstFormatter {
       builder.block(bracePlusBlockIndent) {
         builder.fenceComments()
         builder.blankLineWanted(OpsBuilder.BlankLineWanted.NO)
-        if (blockComments.size == 1) {
-          builder.token(blockComments[0].text)
-        } else {
-          for ((i, comment) in blockComments.withIndex()) {
-            if (i > 0) {
-              builder.forcedBreak()
-            }
-            builder.token(comment.text)
+        for ((i, comment) in blockComments.withIndex()) {
+          if (i > 0) {
+            builder.forcedBreak()
           }
+          builder.token(comment.text)
         }
         builder.breakOp(Doc.FillMode.UNIFIED, " ", bracePlusZeroIndent)
       }
@@ -342,73 +338,58 @@ interface CallFormatter : KotlinAstFormatter {
   }
 
   private fun emitQualifiedExpression(expression: KtExpression) {
-    val parts = expression.chainParts
-    // whether we want to make a lambda look like a block, this make Kotlin DSLs look as expected
-    val hasTrailingLambda = parts.last().isLambda && parts.count { it.isLambda } == 1
-    val groupingInfos = computeGroupingInfo(parts, hasTrailingLambda, expressionBreakIndent)
+    val groupingInfos = expression.computeGroups(expressionBreakIndent)
     builder.block(expressionBreakIndent) {
-      val nameTag = BreakTag() // allows adjusting arguments indentation if a break will be made
-      for ((ktExpression, groupOpenCount, shouldCloseGroup, isLast) in groupingInfos) {
+      // allows adjusting arguments indentation if a break will be made
+      val nameTag = BreakTag()
+      for ((ktExpression, openingGroups, closingGroups, isTrailingLambda, isLast) in
+          groupingInfos) {
         if (ktExpression is KtQualifiedExpression) {
           builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, Optional.of(nameTag))
         }
-        repeat(groupOpenCount) { builder.open(ZERO) }
+
+        var postfix: Triple<KtCallExpression, Indentation, Indentation>? = null
+        repeat(openingGroups) { builder.open(ZERO) }
         when (ktExpression) {
+          is KtQualifiedExpression if ktExpression.selectorExpression is KtCallExpression -> {
+            builder.token(ktExpression.operationSign.value)
+            val selectorExpression = ktExpression.selectorExpression as KtCallExpression
+
+            // emit `doIt` from `doIt(1, 2) { it }`
+            format(selectorExpression.calleeExpression)
+
+            val isLastPartOrBlockLikeCall =
+                isLast || !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
+            val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
+            val lambdaIndentElse = if (isTrailingLambda) -expressionBreakIndent else ZERO
+
+            // remember to emit `(1, 2) { it }` from `doIt(1, 2) { it }`
+            postfix =
+                Triple(
+                    selectorExpression,
+                    Indentation.Conditional(nameTag, expressionBreakIndent, argsIndentElse),
+                    Indentation.Conditional(nameTag, ZERO, lambdaIndentElse),
+                )
+          }
           is KtQualifiedExpression -> {
             builder.token(ktExpression.operationSign.value)
-            val selectorExpression = ktExpression.selectorExpression
-            if (selectorExpression !is KtCallExpression) {
-              // selector is a simple field access
-              format(selectorExpression)
-              if (shouldCloseGroup) {
-                builder.close()
-              }
-            } else {
-              // selector is a function call, we may close a group after its name
-              // emit `doIt` from `doIt(1, 2) { it }`
-              format(selectorExpression.calleeExpression)
-              // close groups according to instructions
-              if (shouldCloseGroup) {
-                builder.close()
-              }
-              // close group due to last lambda to allow block-like style in `as.forEach { ... }`
-              val isTrailingLambda = hasTrailingLambda && isLast
-              if (isTrailingLambda) {
-                builder.close()
-              }
-              // A block-like (exploded) selector call is laid out like the last part: its
-              // arguments are indented once relative to the call itself, and its closing paren
-              // returns to the call's indent, even when chained selectors follow it. This only
-              // applies when trailing commas are preserved (the block-like style); when ktfmt
-              // manages trailing commas, exploded chained calls keep the regular extra indent.
-              val isLastPartOrBlockLikeCall =
-                  isLast || !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
-              val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
-              val lambdaIndentElse = if (isTrailingLambda) -expressionBreakIndent else ZERO
+            format(ktExpression.selectorExpression)
+          }
+          is KtArrayAccessExpression -> formatArrayAccessBrackets(ktExpression)
+          is KtPostfixExpression -> builder.token(ktExpression.operationReference.text)
+          else -> format(ktExpression)
+        }
+        repeat(closingGroups) { builder.close() }
 
-              // emit `(1, 2) { it }` from `doIt(1, 2) { it }`
-              formatFunctionCall(
-                  null,
-                  selectorExpression.typeArgumentList,
-                  selectorExpression.valueArgumentList,
-                  selectorExpression.lambdaArguments,
-                  argumentsIndent =
-                      Indentation.Conditional(nameTag, expressionBreakIndent, argsIndentElse),
-                  lambdaIndent = Indentation.Conditional(nameTag, ZERO, lambdaIndentElse),
-              )
-            }
-          }
-          is KtArrayAccessExpression -> {
-            formatArrayAccessBrackets(ktExpression)
-            builder.close()
-          }
-          is KtPostfixExpression -> {
-            builder.token(ktExpression.operationReference.text)
-            builder.close()
-          }
-          else -> {
-            format(ktExpression)
-          }
+        postfix?.let { (selectorExpression, argumentsIndent, lambdaIndent) ->
+          formatFunctionCall(
+              null,
+              selectorExpression.typeArgumentList,
+              selectorExpression.valueArgumentList,
+              selectorExpression.lambdaArguments,
+              argumentsIndent = argumentsIndent,
+              lambdaIndent = lambdaIndent,
+          )
         }
       }
     }
