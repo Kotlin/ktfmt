@@ -1,8 +1,6 @@
 package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.Doc
-import com.google.googlejavaformat.Indent
-import com.google.googlejavaformat.Indent.Const.ZERO
 import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.Output.BreakTag
 import java.util.Optional
@@ -10,18 +8,13 @@ import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
-import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.kotlin.psi.KtLabeledExpression
 import org.jetbrains.kotlin.psi.KtLambdaArgument
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtPostfixExpression
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.psi.KtReturnExpression
-import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
-import org.jetbrains.kotlin.psi.KtSuperExpression
-import org.jetbrains.kotlin.psi.KtThisExpression
 import org.jetbrains.kotlin.psi.KtTypeArgumentList
 import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtValueArgumentList
@@ -29,11 +22,9 @@ import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.kotlin.psi.psiUtil.startsWithComment
 import org.jetbrains.ktfmt.format.ParseError
+import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 
 interface CallFormatter : KotlinAstFormatter {
-  val doubleExpressionBreakIndent: Indent.Const
-  val blockPlusExpressionBreakIndent: Indent.Const
-
   override fun formatArgument(
       argument: KtValueArgument,
       wrapInBlock: Boolean,
@@ -74,9 +65,8 @@ interface CallFormatter : KotlinAstFormatter {
       typeArgumentList: KtTypeArgumentList?,
       argumentList: KtValueArgumentList?,
       lambdaArguments: List<KtLambdaArgument>,
-      argumentsIndent: Indent,
-      lambdaIndent: Indent,
-      negativeLambdaIndent: Indent,
+      argumentsIndent: Indentation,
+      lambdaIndent: Indentation,
   ) {
     // Apply the lambda indent to the callee, type args, value args, and the lambda.
     // This is undone for the first three by the negative lambda indent.
@@ -87,7 +77,7 @@ interface CallFormatter : KotlinAstFormatter {
       // This is based on if there is a break in the argument list
       var brokeBeforeBrace: BreakTag? = null
 
-      builder.block(negativeLambdaIndent) {
+      builder.block(-lambdaIndent) {
         format(callee)
         builder.block(argumentsIndent) {
           builder.block(ZERO) { format(typeArgumentList) }
@@ -125,9 +115,9 @@ interface CallFormatter : KotlinAstFormatter {
     val hasComments = bodyExpression.children().any { it is PsiComment }
     val hasArrow = lambdaExpression.functionLiteral.arrow != null
 
-    fun ifBrokeBeforeBrace(onTrue: Indent, onFalse: Indent): Indent {
+    fun ifBrokeBeforeBrace(onTrue: Indentation, onFalse: Indentation): Indentation {
       if (brokeBeforeBrace == null) return onFalse
-      return Indent.If.make(brokeBeforeBrace, onTrue, onFalse)
+      return Indentation.Conditional(brokeBeforeBrace, onTrue, onFalse)
     }
 
     /**
@@ -141,9 +131,9 @@ interface CallFormatter : KotlinAstFormatter {
      * These conditional indents should not be used inside interior blocks, since that would apply
      * the condition twice.
      */
-    val bracePlusBlockIndent = ifBrokeBeforeBrace(blockPlusExpressionBreakIndent, blockIndent)
+    val bracePlusBlockIndent = ifBrokeBeforeBrace(blockIndent + expressionBreakIndent, blockIndent)
     val bracePlusExpressionIndent =
-        ifBrokeBeforeBrace(doubleExpressionBreakIndent, expressionBreakIndent)
+        ifBrokeBeforeBrace(expressionBreakIndent * 2, expressionBreakIndent)
     val bracePlusZeroIndent = ifBrokeBeforeBrace(expressionBreakIndent, ZERO)
 
     builder.token("{")
@@ -295,35 +285,26 @@ interface CallFormatter : KotlinAstFormatter {
         Optional.of(breakToExpr),
     )
 
-    var carry = expr
-    if (carry is KtQualifiedExpression && carry.receiverExpression is KtSimpleNameExpression) {
-      format(carry.receiverExpression)
-      builder.token(carry.operationSign.value)
-      carry = carry.selectorExpression
+    val scopingLambda = expr.scopingLambda ?: throw AssertionError(expr)
+    scopingLambda.receiverExpression?.let {
+      format(it)
+      builder.token(scopingLambda.operation!!.value)
     }
-    if (carry is KtCallExpression) {
-      format(carry.calleeExpression)
+    scopingLambda.calleeExpression?.let {
+      format(it)
       builder.space()
-      carry = carry.lambdaArguments[0].getArgumentExpression()
     }
-    if (carry is KtLabeledExpression) {
-      format(carry.labelQualifier)
-      carry = carry.baseExpression ?: fail()
+    scopingLambda.labeledExpression?.let {
+      format(it.labelQualifier)
     }
-    if (carry is KtLambdaExpression) {
-      formatLambdaExpression(carry, brokeBeforeBrace = breakToExpr)
-      return
-    }
-
-    throw AssertionError(carry)
+    formatLambdaExpression(scopingLambda.lambdaExpression, breakToExpr)
   }
 
-  override fun formatQualifiedExpression(expression: KtQualifiedExpression, extraRules: Boolean) {
-
+  override fun formatQualifiedExpression(expression: KtQualifiedExpression) {
     builder.sync(expression)
     val receiver = expression.receiverExpression
     when {
-      extraRules && inImport -> {
+      inImport -> {
         format(receiver)
         val selectorExpression = expression.selectorExpression
         if (selectorExpression != null) {
@@ -331,7 +312,7 @@ interface CallFormatter : KotlinAstFormatter {
           format(selectorExpression)
         }
       }
-      extraRules && receiver is KtStringTemplateExpression -> {
+      receiver is KtStringTemplateExpression -> {
         builder.block(expressionBreakIndent) {
           format(receiver)
           builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
@@ -339,20 +320,19 @@ interface CallFormatter : KotlinAstFormatter {
           format(expression.selectorExpression)
         }
       }
-      extraRules && receiver is KtWhenExpression -> {
+      receiver is KtWhenExpression -> {
         builder.block(ZERO) {
           format(receiver)
           builder.token(expression.operationSign.value)
           format(expression.selectorExpression)
         }
       }
-      extraRules &&
-          expression.isChainedScopingFunction &&
+      expression.isChainedScopingFunction &&
           expression.chainRoot.isMultilineScopingFunction &&
           !chainedSelectorsHaveValueArguments(expression) -> {
         formatChainedScopingFunction(expression, emitLeadingBreak = false)
       }
-      extraRules && expression.isChainedBlockLikeCall -> {
+      expression.isChainedBlockLikeCall -> {
         formatChainedBlockLikeCall(expression, emitLeadingBreak = false)
       }
       else -> {
@@ -362,18 +342,17 @@ interface CallFormatter : KotlinAstFormatter {
   }
 
   private fun emitQualifiedExpression(expression: KtExpression) {
-
     val parts = expression.chainParts
     // whether we want to make a lambda look like a block, this make Kotlin DSLs look as expected
-    val useBlockLikeLambdaStyle = parts.last().isLambda && parts.count { it.isLambda } == 1
-    val groupingInfos = computeGroupingInfo(parts, useBlockLikeLambdaStyle)
+    val hasTrailingLambda = parts.last().isLambda && parts.count { it.isLambda } == 1
+    val groupingInfos = computeGroupingInfo(parts, hasTrailingLambda, expressionBreakIndent)
     builder.block(expressionBreakIndent) {
       val nameTag = BreakTag() // allows adjusting arguments indentation if a break will be made
-      for ((index, ktExpression) in parts.withIndex()) {
+      for ((ktExpression, groupOpenCount, shouldCloseGroup, isLast) in groupingInfos) {
         if (ktExpression is KtQualifiedExpression) {
           builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, Optional.of(nameTag))
         }
-        repeat(groupingInfos[index].groupOpenCount) { builder.open(ZERO) }
+        repeat(groupOpenCount) { builder.open(ZERO) }
         when (ktExpression) {
           is KtQualifiedExpression -> {
             builder.token(ktExpression.operationSign.value)
@@ -381,7 +360,7 @@ interface CallFormatter : KotlinAstFormatter {
             if (selectorExpression !is KtCallExpression) {
               // selector is a simple field access
               format(selectorExpression)
-              if (groupingInfos[index].shouldCloseGroup) {
+              if (shouldCloseGroup) {
                 builder.close()
               }
             } else {
@@ -389,11 +368,11 @@ interface CallFormatter : KotlinAstFormatter {
               // emit `doIt` from `doIt(1, 2) { it }`
               format(selectorExpression.calleeExpression)
               // close groups according to instructions
-              if (groupingInfos[index].shouldCloseGroup) {
+              if (shouldCloseGroup) {
                 builder.close()
               }
               // close group due to last lambda to allow block-like style in `as.forEach { ... }`
-              val isTrailingLambda = useBlockLikeLambdaStyle && index == parts.size - 1
+              val isTrailingLambda = hasTrailingLambda && isLast
               if (isTrailingLambda) {
                 builder.close()
               }
@@ -403,11 +382,9 @@ interface CallFormatter : KotlinAstFormatter {
               // applies when trailing commas are preserved (the block-like style); when ktfmt
               // manages trailing commas, exploded chained calls keep the regular extra indent.
               val isLastPartOrBlockLikeCall =
-                  index == parts.size - 1 ||
-                      !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
+                  isLast || !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
               val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
-              val lambdaIndentElse = if (isTrailingLambda) expressionBreakNegativeIndent else ZERO
-              val negativeLambdaIndentElse = if (isTrailingLambda) expressionBreakIndent else ZERO
+              val lambdaIndentElse = if (isTrailingLambda) -expressionBreakIndent else ZERO
 
               // emit `(1, 2) { it }` from `doIt(1, 2) { it }`
               formatFunctionCall(
@@ -415,23 +392,14 @@ interface CallFormatter : KotlinAstFormatter {
                   selectorExpression.typeArgumentList,
                   selectorExpression.valueArgumentList,
                   selectorExpression.lambdaArguments,
-                  argumentsIndent = Indent.If.make(nameTag, expressionBreakIndent, argsIndentElse),
-                  lambdaIndent = Indent.If.make(nameTag, ZERO, lambdaIndentElse),
-                  negativeLambdaIndent = Indent.If.make(nameTag, ZERO, negativeLambdaIndentElse),
+                  argumentsIndent =
+                      Indentation.Conditional(nameTag, expressionBreakIndent, argsIndentElse),
+                  lambdaIndent = Indentation.Conditional(nameTag, ZERO, lambdaIndentElse),
               )
             }
           }
           is KtArrayAccessExpression -> {
-            builder.block(expressionBreakIndent) {
-              formatCommaSeparatedList(
-                  ktExpression.indexExpressions,
-                  forceMultiline = ktExpression.trailingComma != null,
-                  wrapInBlock = true,
-                  prefix = "[",
-                  postfix = "]",
-                  breakBeforePostfix = false,
-              )
-            }
+            formatArrayAccessBrackets(ktExpression)
             builder.close()
           }
           is KtPostfixExpression -> {
@@ -439,143 +407,11 @@ interface CallFormatter : KotlinAstFormatter {
             builder.close()
           }
           else -> {
-            check(index == 0)
             format(ktExpression)
           }
         }
       }
     }
-  }
-
-  /** Extra data to help [formatQualifiedExpression] know when to open and close a group */
-  private class GroupingInfo {
-    var groupOpenCount = 0
-    var shouldCloseGroup = false
-  }
-
-  /**
-   * Generates the [GroupingInfo] array to go with an array of [KtQualifiedExpression] parts
-   *
-   * For example, the expression `a.b[2].c.d()` is made of four expressions:
-   * 1. [KtQualifiedExpression] `a.b[2].c . d()` (this will be `parts[4]`)
-   * 1. [KtQualifiedExpression] `a.b[2] . c` (this will be `parts[3]`)
-   * 2. [KtArrayAccessExpression] `a.b [2]` (this will be `parts[2]`)
-   * 3. [KtQualifiedExpression] `a . b` (this will be `parts[1]`)
-   * 4. [KtSimpleNameExpression] `a` (this will be `parts[0]`)
-   *
-   * Once in parts, these are in the reverse order. To render the array correct we need to make sure
-   * `b` and [2] are in a group so we avoid splitting them. To do so we need to open a group for `b`
-   * (that will be done in part 2), and always close a group for an array.
-   *
-   * Here is the same expression, with justified braces marking the groupings it will get:
-   * ```
-   *  a . b [2] . c . d ()
-   * {a . b} --> Grouping `a.b` because it can be a package name or simple field access so we add 1
-   *             to the number of groups to open at groupingInfos[0], and mark to close a group at
-   *             groupingInfos[1]
-   * {a . b [2]} --> Grouping `a.b` with `[2]`, since otherwise we may break inside the brackets
-   *                 instead of preferring breaks before dots. So we open a group at [0], but since
-   *                 we always close a group after brackets, we don't store that information.
-   *             {c . d} --> another group to attach the first function name to the fields before it
-   *                         this time we don't start the group in the beginning, and use
-   *                         lastIndexToOpen to track the spot after the last time we stopped
-   *                         grouping.
-   * ```
-   *
-   * The final expression with groupings:
-   * ```
-   * {{a.b}[2]}.{c.d}()
-   * ```
-   */
-  private fun computeGroupingInfo(
-      parts: List<KtExpression>,
-      useBlockLikeLambdaStyle: Boolean,
-  ): List<GroupingInfo> {
-    val groupingInfos = List(parts.size) { GroupingInfo() }
-    var lastIndexToOpen = 0
-    for ((index, part) in parts.withIndex()) {
-      when (part) {
-        is KtQualifiedExpression -> {
-          val receiverExpression = part.receiverExpression
-          val previous =
-              (receiverExpression as? KtQualifiedExpression)?.selectorExpression
-                  ?: receiverExpression
-          val current = checkNotNull(part.selectorExpression)
-          if (
-              lastIndexToOpen == 0 &&
-                  shouldGroupPartWithPrevious(parts, part, index, previous, current)
-          ) {
-            // this and the previous items should be grouped for better style
-            // we add another group to open in index 0
-            groupingInfos[0].groupOpenCount++
-            // we don't always close a group when emitting this node, so we need this flag to
-            // mark if we need to close a group
-            groupingInfos[index].shouldCloseGroup = true
-          } else {
-            // use this index in to open future groups for arrays and postfixes
-            // we will also stop grouping field access to the beginning of the expression
-            lastIndexToOpen = index
-          }
-        }
-        is KtArrayAccessExpression,
-        is KtPostfixExpression -> {
-          // we group these with the last item with a name, and we always close them
-          groupingInfos[lastIndexToOpen].groupOpenCount++
-        }
-      }
-    }
-    if (useBlockLikeLambdaStyle) {
-      // a trailing lambda adds a group that we stop before emitting the lambda
-      groupingInfos[0].groupOpenCount++
-    }
-    return groupingInfos
-  }
-
-  /** Decide whether a [KtQualifiedExpression] part should be grouped with the previous part */
-  private fun shouldGroupPartWithPrevious(
-      parts: List<KtExpression>,
-      part: KtExpression,
-      index: Int,
-      previous: KtExpression,
-      current: KtExpression,
-  ): Boolean {
-    // this is the second, and the first is short, avoid `.` "hanging in air"
-    if (index == 1 && previous.text.length < options.continuationIndent) {
-      return true
-    }
-    // the previous part is `this` or `super`
-    if (previous is KtSuperExpression || previous is KtThisExpression) {
-      return true
-    }
-    // this and the previous part are a package name, type name, or property
-    if (
-        previous is KtSimpleNameExpression &&
-            current is KtSimpleNameExpression &&
-            part is KtDotQualifiedExpression
-    ) {
-      return true
-    }
-    // this is `Foo` in `com.facebook.Foo`, so everything before it is a package name
-    if (
-        current.text.first().isUpperCase() &&
-            current is KtSimpleNameExpression &&
-            part is KtDotQualifiedExpression
-    ) {
-      return true
-    }
-    // this is the `foo()` in `com.facebook.Foo.foo()` or in `Foo.foo()`
-    if (
-        current is KtCallExpression &&
-            (previous !is KtCallExpression) &&
-            previous.text?.firstOrNull()?.isUpperCase() == true
-    ) {
-      return true
-    }
-    // this is an invocation and the last item, and the previous it not, i.e. `a.b.c()`
-    // keeping it grouped and splitting the arguments makes `a.b(...)` feel like `aab()`
-    return current is KtCallExpression &&
-        previous !is KtCallExpression &&
-        index == parts.indices.last
   }
 
   override fun formatArrayAccessExpression(expression: KtArrayAccessExpression) {
@@ -584,16 +420,20 @@ interface CallFormatter : KotlinAstFormatter {
       emitQualifiedExpression(expression)
     } else {
       format(expression.arrayExpression)
-      builder.block(expressionBreakIndent) {
-        formatCommaSeparatedList(
-            expression.indexExpressions,
-            forceMultiline = expression.trailingComma != null,
-            wrapInBlock = true,
-            prefix = "[",
-            postfix = "]",
-            breakBeforePostfix = false,
-        )
-      }
+      formatArrayAccessBrackets(expression)
+    }
+  }
+
+  private fun formatArrayAccessBrackets(expression: KtArrayAccessExpression) {
+    builder.block(expressionBreakIndent) {
+      formatCommaSeparatedList(
+          expression.indexExpressions,
+          forceMultiline = expression.trailingComma != null,
+          wrapInBlock = true,
+          prefix = "[",
+          postfix = "]",
+          breakBeforePostfix = false,
+      )
     }
   }
 }

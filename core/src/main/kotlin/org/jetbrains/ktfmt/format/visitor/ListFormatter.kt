@@ -1,7 +1,6 @@
 package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.Doc
-import com.google.googlejavaformat.Indent.Const.ZERO
 import com.google.googlejavaformat.Output.BreakTag
 import java.util.Optional
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
@@ -18,6 +17,7 @@ import org.jetbrains.kotlin.psi.KtTypeConstraintList
 import org.jetbrains.kotlin.psi.KtTypeParameterList
 import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.psiUtil.children
+import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 import org.jetbrains.ktfmt.util.listToVisit
 
 interface ListFormatter : KotlinAstFormatter {
@@ -206,7 +206,7 @@ interface ListFormatter : KotlinAstFormatter {
       builder.breakOp(breakType, " ", ZERO)
     }
 
-    val indent = if (emitLeadingBreak) ZERO else expressionBreakNegativeIndent
+    val indent = if (emitLeadingBreak) ZERO else -expressionBreakIndent
     builder.block(indent, isEnabled = wrapInBlock) {
       if (emitLeadingBreak) {
         builder.breakOp(breakType, "", ZERO)
@@ -225,12 +225,12 @@ interface ListFormatter : KotlinAstFormatter {
     if (breakAfterLastElement) {
       // a negative closing indent places the postfix to the left of the elements
       // see examples 2 and 4 in the docstring
-      builder.breakOp(breakType, "", expressionBreakNegativeIndent)
+      builder.breakOp(breakType, "", -expressionBreakIndent)
     }
 
     if (postfix != null) {
       if (breakAfterLastElement) {
-        builder.block(expressionBreakNegativeIndent) {
+        builder.block(-expressionBreakIndent) {
           builder.fenceComments()
           builder.token(postfix, expressionBreakIndent)
         }

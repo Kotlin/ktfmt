@@ -1,7 +1,6 @@
 package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.FormattingError
-import com.google.googlejavaformat.Indent
 import com.google.googlejavaformat.Indent.Const.ZERO
 import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.Output.BreakTag
@@ -129,9 +128,8 @@ interface KotlinAstFormatter {
   val options: FormattingOptions
   val builder: OpsBuilder
 
-  val blockIndent: Indent.Const
-  val expressionBreakIndent: Indent.Const
-  val expressionBreakNegativeIndent: Indent.Const
+  val blockIndent: Indentation.Const
+  val expressionBreakIndent: Indentation.Const
 
   /** A record of whether we have visited into an expression. */
   val inExpression: ArrayDeque<Boolean>
@@ -233,9 +231,7 @@ interface KotlinAstFormatter {
     TODO("Unreachable code path")
   }
 
-  fun formatQualifiedExpression(expression: KtQualifiedExpression, extraRules: Boolean = true) {
-    TODO("Unreachable code path")
-  }
+  fun formatQualifiedExpression(expression: KtQualifiedExpression)
 
   fun formatCallExpression(callExpression: KtCallExpression) {
     TODO("Unreachable code path")
@@ -532,20 +528,13 @@ interface KotlinAstFormatter {
   /** See [isLambdaOrScopingFunction] for examples. */
   fun formatLambdaOrScopingFunction(expr: PsiElement?, emitLeadingBreak: Boolean = true)
 
-  /**
-   * Examples `foo<T>(a, b)`, `foo(a)`, `boo()`, `super(a)`
-   *
-   * @param lambdaIndent how to indent [lambdaArguments], if present
-   * @param negativeLambdaIndent the negative indentation of [lambdaIndent]
-   */
   fun formatFunctionCall(
       callee: KtExpression?,
       typeArgumentList: KtTypeArgumentList?,
       argumentList: KtValueArgumentList?,
       lambdaArguments: List<KtLambdaArgument>,
-      argumentsIndent: Indent = expressionBreakIndent,
-      lambdaIndent: Indent = ZERO,
-      negativeLambdaIndent: Indent = ZERO,
+      argumentsIndent: Indentation = expressionBreakIndent,
+      lambdaIndent: Indentation = Indentation.ZERO,
   )
 
   /**
