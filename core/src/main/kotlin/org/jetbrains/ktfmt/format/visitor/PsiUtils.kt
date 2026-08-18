@@ -54,7 +54,7 @@ private fun onlyEmptyParenthesis(left: PsiElement?, right: PsiElement?): Boolean
     left != null && right != null && left.getNextSiblingIgnoringWhitespace() == right
 
 /**
- * [KotlinInputAstVisitor.emitQualifiedExpression] formats call expressions that are either part of
+ * [CallFormatter.emitQualifiedExpression] formats call expressions that are either part of
  * a qualified expression, or standing alone. This method makes it easier to handle both cases
  * uniformly.
  */

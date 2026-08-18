@@ -12,16 +12,17 @@ import org.jetbrains.kotlin.psi.KtThisExpression
 
 internal data class GroupInfo(
     val expression: KtExpression,
-) {
-  var groupOpenCount: Int = 0
-  var shouldCloseGroup: Boolean = false
-  var isLast: Boolean = false
+    var openingGroups: Int = 0,
+    var closingGroups: Int = 0,
+    var isTrailingLambda: Boolean = false,
+    var isLast: Boolean = false,
+)
 
-  operator fun component2() = groupOpenCount
-
-  operator fun component3() = shouldCloseGroup
-
-  operator fun component4() = isLast
+internal fun KtExpression.computeGroups(continuationIndent: Indentation.Const): List<GroupInfo> {
+  val parts = this.chainParts
+  // whether we want to make a lambda look like a block, this make Kotlin DSLs look as expected
+  val hasTrailingLambda = parts.last().isLambda && parts.count { it.isLambda } == 1
+  return computeGroupingInfo(parts, hasTrailingLambda, continuationIndent)
 }
 
 /**
@@ -34,9 +35,9 @@ internal data class GroupInfo(
  * 3. [KtQualifiedExpression] `a . b` (this will be `parts[1]`)
  * 4. [KtSimpleNameExpression] `a` (this will be `parts[0]`)
  *
- * Once in parts, these are in the reverse order. To render the array correct we need to make sure
- * `b` and [2] are in a group so we avoid splitting them. To do so we need to open a group for `b`
- * (that will be done in part 2), and always close a group for an array.
+ * Once in parts, these are in the reverse order. To render the array access correctly we need to
+ * make sure `b` and `[2]` are in a group so we avoid splitting them. To do so we need to open a
+ * group for `b`, and always close a group for an array.
  *
  * Here is the same expression, with justified braces marking the groupings it will get:
  * ```
@@ -47,15 +48,11 @@ internal data class GroupInfo(
  * {a . b [2]} --> Grouping `a.b` with `[2]`, since otherwise we may break inside the brackets
  *                 instead of preferring breaks before dots. So we open a group at [0], but since
  *                 we always close a group after brackets, we don't store that information.
- *             {c . d} --> another group to attach the first function name to the fields before it
- *                         this time we don't start the group in the beginning, and use
- *                         lastIndexToOpen to track the spot after the last time we stopped
- *                         grouping.
  * ```
  *
  * The final expression with groupings:
  * ```
- * {{a.b}[2]}.{c.d}()
+ * {{a.b}[2]}.c.d()
  * ```
  */
 internal fun computeGroupingInfo(
@@ -64,39 +61,38 @@ internal fun computeGroupingInfo(
     continuationIndent: Indentation.Const,
 ): List<GroupInfo> {
   val groupingInfos = List(parts.size) { GroupInfo(parts[it]) }
-  groupingInfos.lastOrNull()?.let { it.isLast = true }
+  groupingInfos.lastOrNull()?.let {
+    it.isTrailingLambda = hasTrailingLambda && it.expression.isLambda
+    it.isLast = true
+  }
+
+  fun group(from: Int, to: Int) {
+    groupingInfos[from].openingGroups++
+    groupingInfos[to].closingGroups++
+  }
 
   var inPrefix = true
-  var lastIndexToOpen = 0
+  var lastAnchor = 0
   for ((index, part) in parts.withIndex()) {
     when (part) {
       is KtQualifiedExpression -> {
-        if (
-            lastIndexToOpen == 0 &&
-                part.shouldGroupWithPrevious(index, parts.lastIndex, continuationIndent)
-        ) {
-          // this and the previous items should be grouped for better style
-          // we add another group to open in index 0
-          groupingInfos[0].groupOpenCount++
-          // we don't always close a group when emitting this node, so we need this flag to
-          // mark if we need to close a group
-          groupingInfos[index].shouldCloseGroup = true
+        if (inPrefix && part.shouldGroupWithPrevious(index, parts.lastIndex, continuationIndent)) {
+          // all parts of the prefix are grouped together
+          group(0, index)
         } else {
-          // use this index in to open future groups for arrays and postfixes
-          // we will also stop grouping field access to the beginning of the expression
-          lastIndexToOpen = index
+          inPrefix = false
+          // future arrays and postfixes will be anchored to this part
+          lastAnchor = index
         }
       }
       is KtArrayAccessExpression,
       is KtPostfixExpression -> {
-        // we group these with the last item with a name, and we always close them
-        groupingInfos[lastIndexToOpen].groupOpenCount++
+        group(lastAnchor, index)
       }
     }
   }
   if (hasTrailingLambda) {
-    // a trailing lambda adds a group that we stop before emitting the lambda
-    groupingInfos[0].groupOpenCount++
+    group(0, groupingInfos.lastIndex)
   }
   return groupingInfos
 }
