@@ -35,5 +35,15 @@ sealed class Indentation {
 
   companion object {
     val ZERO = Const(0)
+
+    fun makeCond(
+        condition: Output.BreakTag?,
+        trueIndent: Indentation,
+        falseIndent: Indentation,
+    ): Indentation =
+        when {
+          condition == null -> falseIndent
+          else -> Conditional(condition, trueIndent, falseIndent)
+        }
   }
 }
