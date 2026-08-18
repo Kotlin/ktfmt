@@ -2,22 +2,21 @@ package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.Doc.Level
-import com.google.googlejavaformat.Doc.Token
-import com.google.googlejavaformat.Indent
-import com.google.googlejavaformat.Indent.Const.ZERO
 import com.google.googlejavaformat.OpsBuilder
+import com.google.googlejavaformat.Output
 import java.util.Optional
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.ktfmt.format.FenceCommentsOp
+import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 
 /** Helper method to sync the current offset to match any element in the AST */
-fun OpsBuilder.sync(psiElement: PsiElement) {
+internal fun OpsBuilder.sync(psiElement: PsiElement) {
   sync(psiElement.startOffset)
 }
 
 /** Prevent subsequent comments from being moved ahead of this point, into parent [Level]s. */
-fun OpsBuilder.fenceComments() {
+internal fun OpsBuilder.fenceComments() {
   addAll(FenceCommentsOp.AS_LIST)
 }
 
@@ -27,11 +26,11 @@ fun OpsBuilder.fenceComments() {
  * @param token the [String] to wrap in a [Doc.Token]
  * @param plusIndentCommentsBefore extra block for comments before this token
  */
-fun OpsBuilder.token(token: String, plusIndentCommentsBefore: Indent = ZERO) {
+internal fun OpsBuilder.token(token: String, plusIndentCommentsBefore: Indentation = ZERO) {
   token(
       token,
       Doc.Token.RealOrImaginary.REAL,
-      plusIndentCommentsBefore,
+      plusIndentCommentsBefore.indent,
       /* breakAndIndentTrailingComment */ Optional.empty(),
   )
 }
@@ -45,13 +44,13 @@ fun OpsBuilder.token(token: String, plusIndentCommentsBefore: Indent = ZERO) {
  * @param plusIndent the block level to pass to the block
  * @param block a code block to be run in this block level
  */
-fun OpsBuilder.block(
-    plusIndent: Indent = ZERO,
+internal fun OpsBuilder.block(
+    plusIndent: Indentation = ZERO,
     isEnabled: Boolean = true,
     block: () -> Unit,
 ) {
   if (isEnabled) {
-    open(plusIndent)
+    open(plusIndent.indent)
   }
   block()
   if (isEnabled) {
@@ -59,5 +58,13 @@ fun OpsBuilder.block(
   }
 }
 
-val Int.asIndent: Indent.Const
-  get() = Indent.Const.make(this, 1)
+internal fun OpsBuilder.breakOp(
+    fillMode: Doc.FillMode = Doc.FillMode.UNIFIED,
+    flat: String = " ",
+    plusIndent: Indentation = ZERO,
+    optionalTag: Optional<Output.BreakTag> = Optional.empty(),
+) = breakOp(fillMode, flat, plusIndent.indent, optionalTag)
+
+internal fun OpsBuilder.open(plusIndent: Indentation) = open(plusIndent.indent)
+
+internal fun OpsBuilder.forcedBreak(plusIndent: Indentation) = forcedBreak(plusIndent.indent)

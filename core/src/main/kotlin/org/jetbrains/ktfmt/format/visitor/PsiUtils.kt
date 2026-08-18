@@ -21,6 +21,7 @@ import kotlin.contracts.contract
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
+import org.jetbrains.kotlin.lexer.KtSingleValueToken
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtBinaryExpressionWithTypeRHS
@@ -38,7 +39,6 @@ import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.kotlin.psi.psiUtil.getNextSiblingIgnoringWhitespace
 import org.jetbrains.kotlin.psi.psiUtil.getPrevSiblingIgnoringWhitespace
 import org.jetbrains.ktfmt.format.FormattingOptions
-import org.jetbrains.ktfmt.format.KotlinInputAstVisitor
 
 /** Returns true if the expression represents an invocation that is also a lambda */
 val KtExpression.isLambda: Boolean
@@ -164,7 +164,7 @@ inline fun <reified T : PsiElement> PsiElement?.getPrevSiblingIgnoringWhiteSpace
 }
 
 /**
- * Returns an unwrapped lambda expression or scoping function of an expression
+ * An unwrapped lambda expression or scoping function of an expression
  *
  * Examples:
  * 1. '... = { ... }' is a lambda expression
@@ -176,14 +176,30 @@ inline fun <reified T : PsiElement> PsiElement?.getPrevSiblingIgnoringWhiteSpace
  * 1. '... = foo() { ... }' due to the empty parenthesis
  * 2. '... = Runnable @Annotation { ... }' due to the annotation
  */
-val KtExpression?.scopingLambda: KtLambdaExpression?
+internal data class ScopingLambda(
+    val receiverExpression: KtExpression?,
+    val operation: KtSingleValueToken?,
+    val calleeExpression: KtExpression?,
+    val labeledExpression: KtLabeledExpression?,
+    val lambdaExpression: KtLambdaExpression,
+)
+
+internal val PsiElement?.scopingLambda: ScopingLambda?
   get() {
     if (this == null) return null
+    var receiverExpression: KtExpression? = null
+    var operation: KtSingleValueToken? = null
+    var calleeExpression: KtExpression? = null
+    var labeledExpression: KtLabeledExpression? = null
+    val lambdaExpression: KtLambdaExpression
     var carry = this
     if (carry is KtQualifiedExpression && carry.receiverExpression is KtSimpleNameExpression) {
+      receiverExpression = carry.receiverExpression
+      operation = carry.operationSign
       carry = carry.selectorExpression
     }
     if (carry is KtCallExpression) {
+      calleeExpression = carry.calleeExpression
       if (
           carry.valueArgumentList?.leftParenthesis == null &&
               carry.lambdaArguments.isNotEmpty() &&
@@ -195,9 +211,17 @@ val KtExpression?.scopingLambda: KtLambdaExpression?
       }
     }
     if (carry is KtLabeledExpression) {
+      labeledExpression = carry
       carry = carry.baseExpression
     }
-    return carry as? KtLambdaExpression
+    lambdaExpression = carry as? KtLambdaExpression ?: return null
+    return ScopingLambda(
+        receiverExpression,
+        operation,
+        calleeExpression,
+        labeledExpression,
+        lambdaExpression,
+    )
   }
 
 /**
@@ -251,7 +275,7 @@ fun chainedSelectorsHaveValueArguments(expression: KtExpression): Boolean {
  * closing brace must break onto a new line.
  */
 val KtExpression.isMultilineScopingFunction: Boolean
-  get() = scopingLambda?.hasSourceNewlineInLambdaBody ?: false
+  get() = scopingLambda?.lambdaExpression?.hasSourceNewlineInLambdaBody ?: false
 
 /**
  * Returns true if the source code contains a newline anywhere inside the body of
@@ -267,6 +291,10 @@ val KtLambdaExpression.hasSourceNewlineInLambdaBody: Boolean
     }
     return false
   }
+
+internal fun KtExpression?.startsWithUpperCase(): Boolean {
+  return this?.text?.firstOrNull()?.isUpperCase() ?: false
+}
 
 internal val KtExpression?.isBinaryExpression: Boolean
   get() = this is KtBinaryExpression || this is KtBinaryExpressionWithTypeRHS
