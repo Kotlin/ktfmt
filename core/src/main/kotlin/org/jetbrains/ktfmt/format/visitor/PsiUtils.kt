@@ -22,6 +22,8 @@ import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
+import org.jetbrains.kotlin.psi.KtBinaryExpression
+import org.jetbrains.kotlin.psi.KtBinaryExpressionWithTypeRHS
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtLabeledExpression
@@ -265,3 +267,6 @@ val KtLambdaExpression.hasSourceNewlineInLambdaBody: Boolean
     }
     return false
   }
+
+internal val KtExpression?.isBinaryExpression: Boolean
+  get() = this is KtBinaryExpression || this is KtBinaryExpressionWithTypeRHS

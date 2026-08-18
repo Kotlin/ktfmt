@@ -6,8 +6,6 @@ import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtAnnotation
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtAnnotationUseSiteTarget
-import org.jetbrains.kotlin.psi.KtBinaryExpression
-import org.jetbrains.kotlin.psi.KtBinaryExpressionWithTypeRHS
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtReturnExpression
@@ -33,8 +31,8 @@ interface AnnotationFormatter : KotlinAstFormatter {
       // line then only to the first operand of the operator.
       // We force a break to avoid such semantic changes
       when {
-        (baseExpression is KtBinaryExpression || baseExpression is KtBinaryExpressionWithTypeRHS) &&
-            expression.parent is KtBlockExpression -> builder.forcedBreak()
+        baseExpression.isBinaryExpression && expression.parent is KtBlockExpression ->
+            builder.forcedBreak()
         baseExpression is KtLambdaExpression -> builder.space()
         baseExpression is KtReturnExpression -> builder.forcedBreak()
         else -> builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)

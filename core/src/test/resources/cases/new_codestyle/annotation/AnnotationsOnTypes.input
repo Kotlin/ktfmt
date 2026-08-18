@@ -1,0 +1,10 @@
+
+val foo: @Ann String = ""
+
+val foo: @Ann("") String = ""
+
+val foo: @Ann String? = null
+
+val foo: List<@Ann Int> = listOf()
+
+val veryLongType: @Ann("with an argument") Map<String, List<Int>> = emptyMap()

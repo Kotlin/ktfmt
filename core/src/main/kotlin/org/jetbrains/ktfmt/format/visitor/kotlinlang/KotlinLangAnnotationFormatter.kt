@@ -3,15 +3,34 @@ package org.jetbrains.ktfmt.format.visitor.kotlinlang
 import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.Indent.Const.ZERO
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
-import org.jetbrains.kotlin.psi.KtBinaryExpression
-import org.jetbrains.kotlin.psi.KtBinaryExpressionWithTypeRHS
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtReturnExpression
 import org.jetbrains.ktfmt.format.visitor.AnnotationFormatter
 import org.jetbrains.ktfmt.format.visitor.block
+import org.jetbrains.ktfmt.format.visitor.isBinaryExpression
 import org.jetbrains.ktfmt.format.visitor.sync
 
+/**
+ * Custom annotation formatter for KotlinLang style. Currently only modifies formatting of
+ * annotations on expressions via [formatAnnotatedExpression].
+ *
+ * General rule for annotations on an expression: keep annotations on the same line as the
+ * expression; if the line does not fit, force each annotation into a new line.
+ *
+ * Exceptions:
+ * - Return expressions always force a break
+ * - Lambda expressions never force a break, annotation is always glued to `{`
+ * - Binary expressions in a block are break sensitive w.r.t. annotations. Therefore, we have to
+ *   preserve the original formatting
+ *
+ * ```
+ * @Anno a + b = (@Anno a) + b
+ *
+ * @Anno
+ * a + b = @Anno (a + b)
+ * ```
+ */
 interface KotlinLangAnnotationFormatter : AnnotationFormatter {
   override fun formatAnnotatedExpression(expression: KtAnnotatedExpression) {
     builder.sync(expression)
@@ -26,14 +45,9 @@ interface KotlinLangAnnotationFormatter : AnnotationFormatter {
         format(annotationEntry)
       }
 
-      // Binary expressions in a block have a different meaning according to their formatting.
-      // If they're in the line above, they refer to the entire expression, if they're in the same
-      // line then only to the first operand of the operator.
-      // We force a break to avoid such semantic changes
       when {
-        (baseExpression is KtBinaryExpression || baseExpression is KtBinaryExpressionWithTypeRHS) &&
-            expression.parent is KtBlockExpression -> builder.forcedBreak()
-
+        baseExpression.isBinaryExpression && expression.parent is KtBlockExpression ->
+            builder.forcedBreak()
         baseExpression is KtLambdaExpression -> builder.space()
         baseExpression is KtReturnExpression -> builder.forcedBreak()
         else -> builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)

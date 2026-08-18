@@ -4,16 +4,31 @@ import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.Indent.Const.ZERO
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
 import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
+import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtContextReceiverList
 import org.jetbrains.kotlin.psi.KtFunction
 import org.jetbrains.kotlin.psi.KtModifierList
-import org.jetbrains.kotlin.psi.KtParameter
-import org.jetbrains.kotlin.psi.KtTypeReference
+import org.jetbrains.kotlin.psi.KtPrimaryConstructor
+import org.jetbrains.kotlin.psi.KtProperty
+import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.ktfmt.format.visitor.ListFormatter
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
 
+/**
+ * Custom list formatter for KotlinLang style. Currently only overrides [formatModifierList],
+ * because it handles (some of) annotations' formatting.
+ *
+ * General rules for annotations in modifier lists:
+ * - One annotation per line (forced breaks) for class-like declarations
+ * - One annotation per line for function-like declarations, including:
+ *     - Top-level functions
+ *     - Class members, including constructors (except primary constructors)
+ *     - Property accessors
+ * - One annotation per line for properties
+ * - No forced breaks for everything else
+ */
 interface KotlinLangListFormatter : ListFormatter {
   override fun formatModifierList(list: KtModifierList) {
     builder.sync(list)
@@ -41,12 +56,10 @@ interface KotlinLangListFormatter : ListFormatter {
       }
 
       val shouldForceBreak =
-          // don't force break on parameter annotations
-          list.parent !is KtParameter &&
-              // don't force break on receiver type annotations
-              !(list.parent is KtTypeReference && list.parent.parent is KtFunction) &&
-              // don't force break on parameter type annotations
-              !(list.parent is KtTypeReference && list.parent.parent is KtParameter)
+          list.parent is KtClassOrObject ||
+              (list.parent is KtFunction && list.parent !is KtPrimaryConstructor) ||
+              (list.parent is KtPropertyAccessor) ||
+              (list.parent is KtProperty)
       if (onlyAnnotationsSoFar && shouldForceBreak) {
         builder.forcedBreak()
       } else if (onlyAnnotationsSoFar) {
