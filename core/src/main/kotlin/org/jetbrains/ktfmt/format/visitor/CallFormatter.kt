@@ -28,9 +28,9 @@ import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.makeCond
 
 interface CallFormatter : KotlinAstFormatter {
   override fun formatArgument(
-    argument: KtValueArgument,
-    wrapInBlock: Boolean,
-    brokeBeforeBrace: BreakTag?,
+      argument: KtValueArgument,
+      wrapInBlock: Boolean,
+      brokeBeforeBrace: BreakTag?,
   ) {
     builder.sync(argument)
     val hasArgName = argument.getArgumentName() != null
@@ -53,8 +53,8 @@ interface CallFormatter : KotlinAstFormatter {
       }
       if (isLambda) {
         formatLambdaExpression(
-          argument.getArgumentExpression() as KtLambdaExpression,
-          brokeBeforeBrace = brokeBeforeBrace,
+            argument.getArgumentExpression() as KtLambdaExpression,
+            brokeBeforeBrace = brokeBeforeBrace,
         )
       } else {
         format(argument.getArgumentExpression())
@@ -63,12 +63,12 @@ interface CallFormatter : KotlinAstFormatter {
   }
 
   override fun formatFunctionCall(
-    callee: KtExpression?,
-    typeArgumentList: KtTypeArgumentList?,
-    argumentList: KtValueArgumentList?,
-    lambdaArguments: List<KtLambdaArgument>,
-    argumentsIndent: Indentation,
-    lambdaIndent: Indentation,
+      callee: KtExpression?,
+      typeArgumentList: KtTypeArgumentList?,
+      argumentList: KtValueArgumentList?,
+      lambdaArguments: List<KtLambdaArgument>,
+      argumentsIndent: Indentation,
+      lambdaIndent: Indentation,
   ) {
     // Apply the lambda indent to the callee, type args, value args, and the lambda.
     // This is undone for the first three by the negative lambda indent.
@@ -93,9 +93,9 @@ interface CallFormatter : KotlinAstFormatter {
         1 -> {
           builder.space()
           formatArgument(
-            lambdaArguments.single(),
-            wrapInBlock = false,
-            brokeBeforeBrace = brokeBeforeBrace,
+              lambdaArguments.single(),
+              wrapInBlock = false,
+              brokeBeforeBrace = brokeBeforeBrace,
           )
         }
 
@@ -105,8 +105,8 @@ interface CallFormatter : KotlinAstFormatter {
   }
 
   override fun formatLambdaExpression(
-    lambdaExpression: KtLambdaExpression,
-    brokeBeforeBrace: BreakTag?,
+      lambdaExpression: KtLambdaExpression,
+      brokeBeforeBrace: BreakTag?,
   ) {
     builder.sync(lambdaExpression)
 
@@ -114,7 +114,9 @@ interface CallFormatter : KotlinAstFormatter {
     val hasStatements = bodyExpression.children.isNotEmpty()
     val hasComments = bodyExpression.children().any { it is PsiComment }
 
-    val hasDeclaration = lambdaExpression.valueParameters.isNotEmpty() || lambdaExpression.functionLiteral.arrow != null
+    val hasDeclaration =
+        lambdaExpression.valueParameters.isNotEmpty() ||
+            lambdaExpression.functionLiteral.arrow != null
     val hasBody = hasDeclaration || hasStatements || hasComments
 
     /**
@@ -128,19 +130,18 @@ interface CallFormatter : KotlinAstFormatter {
      * These conditional indents should not be used inside interior blocks, since that would apply
      * the condition twice.
      */
-    val bodyIndent =
-      makeCond(brokeBeforeBrace, blockIndent + expressionBreakIndent, blockIndent)
+    val bodyIndent = makeCond(brokeBeforeBrace, blockIndent + expressionBreakIndent, blockIndent)
     val declarationIndent =
-      makeCond(brokeBeforeBrace, expressionBreakIndent * 2, expressionBreakIndent)
+        makeCond(brokeBeforeBrace, expressionBreakIndent * 2, expressionBreakIndent)
     val closingBraceIndent = makeCond(brokeBeforeBrace, expressionBreakIndent, ZERO)
 
     builder.token("{")
 
     if (hasDeclaration) {
       formatLambdaArguments(
-        lambdaExpression.functionLiteral.valueParameterList!!,
-        declarationIndent,
-        bodyIndent,
+          lambdaExpression.functionLiteral.valueParameterList!!,
+          declarationIndent,
+          bodyIndent,
       )
     }
 
@@ -161,9 +162,9 @@ interface CallFormatter : KotlinAstFormatter {
   }
 
   private fun formatLambdaArguments(
-    valueParameterList: KtParameterList,
-    valueParametersIndent: Indentation,
-    arrowIndent: Indentation,
+      valueParameterList: KtParameterList,
+      valueParametersIndent: Indentation,
+      arrowIndent: Indentation,
   ) {
     builder.space()
     builder.block(valueParametersIndent) { formatCommaSeparatedList(valueParameterList.parameters) }
@@ -179,14 +180,14 @@ interface CallFormatter : KotlinAstFormatter {
   }
 
   private fun formatLambdaBody(
-    lambdaExpression: KtLambdaExpression,
-    bodyIndent: Indentation,
-    braceIndent: Indentation,
+      lambdaExpression: KtLambdaExpression,
+      bodyIndent: Indentation,
+      braceIndent: Indentation,
   ) {
     val bodyExpression = lambdaExpression.bodyExpression ?: fail()
     val expressionStatements = bodyExpression.children
     val blockComments =
-      bodyExpression.children().filter { it is PsiComment && it.text.startsWith("/*") }.toList()
+        bodyExpression.children().filter { it is PsiComment && it.text.startsWith("/*") }.toList()
 
     val hasBody = expressionStatements.isNotEmpty() || blockComments.isNotEmpty()
 
@@ -198,12 +199,12 @@ interface CallFormatter : KotlinAstFormatter {
         builder.blankLineWanted(OpsBuilder.BlankLineWanted.NO)
 
         val shouldForceMultiline =
-          options.preserveLambdaBreaks && lambdaExpression.hasSourceNewlineInLambdaBody
+            options.preserveLambdaBreaks && lambdaExpression.hasSourceNewlineInLambdaBody
 
         val singleLineStatement =
-          expressionStatements.size == 1 &&
-                  expressionStatements.first() !is KtReturnExpression &&
-                  !bodyExpression.startsWithComment()
+            expressionStatements.size == 1 &&
+                expressionStatements.first() !is KtReturnExpression &&
+                !bodyExpression.startsWithComment()
 
         if (!shouldForceMultiline && singleLineStatement) {
           formatStatement(expressionStatements[0])
@@ -223,7 +224,6 @@ interface CallFormatter : KotlinAstFormatter {
       builder.breakOp(Doc.FillMode.UNIFIED, " ", braceIndent)
     }
   }
-
 
   override fun formatChainedBlockLikeCall(
       expression: KtQualifiedExpression,

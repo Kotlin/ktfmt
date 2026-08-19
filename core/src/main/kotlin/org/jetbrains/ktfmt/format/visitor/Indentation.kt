@@ -27,8 +27,7 @@ sealed class Indentation {
   ) : Indentation() {
     override val indent: Indent = Indent.If.make(condition, trueIndent.indent, falseIndent.indent)
 
-    override operator fun unaryMinus(): Cond =
-        Cond(condition, -trueIndent, -falseIndent)
+    override operator fun unaryMinus(): Cond = Cond(condition, -trueIndent, -falseIndent)
   }
 
   abstract operator fun unaryMinus(): Indentation
