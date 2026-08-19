@@ -10,11 +10,6 @@ interface ExpressionFormatter : KotlinAstFormatter {
       formatLambdaOrScopingFunction(initializer)
     } else if (initializer.isChainedScopingFunction) {
       formatChainedScopingFunction(initializer, emitLeadingBreak = true)
-    } else if (initializer.isBlockLikeCall) {
-      builder.space()
-      format(initializer)
-    } else if (initializer.isChainedBlockLikeCall) {
-      formatChainedBlockLikeCall(initializer, emitLeadingBreak = true)
     } else {
       builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
       builder.block(expressionBreakIndent) {

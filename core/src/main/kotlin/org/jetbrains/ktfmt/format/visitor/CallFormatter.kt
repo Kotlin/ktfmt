@@ -350,16 +350,13 @@ interface CallFormatter : KotlinAstFormatter {
           !chainedSelectorsHaveValueArguments(expression) -> {
         formatChainedScopingFunction(expression, emitLeadingBreak = false)
       }
-      expression.isChainedBlockLikeCall -> {
-        formatChainedBlockLikeCall(expression, emitLeadingBreak = false)
-      }
       else -> {
         emitQualifiedExpression(expression)
       }
     }
   }
 
-  private fun emitQualifiedExpression(expression: KtExpression) {
+  fun emitQualifiedExpression(expression: KtExpression) {
     val groupingInfos = expression.computeGroups(expressionBreakIndent)
     builder.block(expressionBreakIndent) {
       // allows adjusting arguments indentation if a break will be made
@@ -380,9 +377,7 @@ interface CallFormatter : KotlinAstFormatter {
             // emit `doIt` from `doIt(1, 2) { it }`
             format(selectorExpression.calleeExpression)
 
-            val isLastPartOrBlockLikeCall =
-                isLast || !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
-            val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
+            val argsIndentElse = if (isLast) ZERO else expressionBreakIndent
             val lambdaIndentElse = if (isTrailingLambda) -expressionBreakIndent else ZERO
 
             // remember to emit `(1, 2) { it }` from `doIt(1, 2) { it }`
@@ -427,7 +422,7 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
-  private fun formatArrayAccessBrackets(expression: KtArrayAccessExpression) {
+  fun formatArrayAccessBrackets(expression: KtArrayAccessExpression) {
     builder.block(expressionBreakIndent) {
       formatCommaSeparatedList(
           expression.indexExpressions,

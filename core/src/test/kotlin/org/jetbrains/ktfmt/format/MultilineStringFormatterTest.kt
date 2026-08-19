@@ -93,14 +93,15 @@ class MultilineStringFormatterTest {
 
   @Test
   fun `MultilineTrimmedString minimalIndent calculation`() {
-    val string = multilineTrimmedStringFromLines(
-        " $TQ  ", // whitespace after opening quotes (should be ignored)
-        "    line1", // 4 spaces
-        " ", // blank line (should be ignored)
-        "      line2", // 6 spaces
-        "  line3", // 2 spaces (minimal)
-        " $TQ.trimIndent()", // blank final line (should be ignored)
-    )
+    val string =
+        multilineTrimmedStringFromLines(
+            " $TQ  ", // whitespace after opening quotes (should be ignored)
+            "    line1", // 4 spaces
+            " ", // blank line (should be ignored)
+            "      line2", // 6 spaces
+            "  line3", // 2 spaces (minimal)
+            " $TQ.trimIndent()", // blank final line (should be ignored)
+        )
 
     assertEquals(2, string.minimalIndent)
   }
@@ -110,72 +111,72 @@ class MultilineStringFormatterTest {
     // simple string without template expression
     assertFalse(
         multilineTrimmedStringFromLines(
-            TQ,
-            "    line1",
-            "    line2",
-            "    $TQ.trimIndent()",
-        )
+                TQ,
+                "    line1",
+                "    line2",
+                "    $TQ.trimIndent()",
+            )
             .hasTemplateExpression(),
     )
 
     // dollar string without dollar template expression
     assertFalse(
         multilineTrimmedStringFromLines(
-            "$$$TQ",
-            "    line1 \${variable}",
-            "    line2",
-            "    $TQ.trimIndent()",
-        )
+                "$$$TQ",
+                "    line1 \${variable}",
+                "    line2",
+                "    $TQ.trimIndent()",
+            )
             .hasTemplateExpression(),
     )
 
     // simple string with template expression
     assertTrue(
         multilineTrimmedStringFromLines(
-            TQ,
-            "    line1 \${variable}",
-            "    line2",
-            "    $TQ.trimIndent()",
-        )
+                TQ,
+                "    line1 \${variable}",
+                "    line2",
+                "    $TQ.trimIndent()",
+            )
             .hasTemplateExpression(),
     )
 
     // dollar string with template expression
     assertTrue(
         multilineTrimmedStringFromLines(
-            "$$$TQ",
-            "    line1 $$\${variable}",
-            "    line2",
-            "    $TQ.trimIndent()",
-        )
+                "$$$TQ",
+                "    line1 $$\${variable}",
+                "    line2",
+                "    $TQ.trimIndent()",
+            )
             .hasTemplateExpression(),
     )
 
     // simple string with multiline template expression
     assertTrue(
         multilineTrimmedStringFromLines(
-            TQ,
-            "    line1",
-            "    $$\${",
-            "      if (condition) variable else $TQ hello $TQ",
-            "    }",
-            "    line2",
-            "    $TQ.trimIndent()",
-        )
+                TQ,
+                "    line1",
+                "    $$\${",
+                "      if (condition) variable else $TQ hello $TQ",
+                "    }",
+                "    line2",
+                "    $TQ.trimIndent()",
+            )
             .hasTemplateExpression(),
     )
 
     // dollar string with multiline template expression
     assertTrue(
         multilineTrimmedStringFromLines(
-            "$$$TQ",
-            "    line1",
-            "    $$\${",
-            "      if (condition) variable else \"\"",
-            "    }",
-            "    line2",
-            "    $TQ.trimIndent()",
-        )
+                "$$$TQ",
+                "    line1",
+                "    $$\${",
+                "      if (condition) variable else \"\"",
+                "    }",
+                "    line2",
+                "    $TQ.trimIndent()",
+            )
             .hasTemplateExpression(),
     )
   }
@@ -189,12 +190,12 @@ class MultilineStringFormatterTest {
             "line3",
         ),
         multilineTrimmedStringFromLines(
-            "$TQ  ",
-            "    |line1",
-            "    |line2",
-            "    |line3",
-            "    $TQ.trimMargin()",
-        )
+                "$TQ  ",
+                "    |line1",
+                "    |line2",
+                "    |line3",
+                "    $TQ.trimMargin()",
+            )
             .getStringContent(),
     )
 
@@ -206,12 +207,12 @@ class MultilineStringFormatterTest {
             "",
         ),
         multilineTrimmedStringFromLines(
-            TQ,
-            "    line1",
-            "    line2",
-            "    line3",
-            "    |$TQ.trimMargin()",
-        )
+                TQ,
+                "    line1",
+                "    line2",
+                "    line3",
+                "    |$TQ.trimMargin()",
+            )
             .getStringContent(),
     )
   }
@@ -226,13 +227,13 @@ class MultilineStringFormatterTest {
             "",
         ),
         multilineTrimmedStringFromLines(
-            "$TQ ",
-            "    line1",
-            "      line2", // 6 spaces
-            "    line3", // 4 spaces
-            "",
-            "    $TQ.trimIndent()",
-        )
+                "$TQ ",
+                "    line1",
+                "      line2", // 6 spaces
+                "    line3", // 4 spaces
+                "",
+                "    $TQ.trimIndent()",
+            )
             .getStringContent(),
     )
 
@@ -244,14 +245,14 @@ class MultilineStringFormatterTest {
             "",
         ),
         multilineTrimmedStringFromLines(
-            "$TQ ",
-            "    line1",
-            "      line2", // 6 spaces
-            "    line3", // 4 spaces
-            "",
-            "    $TQ",
-            "    .trimIndent()",
-        )
+                "$TQ ",
+                "    line1",
+                "      line2", // 6 spaces
+                "    line3", // 4 spaces
+                "",
+                "    $TQ",
+                "    .trimIndent()",
+            )
             .getStringContent(),
     )
   }
@@ -265,12 +266,12 @@ class MultilineStringFormatterTest {
             "line2",
         ),
         multilineTrimmedStringFromLines(
-            "${TQ}content",
-            "    |line1",
-            "  |line2",
-            "    $TQ",
-            "        .trimMargin()",
-        )
+                "${TQ}content",
+                "    |line1",
+                "  |line2",
+                "    $TQ",
+                "        .trimMargin()",
+            )
             .getStringContent(),
     )
 
@@ -281,11 +282,11 @@ class MultilineStringFormatterTest {
             "line2",
         ),
         multilineTrimmedStringFromLines(
-            "$TQ    content",
-            "    line1",
-            "    line2",
-            "    $TQ.trimIndent()",
-        )
+                "$TQ    content",
+                "    line1",
+                "    line2",
+                "    $TQ.trimIndent()",
+            )
             .getStringContent(),
     )
   }

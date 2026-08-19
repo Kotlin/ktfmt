@@ -23,13 +23,14 @@ import org.junit.jupiter.api.assertThrows
 class TokenizerTest {
   @Test
   fun `PsiWhiteSpace are split to newlines and maximal-length whitespaces`() {
-    val code = listOf(
-        "val  a = ", //
-        "", //
-        "     ", //
-        "     15",
-    )
-        .joinToString("\n")
+    val code =
+        listOf(
+                "val  a = ", //
+                "", //
+                "     ", //
+                "     15",
+            )
+            .joinToString("\n")
 
     val file = Parser.parse(code)
     val tokenizer = Tokenizer(code, file)
@@ -43,20 +44,21 @@ class TokenizerTest {
 
   @Test
   fun `Strings are returns as a single token`() {
-    val code = listOf(
-        "val a=\"\"\"",
-        "  ",
-        "   ",
-        "    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do ",
-        "    Lorem",
-        "    ",
-        "     ",
-        "      \"\"\"",
-        "val b=\"lorem ipsum\"",
-        "      ",
-        "    ",
-    )
-        .joinToString("\n")
+    val code =
+        listOf(
+                "val a=\"\"\"",
+                "  ",
+                "   ",
+                "    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do ",
+                "    Lorem",
+                "    ",
+                "     ",
+                "      \"\"\"",
+                "val b=\"lorem ipsum\"",
+                "      ",
+                "    ",
+            )
+            .joinToString("\n")
 
     val file = Parser.parse(code)
     val tokenizer = Tokenizer(code, file)
@@ -69,15 +71,15 @@ class TokenizerTest {
             "a",
             "=",
             listOf(
-                "\"\"\"",
-                " ${WhitespaceTombstones.SPACE_TOMBSTONE}",
-                "  ${WhitespaceTombstones.SPACE_TOMBSTONE}",
-                "    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do${WhitespaceTombstones.SPACE_TOMBSTONE}",
-                "    Lorem",
-                "   ${WhitespaceTombstones.SPACE_TOMBSTONE}",
-                "    ${WhitespaceTombstones.SPACE_TOMBSTONE}",
-                "      \"\"\"",
-            )
+                    "\"\"\"",
+                    " ${WhitespaceTombstones.SPACE_TOMBSTONE}",
+                    "  ${WhitespaceTombstones.SPACE_TOMBSTONE}",
+                    "    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do${WhitespaceTombstones.SPACE_TOMBSTONE}",
+                    "    Lorem",
+                    "   ${WhitespaceTombstones.SPACE_TOMBSTONE}",
+                    "    ${WhitespaceTombstones.SPACE_TOMBSTONE}",
+                    "      \"\"\"",
+                )
                 .joinToString("\n"),
             "\n",
             "val",

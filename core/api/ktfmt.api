@@ -438,7 +438,9 @@ public abstract class org/jetbrains/ktfmt/format/visitor/AbstractFormatterVisito
 }
 
 public abstract interface class org/jetbrains/ktfmt/format/visitor/CallFormatter : org/jetbrains/ktfmt/format/visitor/KotlinAstFormatter {
+	public fun emitQualifiedExpression (Lorg/jetbrains/kotlin/psi/KtExpression;)V
 	public fun formatArgument (Lorg/jetbrains/kotlin/psi/KtValueArgument;ZLcom/google/googlejavaformat/Output$BreakTag;)V
+	public fun formatArrayAccessBrackets (Lorg/jetbrains/kotlin/psi/KtArrayAccessExpression;)V
 	public fun formatArrayAccessExpression (Lorg/jetbrains/kotlin/psi/KtArrayAccessExpression;)V
 	public fun formatChainedBlockLikeCall (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;Z)V
 	public fun formatChainedScopingFunction (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;Z)V
@@ -651,6 +653,15 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/TypeFormatter
 	public fun formatTypeProjection (Lorg/jetbrains/kotlin/psi/KtTypeProjection;)V
 	public fun formatTypeReference (Lorg/jetbrains/kotlin/psi/KtTypeReference;)V
 	public fun formatUserType (Lorg/jetbrains/kotlin/psi/KtUserType;)V
+}
+
+public abstract interface class org/jetbrains/ktfmt/format/visitor/kotlinlang/KotlinLangCallFormatter : org/jetbrains/ktfmt/format/visitor/CallFormatter {
+	public fun emitQualifiedExpression (Lorg/jetbrains/kotlin/psi/KtExpression;)V
+	public fun formatQualifiedExpression (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;)V
+}
+
+public abstract interface class org/jetbrains/ktfmt/format/visitor/kotlinlang/KotlinLangExpressionFormatter : org/jetbrains/ktfmt/format/visitor/ExpressionFormatter {
+	public fun formatInitializerExpression (Lorg/jetbrains/kotlin/psi/KtExpression;)V
 }
 
 public abstract interface class org/jetbrains/ktfmt/format/visitor/kotlinlang/KotlinLangListFormatter : org/jetbrains/ktfmt/format/visitor/ListFormatter {

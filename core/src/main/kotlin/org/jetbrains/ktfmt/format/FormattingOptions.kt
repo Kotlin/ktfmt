@@ -223,16 +223,17 @@ data class FormattingOptions(
     }
 
     /** Builds a new [FormattingOptions] from the current builder state. */
-    fun build(): FormattingOptions = FormattingOptions(
-        maxWidth = maxWidth,
-        blockIndent = blockIndent,
-        continuationIndent = continuationIndent,
-        trailingCommaManagementStrategy = trailingCommaManagementStrategy,
-        removeUnusedImports = removeUnusedImports,
-        preserveLambdaBreaks = preserveLambdaBreaks,
-        debuggingPrintOpsAfterFormatting = debuggingPrintOpsAfterFormatting,
-        experimentalEngine = useExperimentalEngine,
-    )
+    fun build(): FormattingOptions =
+        FormattingOptions(
+            maxWidth = maxWidth,
+            blockIndent = blockIndent,
+            continuationIndent = continuationIndent,
+            trailingCommaManagementStrategy = trailingCommaManagementStrategy,
+            removeUnusedImports = removeUnusedImports,
+            preserveLambdaBreaks = preserveLambdaBreaks,
+            debuggingPrintOpsAfterFormatting = debuggingPrintOpsAfterFormatting,
+            experimentalEngine = useExperimentalEngine,
+        )
   }
 }
 

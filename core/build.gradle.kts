@@ -76,10 +76,11 @@ tasks {
 
   // Javadoc
   register("javadocJar", Jar::class) {
-    val dokkaJavadocTask = named(
-        "dokkaGeneratePublicationJavadoc",
-        org.jetbrains.dokka.gradle.tasks.DokkaGeneratePublicationTask::class,
-    )
+    val dokkaJavadocTask =
+        named(
+            "dokkaGeneratePublicationJavadoc",
+            org.jetbrains.dokka.gradle.tasks.DokkaGeneratePublicationTask::class,
+        )
     dependsOn(dokkaJavadocTask)
     from(dokkaJavadocTask.flatMap { it.outputDirectory })
     archiveClassifier = "javadoc"

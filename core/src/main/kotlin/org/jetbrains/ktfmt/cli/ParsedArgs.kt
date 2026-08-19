@@ -261,18 +261,19 @@ data class ParsedArgs(
         return ParseResult.Error("partial formatting is only supported for a single file")
       }
 
-      val parsedArgs = ParsedArgs(
-          fileNames,
-          formattingOptions.copy(
-              removeUnusedImports = removeUnusedImports,
-              experimentalEngine = useExperimentalEngine,
-          ),
-          dryRun,
-          setExitIfChanged,
-          stdinName,
-          editorConfig,
-          quiet,
-      )
+      val parsedArgs =
+          ParsedArgs(
+              fileNames,
+              formattingOptions.copy(
+                  removeUnusedImports = removeUnusedImports,
+                  experimentalEngine = useExperimentalEngine,
+              ),
+              dryRun,
+              setExitIfChanged,
+              stdinName,
+              editorConfig,
+              quiet,
+          )
       parsedArgs.lineRanges.addAll(lineRanges)
       parsedArgs.characterRanges.addAll(characterRanges)
       return ParseResult.Ok(parsedArgs)

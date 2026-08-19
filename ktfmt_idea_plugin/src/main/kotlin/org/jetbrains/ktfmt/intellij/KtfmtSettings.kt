@@ -47,15 +47,16 @@ internal class KtfmtSettings(private val project: Project) :
     }
 
   var customFormattingOptions: FormattingOptions
-    get() = FormattingOptions(
-        maxWidth = state.customMaxLineLength,
-        blockIndent = state.customBlockIndent,
-        continuationIndent = state.customContinuationIndent,
-        trailingCommaManagementStrategy =
-            state.customTrailingCommaManagementStrategy.toTrailingCommaManagementStrategy(),
-        removeUnusedImports = state.customRemoveUnusedImports,
-        preserveLambdaBreaks = state.customPreserveLambdaBreaks,
-    )
+    get() =
+        FormattingOptions(
+            maxWidth = state.customMaxLineLength,
+            blockIndent = state.customBlockIndent,
+            continuationIndent = state.customContinuationIndent,
+            trailingCommaManagementStrategy =
+                state.customTrailingCommaManagementStrategy.toTrailingCommaManagementStrategy(),
+            removeUnusedImports = state.customRemoveUnusedImports,
+            preserveLambdaBreaks = state.customPreserveLambdaBreaks,
+        )
     set(customFormattingOptions) {
       state.applyCustomFormattingOptions(customFormattingOptions)
     }

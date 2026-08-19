@@ -2,7 +2,7 @@
 // TRAILING_COMMA_STRATEGY NONE
 
 getRainbow(
-    infrared,
-    ultraviolet,
-)
+        infrared,
+        ultraviolet,
+    )
     .z { it }
