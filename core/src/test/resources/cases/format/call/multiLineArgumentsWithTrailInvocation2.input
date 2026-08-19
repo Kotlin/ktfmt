@@ -2,7 +2,7 @@
 // TRAILING_COMMA_STRATEGY NONE
 
 z12.shine(
-    infrared,
-    ultraviolet,
-)
+        infrared,
+        ultraviolet,
+    )
     .bright()

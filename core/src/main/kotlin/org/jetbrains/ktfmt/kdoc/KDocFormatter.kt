@@ -60,19 +60,21 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
       // Does the text fit on a single line?
       val trimmed = paragraphs.firstOrNull()?.text?.trim() ?: ""
       // Subtract out space for "/** " and " */" and the indent:
-      val width = min(
-          options.maxLineWidth - firstIndentSize - commentType.singleLineOverhead(),
-          options.maxCommentWidth,
-      )
+      val width =
+          min(
+              options.maxLineWidth - firstIndentSize - commentType.singleLineOverhead(),
+              options.maxCommentWidth,
+          )
       val suffix = if (commentType.suffix.isEmpty()) "" else " ${commentType.suffix}"
       if (trimmed.length <= width) {
         return "$prefix $trimmed$suffix"
       }
       if (indentSize < firstIndentSize) {
-        val nextLineWidth = min(
-            options.maxLineWidth - indentSize - commentType.singleLineOverhead(),
-            options.maxCommentWidth,
-        )
+        val nextLineWidth =
+            min(
+                options.maxLineWidth - indentSize - commentType.singleLineOverhead(),
+                options.maxCommentWidth,
+            )
         if (trimmed.length <= nextLineWidth) {
           return "$prefix $trimmed$suffix"
         }
