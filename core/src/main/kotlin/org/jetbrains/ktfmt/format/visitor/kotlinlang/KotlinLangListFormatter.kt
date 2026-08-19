@@ -17,8 +17,9 @@ import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
 
 /**
- * Custom formatter for KotlinLang style. Handles annotation formatting for declarations and types by
- * overriding [formatModifierList]. For annotations on expressions see [KotlinLangAnnotationFormatter].
+ * Custom formatter for KotlinLang style. Handles annotation formatting for declarations and types
+ * by overriding [formatModifierList]. For annotations on expressions see
+ * [KotlinLangAnnotationFormatter].
  *
  * General rules for annotations in modifier lists:
  * - One annotation per line (forced breaks) for class-like declarations

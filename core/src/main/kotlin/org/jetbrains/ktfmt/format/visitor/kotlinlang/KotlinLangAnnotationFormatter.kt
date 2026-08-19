@@ -12,8 +12,8 @@ import org.jetbrains.ktfmt.format.visitor.isBinaryExpression
 import org.jetbrains.ktfmt.format.visitor.sync
 
 /**
- * Custom annotation expression formatter for KotlinLang style. For annotations on declarations and types see
- * [KotlinLangListFormatter].
+ * Custom annotation expression formatter for KotlinLang style. For annotations on declarations and
+ * types see [KotlinLangListFormatter].
  *
  * General rule for annotations on an expression: keep annotations on the same line as the
  * expression; if the line does not fit, force each annotation into a new line.
