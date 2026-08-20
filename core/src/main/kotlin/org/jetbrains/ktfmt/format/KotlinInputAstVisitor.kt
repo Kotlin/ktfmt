@@ -126,6 +126,7 @@ import org.jetbrains.ktfmt.format.visitor.isLambdaOrScopingFunction
 import org.jetbrains.ktfmt.format.visitor.open
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
+import org.jetbrains.ktfmt.format.visitor.trailingLambda
 import org.jetbrains.ktfmt.util.CONTEXT_PARAMETER_LIST
 import org.jetbrains.ktfmt.util.ownValOrVarKeywordText
 
@@ -343,7 +344,7 @@ open class KotlinInputAstVisitor(
           calleeExpression,
           typeArgumentList,
           valueArgumentList,
-          lambdaArguments,
+          trailingLambda,
       )
     }
   }
@@ -829,7 +830,7 @@ open class KotlinInputAstVisitor(
           null,
           call.typeArgumentList,
           call.valueArgumentList,
-          call.lambdaArguments,
+          call.trailingLambda,
       )
     }
   }
@@ -908,7 +909,7 @@ open class KotlinInputAstVisitor(
 
   override fun visitSuperTypeCallEntry(call: KtSuperTypeCallEntry) {
     builder.sync(call)
-    formatFunctionCall(call.calleeExpression, null, call.valueArgumentList, call.lambdaArguments)
+    formatFunctionCall(call.calleeExpression, null, call.valueArgumentList, call.trailingLambda)
   }
 
   /**
@@ -1285,7 +1286,7 @@ open class KotlinInputAstVisitor(
           receiverExpression.calleeExpression,
           receiverExpression.typeArgumentList,
           receiverExpression.valueArgumentList,
-          receiverExpression.lambdaArguments,
+          receiverExpression.trailingLambda,
       )
     } else {
       visit(receiverExpression)
