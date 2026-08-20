@@ -10,6 +10,16 @@ import org.jetbrains.kotlin.psi.KtSimpleNameExpression
 import org.jetbrains.kotlin.psi.KtSuperExpression
 import org.jetbrains.kotlin.psi.KtThisExpression
 
+/**
+ * Represents a part of an execution chain (see [chainParts]) with the necessary grouping
+ * information:
+ *
+ * @property [openingGroups] is the number of groups that need to be opened before this expression
+ * @property [closingGroups] is the number of groups that need to be closed after this expression
+ * @property [isTrailingLambda] is true if this expression is the only lambda in the chain, and it
+ *   is the last part of the chain
+ * @property [isLast] is true if this expression is the last part of the chain
+ */
 internal data class GroupInfo(
     val expression: KtExpression,
     var openingGroups: Int = 0,
@@ -28,12 +38,12 @@ internal fun KtExpression.computeGroups(continuationIndent: Indentation.Const): 
 /**
  * Generates the [GroupInfo] array to go with an array of [KtQualifiedExpression] parts
  *
- * For example, the expression `a.b[2].c.d()` is made of four expressions:
+ * For example, the expression `a.b[2].c.d()` is made of five expressions:
  * 1. [KtQualifiedExpression] `a.b[2].c . d()` (this will be `parts[4]`)
- * 1. [KtQualifiedExpression] `a.b[2] . c` (this will be `parts[3]`)
- * 2. [KtArrayAccessExpression] `a.b [2]` (this will be `parts[2]`)
- * 3. [KtQualifiedExpression] `a . b` (this will be `parts[1]`)
- * 4. [KtSimpleNameExpression] `a` (this will be `parts[0]`)
+ * 2. [KtQualifiedExpression] `a.b[2] . c` (this will be `parts[3]`)
+ * 3. [KtArrayAccessExpression] `a.b [2]` (this will be `parts[2]`)
+ * 4. [KtQualifiedExpression] `a . b` (this will be `parts[1]`)
+ * 5. [KtSimpleNameExpression] `a` (this will be `parts[0]`)
  *
  * Once in parts, these are in the reverse order. To render the array access correctly we need to
  * make sure `b` and `[2]` are in a group so we avoid splitting them. To do so we need to open a
