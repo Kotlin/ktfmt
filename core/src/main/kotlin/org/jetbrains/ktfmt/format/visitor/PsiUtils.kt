@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
 import org.jetbrains.kotlin.lexer.KtSingleValueToken
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
+import org.jetbrains.kotlin.psi.KtCallElement
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtLabeledExpression
@@ -295,3 +296,18 @@ val KtLambdaExpression.hasSourceNewlineInLambdaBody: Boolean
 internal fun KtExpression?.startsWithUpperCase(): Boolean {
   return this?.text?.firstOrNull()?.isUpperCase() ?: false
 }
+
+/**
+ * Returns the trailing lambda argument of a function call expression or null if its not present.
+ *
+ * A function call can't have more than one trailing lambda, but [KtCallElement] and
+ * [KtCallExpression] represent them as a list (see [KtCallExpression.getLambdaArguments] for more
+ * details).
+ */
+internal val KtCallElement.trailingLambda: KtLambdaArgument?
+  get() {
+    val lambdas = lambdaArguments
+    if (lambdas.isEmpty()) return null
+    if (lambdas.size == 1) return lambdas.first()
+    else throw ParseError("Maximum one trailing lambda is allowed", lambdaArguments[1])
+  }

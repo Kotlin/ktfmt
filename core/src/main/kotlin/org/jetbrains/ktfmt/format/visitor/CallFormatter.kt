@@ -22,7 +22,6 @@ import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.kotlin.psi.psiUtil.startsWithComment
-import org.jetbrains.ktfmt.format.ParseError
 import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 
 /**
@@ -75,17 +74,15 @@ interface CallFormatter : KotlinAstFormatter {
    * @param callee the function call expression
    * @param typeArgumentList the type arguments of the function call expression
    * @param argumentList the value arguments of the function call expression
-   * @param lambdaArguments trailing lambda arguments of the call expression; in correspondence with
-   *   Kotlin syntax a function call can't have more than one trailing lambda, but
-   *   [KtCallExpression] represents them as a list (see [KtCallExpression.getLambdaArguments])
+   * @param trailingLambda trailing lambda arguments of the call expression
    * @param argumentsIndent how to indent [argumentList], if present
-   * @param lambdaIndent how to indent [lambdaArguments], if present
+   * @param lambdaIndent how to indent [trailingLambda], if present
    */
   override fun formatFunctionCall(
       callee: KtExpression?,
       typeArgumentList: KtTypeArgumentList?,
       argumentList: KtValueArgumentList?,
-      lambdaArguments: List<KtLambdaArgument>,
+      trailingLambda: KtLambdaArgument?,
       argumentsIndent: Indentation,
       lambdaIndent: Indentation,
   ) {
@@ -107,18 +104,13 @@ interface CallFormatter : KotlinAstFormatter {
           }
         }
       }
-      when (lambdaArguments.size) {
-        0 -> {}
-        1 -> {
-          builder.space()
-          formatArgument(
-              lambdaArguments.single(),
-              wrapInBlock = false,
-              brokeBeforeBrace = brokeBeforeBrace,
-          )
-        }
-
-        else -> throw ParseError("Maximum one trailing lambda is allowed", lambdaArguments[1])
+      trailingLambda?.let {
+        builder.space()
+        formatArgument(
+            it,
+            wrapInBlock = false,
+            brokeBeforeBrace = brokeBeforeBrace,
+        )
       }
     }
   }
@@ -267,7 +259,7 @@ interface CallFormatter : KotlinAstFormatter {
               null,
               selectorExpression.typeArgumentList,
               selectorExpression.valueArgumentList,
-              selectorExpression.lambdaArguments,
+              selectorExpression.trailingLambda,
           )
         } else {
           format(selectorExpression)
@@ -304,7 +296,7 @@ interface CallFormatter : KotlinAstFormatter {
               null,
               selectorExpression.typeArgumentList,
               selectorExpression.valueArgumentList,
-              selectorExpression.lambdaArguments,
+              selectorExpression.trailingLambda,
           )
         } else {
           format(selectorExpression)
@@ -440,7 +432,7 @@ interface CallFormatter : KotlinAstFormatter {
               null,
               callee.typeArgumentList,
               callee.valueArgumentList,
-              callee.lambdaArguments,
+              callee.trailingLambda,
               argumentsIndent = argumentsIndent,
               lambdaIndent = lambdaIndent,
           )
