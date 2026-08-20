@@ -1,15 +1,17 @@
 private class AnnotatedConstructor(
     @JvmField @Volatile private var state: Int,
     @get:JvmName("ctx") val context: CoroutineContext,
-    @Suppress("UNUSED_PARAMETER") unused: String = "",
-    @property:Inject val dependency: Dependency,
     @Deprecated("Use context instead", ReplaceWith("context")) val legacyContext: CoroutineContext,
 )
 
 private class AnnotatedParameters {
-    fun single(@NotNull a: String) = a
+    fun twoAnnotationsFits(@NotNull @Size(min = 1) a: String, @Nullable b: String?) = a + b
 
-    fun multiple(@NotNull @Size(min = 1) a: String, @Nullable b: String?) = a + b
+    fun twoAnnotationsOverflows(
+        @Suppress("UNUSED_PARAMETER")
+        @Size(min = 1, max = 100, message = "out of range")
+        someLongParameterName: String,
+    ) = 1
 
     fun wrapped(
         @NotNull @Size(min = 1, max = 100) someVeryLongParameterName: String,
@@ -17,12 +19,4 @@ private class AnnotatedParameters {
     ) = someVeryLongParameterName + anotherRatherLongParameterName
 
     fun varargs(@NotNull vararg values: String) = values.size
-
-    fun higherOrder(@NotNull block: (@Nullable Int) -> Unit) = block(1)
-
-    fun @receiver:NotNull String.extension(@NotNull other: String) = this + other
-
-    fun withLambda(@NotNull name: String, @Nullable block: () -> Unit = {}) {
-        block()
-    }
 }
