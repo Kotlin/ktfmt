@@ -40,3 +40,16 @@ fun castIt(
 val a =
     l.sOrNull() is
         SomethingLongEnough
+
+fun f() {
+  foo.bam()
+      .uber()
+      .boom() is Boo
+
+  doIt(
+      foo.bam()
+          .uber()
+          .boom()
+          .lah is Boo,
+  )
+}
