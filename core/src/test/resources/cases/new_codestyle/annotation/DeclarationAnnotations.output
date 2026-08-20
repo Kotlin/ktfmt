@@ -19,28 +19,28 @@ class PrimaryCtor @Inject constructor(val a: Int)
 class PrimaryCtorWithArgs @Inject("qualifier") internal constructor(val a: Int)
 
 class SecondaryCtor(a: Int, b: String) {
-    @Inject constructor() : this(1, "")
+  @Inject constructor() : this(1, "")
 
-    @Inject("qualifier") constructor(a: Int) : this(a, "default")
+  @Inject("qualifier") constructor(a: Int) : this(a, "default")
 }
 
 var accessors: Int = 1
-    @Anno get() = field
-    @Anno set(value) {}
+  @Anno get() = field
+  @Anno set(value) {}
 
 var multipleAccessorAnnotations: Int = 1
-    @Anno("arg") get() = field + someOtherValueHere
-    @Deprecated("Deprecation message") @TestOnly set
+  @Anno("arg") get() = field + someOtherValueHere
+  @Deprecated("Deprecation message") @TestOnly set
 
 enum class EnumEntries {
-    @A FOO,
-    @Deprecated("Use FOO", ReplaceWith("FOO")) BAR,
+  @A FOO,
+  @Deprecated("Use FOO", ReplaceWith("FOO")) BAR,
 }
 
 fun localDeclarations() {
-    @A val local = 1
+  @A val local = 1
 
-    @Suppress("UNUSED_VARIABLE") val localWithArgs = compute(a, b)
+  @Suppress("UNUSED_VARIABLE") val localWithArgs = compute(a, b)
 
-    @A fun inner() {}
+  @A fun inner() {}
 }
