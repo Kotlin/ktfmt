@@ -551,22 +551,6 @@ interface KotlinAstFormatter {
       emitLeadingBreak: Boolean,
   )
 
-    /**
-     * Examples `foo<T>(a, b)`, `foo(a)`, `boo()`, `super(a)`
-     *
-     * @param lambdaIndent how to indent [lambdaArguments], if present
-     * @param negativeLambdaIndent the negative indentation of [lambdaIndent]
-     */
-    fun formatCallElement(
-        callee: KtExpression?,
-        typeArgumentList: KtTypeArgumentList?,
-        argumentList: KtValueArgumentList?,
-        lambdaArguments: List<KtLambdaArgument>,
-        argumentsIndent: Indent = expressionBreakIndent,
-        lambdaIndent: Indent = ZERO,
-        negativeLambdaIndent: Indent = ZERO,
-    )
-
   /**
    * markForPartialFormat is used to delineate the smallest areas of code that must be formatted
    * together.

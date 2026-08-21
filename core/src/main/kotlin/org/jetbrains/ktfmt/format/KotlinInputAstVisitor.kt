@@ -30,10 +30,6 @@ import kotlin.jvm.optionals.getOrNull
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.stubs.PsiFileStubImpl
 import org.jetbrains.kotlin.lexer.KtTokens
-import org.jetbrains.kotlin.psi.KtAnnotatedExpression
-import org.jetbrains.kotlin.psi.KtAnnotation
-import org.jetbrains.kotlin.psi.KtAnnotationEntry
-import org.jetbrains.kotlin.psi.KtAnnotationUseSiteTarget
 import org.jetbrains.kotlin.psi.KtBackingField
 import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtBinaryExpressionWithTypeRHS
@@ -347,26 +343,6 @@ open class KotlinInputAstVisitor(
           trailingLambda,
       )
     }
-  }
-
-  override fun formatCallElement(
-      callee: KtExpression?,
-      typeArgumentList: KtTypeArgumentList?,
-      argumentList: KtValueArgumentList?,
-      lambdaArguments: List<KtLambdaArgument>,
-      argumentsIndent: Indent,
-      lambdaIndent: Indent,
-      negativeLambdaIndent: Indent,
-  ) {
-    visitCallElement(
-        callee,
-        typeArgumentList,
-        argumentList,
-        lambdaArguments,
-        argumentsIndent,
-        lambdaIndent,
-        negativeLambdaIndent,
-    )
   }
 
   /** Example `this` or `this@Foo` */
