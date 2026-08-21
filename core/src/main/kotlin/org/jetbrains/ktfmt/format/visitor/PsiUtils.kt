@@ -21,12 +21,15 @@ import kotlin.contracts.contract
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
+import org.jetbrains.kotlin.lexer.KtSingleValueToken
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtBinaryExpressionWithTypeRHS
+import org.jetbrains.kotlin.psi.KtCallElement
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtLabeledExpression
+import org.jetbrains.kotlin.psi.KtLambdaArgument
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtPostfixExpression
@@ -38,7 +41,7 @@ import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.kotlin.psi.psiUtil.getNextSiblingIgnoringWhitespace
 import org.jetbrains.kotlin.psi.psiUtil.getPrevSiblingIgnoringWhitespace
 import org.jetbrains.ktfmt.format.FormattingOptions
-import org.jetbrains.ktfmt.format.KotlinInputAstVisitor
+import org.jetbrains.ktfmt.format.ParseError
 
 /** Returns true if the expression represents an invocation that is also a lambda */
 val KtExpression.isLambda: Boolean
@@ -56,8 +59,8 @@ private fun onlyEmptyParenthesis(left: PsiElement?, right: PsiElement?): Boolean
     left != null && right != null && left.getNextSiblingIgnoringWhitespace() == right
 
 /**
- * [KotlinInputAstVisitor.emitQualifiedExpression] formats call expressions that are either part of
- * a qualified expression, or standing alone. This method makes it easier to handle both cases
+ * [CallFormatter.emitQualifiedExpression] formats call expressions that are either part of a
+ * qualified expression, or standing alone. This method makes it easier to handle both cases
  * uniformly.
  */
 val KtExpression.callExpression: KtCallExpression?
@@ -164,7 +167,7 @@ inline fun <reified T : PsiElement> PsiElement?.getPrevSiblingIgnoringWhiteSpace
 }
 
 /**
- * Returns an unwrapped lambda expression or scoping function of an expression
+ * An unwrapped lambda expression or scoping function of an expression
  *
  * Examples:
  * 1. '... = { ... }' is a lambda expression
@@ -176,14 +179,30 @@ inline fun <reified T : PsiElement> PsiElement?.getPrevSiblingIgnoringWhiteSpace
  * 1. '... = foo() { ... }' due to the empty parenthesis
  * 2. '... = Runnable @Annotation { ... }' due to the annotation
  */
-val KtExpression?.scopingLambda: KtLambdaExpression?
+internal data class ScopingLambda(
+    val receiverExpression: KtExpression?,
+    val operation: KtSingleValueToken?,
+    val calleeExpression: KtExpression?,
+    val labeledExpression: KtLabeledExpression?,
+    val lambdaExpression: KtLambdaExpression,
+)
+
+internal val PsiElement?.scopingLambda: ScopingLambda?
   get() {
     if (this == null) return null
+    var receiverExpression: KtExpression? = null
+    var operation: KtSingleValueToken? = null
+    var calleeExpression: KtExpression? = null
+    var labeledExpression: KtLabeledExpression? = null
+    val lambdaExpression: KtLambdaExpression
     var carry = this
     if (carry is KtQualifiedExpression && carry.receiverExpression is KtSimpleNameExpression) {
+      receiverExpression = carry.receiverExpression
+      operation = carry.operationSign
       carry = carry.selectorExpression
     }
     if (carry is KtCallExpression) {
+      calleeExpression = carry.calleeExpression
       if (
           carry.valueArgumentList?.leftParenthesis == null &&
               carry.lambdaArguments.isNotEmpty() &&
@@ -195,9 +214,17 @@ val KtExpression?.scopingLambda: KtLambdaExpression?
       }
     }
     if (carry is KtLabeledExpression) {
+      labeledExpression = carry
       carry = carry.baseExpression
     }
-    return carry as? KtLambdaExpression
+    lambdaExpression = carry as? KtLambdaExpression ?: return null
+    return ScopingLambda(
+        receiverExpression,
+        operation,
+        calleeExpression,
+        labeledExpression,
+        lambdaExpression,
+    )
   }
 
 /**
@@ -251,7 +278,7 @@ fun chainedSelectorsHaveValueArguments(expression: KtExpression): Boolean {
  * closing brace must break onto a new line.
  */
 val KtExpression.isMultilineScopingFunction: Boolean
-  get() = scopingLambda?.hasSourceNewlineInLambdaBody ?: false
+  get() = scopingLambda?.lambdaExpression?.hasSourceNewlineInLambdaBody ?: false
 
 /**
  * Returns true if the source code contains a newline anywhere inside the body of
@@ -268,5 +295,24 @@ val KtLambdaExpression.hasSourceNewlineInLambdaBody: Boolean
     return false
   }
 
+internal fun KtExpression?.startsWithUpperCase(): Boolean {
+  return this?.text?.firstOrNull()?.isUpperCase() ?: false
+}
+
 internal val KtExpression?.isBinaryExpression: Boolean
   get() = this is KtBinaryExpression || this is KtBinaryExpressionWithTypeRHS
+
+/**
+ * Returns the trailing lambda argument of a function call expression or null if its not present.
+ *
+ * A function call can't have more than one trailing lambda, but [KtCallElement] and
+ * [KtCallExpression] represent them as a list (see [KtCallExpression.getLambdaArguments] for more
+ * details).
+ */
+internal val KtCallElement.trailingLambda: KtLambdaArgument?
+  get() {
+    val lambdas = lambdaArguments
+    if (lambdas.isEmpty()) return null
+    if (lambdas.size == 1) return lambdas.first()
+    else throw ParseError("Maximum one trailing lambda is allowed", lambdaArguments[1])
+  }

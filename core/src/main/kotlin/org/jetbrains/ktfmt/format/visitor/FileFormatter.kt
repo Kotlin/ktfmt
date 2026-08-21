@@ -2,6 +2,7 @@ package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.OpsBuilder
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
+import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtScript
@@ -67,5 +68,25 @@ interface FileFormatter : KotlinAstFormatter {
       first = false
     }
     markForPartialFormat()
+  }
+
+  override fun formatStatement(statement: PsiElement) {
+    builder.block { format(statement) }
+    builder.guessToken(";")
+  }
+
+  override fun formatStatements(statements: Array<PsiElement>) {
+    var first = true
+    builder.guessToken(";")
+    for (statement in statements) {
+      builder.forcedBreak()
+      if (!first) {
+        builder.blankLineWanted(OpsBuilder.BlankLineWanted.PRESERVE)
+      }
+      first = false
+      markForPartialFormat()
+      formatStatement(statement)
+      markForPartialFormat()
+    }
   }
 }
