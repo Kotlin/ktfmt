@@ -1,0 +1,65 @@
+// MAX_WIDTH 100
+
+private fun Window.animationQueue(): AnimationQueue =
+    @Suppress("UnsafeCastFromDynamic") asDynamic().queue
+        ?: AnimationQueue(this).also { asDynamic().queue = it }
+
+fun callFits(): Int = @Suppress("A") compute()
+
+fun callOverflows(): Int = @Suppress("UNCHECKED_CAST") compute(a)
+
+fun multipleAnnotations(): Int = @Suppress("A") @Suppress("B") compute()
+
+fun annotatedFirstOperandOnly() {
+  @Suppress("D") a + b
+
+  @Suppress("DEPRECATION") a.member + b.member + c.member
+}
+
+fun annotatedWholeExpression() {
+  @Suppress("D")
+  a + b
+}
+
+fun annotatedReturn(): Int {
+  @Suppress("R")
+  return 42
+}
+
+fun lambdaArgumentFits() = g(@Anno { log(1) })
+
+fun lambdaArgumentOverflows() = register(@Anno { v -> log(v) })
+
+val objectLiteral =
+    @Suppress("UNUSED") @MyCustomAnnotation
+    object {
+      fun foo() = 42
+    }
+
+class DelegationFits : I by @Anno impl
+
+class DelegationOverflows : InterfaceName by @Anno("arg") impl.field
+
+fun statements() {
+  if (@Stuff(Magic::class) isGood(a) && isOk(b) && fine(c)) go()
+
+  add(@Suppress("MagicNumber") 10)
+
+  @Suppress("UNCHECKED_CAST") b = compute(a, b, c) as Int
+
+  try {} catch (@Anno e: Exception) {}
+
+  try {} catch (@Anno("arg") e: IllegalStateException) {
+    report()
+  }
+
+  val (@Anno a, @Anno b) = pair
+
+  val (@Anno("arg") first, @Anno("arg") second) = pair
+
+  val whenExpr =
+      @Suppress("WHEN")
+      when (value) {
+        else -> compute(alpha, beta, gamma, delta)
+      }
+}
