@@ -928,6 +928,393 @@ class MainTest {
   }
 
   @Test
+  fun `--range-start and --range-end format the selected file statement`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val endOffset = code.indexOf("val adjacent")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--range-start=$startOffset",
+            "--range-end=$endOffset",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-start and --range-end format the selected stdin statement`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin()
+
+    val startOffset = code.indexOf("val selected")
+    val endOffset = code.indexOf("val adjacent")
+    val exitCode = Main(
+        code.byteInputStream(),
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf("--range-start=$startOffset", "--range-end=$endOffset", "-"),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin(),
+        out.toString(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-start without --range-end formats to end of file`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("fun test()")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf("--range-start=$startOffset", file.toString()),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |  val adjacent = 3
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-end without --range-start formats from start of file`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val endOffset = code.indexOf("fun test()")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf("--range-end=$endOffset", file.toString()),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched() = 1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-start and --range-end with --dry-run prints filename on changes`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--dry-run",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(code, file.readText(UTF_8))
+    assertContains(out.toString(testCharset), file.toString())
+  }
+
+  @Test
+  fun `--range-start and --range-end with --set-exit-if-changed returns 1 on changes`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--set-exit-if-changed",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(1, exitCode)
+  }
+
+  @Test
+  fun `--range-start and --range-end adjust properly for shebang`() {
+    val code =
+        """
+        |#!/usr/bin/env kotlin
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val endOffset = code.indexOf("val adjacent")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--range-start=$startOffset",
+            "--range-end=$endOffset",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |#!/usr/bin/env kotlin
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-start equal to --range-end leaves file untouched`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |  val adjacent    =   3
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val offset = code.indexOf("selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--range-start=$offset",
+            "--range-end=$offset",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(code, file.readText(UTF_8))
+  }
+
+  @Test
+  fun `--range-end beyond file length formats up to end of file without error`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("fun test()")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--range-start=$startOffset",
+            "--range-end=999999",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-start rejects directories that expand to multiple files`() {
+    val dir = root.resolve("dir")
+    dir.mkdirs()
+    dir.resolve("foo.kt").writeText("fun foo () = 1", UTF_8)
+    dir.resolve("bar.kt").writeText("fun bar () = 1", UTF_8)
+
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf("--range-start=0", dir.toString()),
+    )
+        .run()
+
+    assertEquals(1, exitCode)
+    assertContains(
+        err.toString(testCharset),
+        "partial formatting is only supported for a single file",
+    )
+  }
+
+  @Test
+  fun `--range-end rejects directories that expand to multiple files`() {
+    val dir = root.resolve("dir")
+    dir.mkdirs()
+    dir.resolve("foo.kt").writeText("fun foo () = 1", UTF_8)
+    dir.resolve("bar.kt").writeText("fun bar () = 1", UTF_8)
+
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf("--range-end=10", dir.toString()),
+    )
+        .run()
+
+    assertEquals(1, exitCode)
+    assertContains(
+        err.toString(testCharset),
+        "partial formatting is only supported for a single file",
+    )
+  }
+
+  @Test
   fun `--lines rejects directories that expand to multiple files`() {
     val dir = root.resolve("dir")
     dir.mkdirs()
@@ -942,6 +1329,691 @@ class MainTest {
     assertContains(
         err.toString(testCharset),
         "partial formatting is only supported for a single file",
+    )
+  }
+
+  @Test
+  fun `--offset rejects directories that expand to multiple files`() {
+    val dir = root.resolve("dir")
+    dir.mkdirs()
+    dir.resolve("foo.kt").writeText("fun foo () = 1", UTF_8)
+    dir.resolve("bar.kt").writeText("fun bar () = 1", UTF_8)
+
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf("--offset=0", "--length=5", dir.toString()),
+    )
+        .run()
+
+    assertEquals(1, exitCode)
+    assertContains(
+        err.toString(testCharset),
+        "partial formatting is only supported for a single file",
+    )
+  }
+
+  @Test
+  fun `--range-start accepts directory that expands to a single kt file`() {
+    val dir = root.resolve("dir")
+    dir.mkdirs()
+    val file = dir.resolve("single.kt")
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf("--range-start=$startOffset", dir.toString()),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-start and --range-end with stdin and --dry-run prints stdin name when modified`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        code.byteInputStream(UTF_8),
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--dry-run",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            "-",
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals("<stdin>${System.lineSeparator()}", out.toString(testCharset))
+  }
+
+  @Test
+  fun `--range-start and --range-end with stdin and --dry-run prints nothing when unmodified`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |}
+        |"""
+            .trimMargin()
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        code.byteInputStream(UTF_8),
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--dry-run",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            "-",
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals("", out.toString(testCharset))
+  }
+
+  @Test
+  fun `--range-start and --range-end with stdin, --stdin-name, and --dry-run prints custom name`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        code.byteInputStream(UTF_8),
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--dry-run",
+            "--stdin-name=custom/Path.kt",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            "-",
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals("custom/Path.kt${System.lineSeparator()}", out.toString(testCharset))
+  }
+
+  @Test
+  fun `--range-start and --range-end with stdin and --set-exit-if-changed returns 1 when modified`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        code.byteInputStream(UTF_8),
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--set-exit-if-changed",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            "-",
+        ),
+    )
+        .run()
+
+    assertEquals(1, exitCode)
+  }
+
+  @Test
+  fun `--range-start and --range-end with stdin and --set-exit-if-changed returns 0 when unmodified`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |}
+        |"""
+            .trimMargin()
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        code.byteInputStream(UTF_8),
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--set-exit-if-changed",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            "-",
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+  }
+
+  @Test
+  fun `--range-start and --range-end with file and --dry-run prints nothing when unmodified`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--dry-run",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals("", out.toString(testCharset))
+  }
+
+  @Test
+  fun `--range-start and --range-end with file and --set-exit-if-changed returns 0 when unmodified`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--set-exit-if-changed",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+  }
+
+  @Test
+  fun `--range-start and --range-end with file, --dry-run, and --set-exit-if-changed returns 1 and prints filename`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--dry-run",
+            "--set-exit-if-changed",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(1, exitCode)
+    assertEquals(code, file.readText(UTF_8))
+    assertContains(out.toString(testCharset), file.toString())
+  }
+
+  @Test
+  fun `--range-start and --range-end with stdin, --dry-run, and --set-exit-if-changed returns 1 and prints stdin name`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        code.byteInputStream(UTF_8),
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--dry-run",
+            "--set-exit-if-changed",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            "-",
+        ),
+    )
+        .run()
+
+    assertEquals(1, exitCode)
+    assertEquals("<stdin>${System.lineSeparator()}", out.toString(testCharset))
+  }
+
+  @Test
+  fun `--range-start and --range-end with stdin, --dry-run, and --set-exit-if-changed returns 0 and prints nothing when unchanged`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |}
+        |"""
+            .trimMargin()
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        code.byteInputStream(UTF_8),
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--dry-run",
+            "--set-exit-if-changed",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            "-",
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals("", out.toString(testCharset))
+  }
+
+  @Test
+  fun `--range-start and --range-end with --quiet suppresses output but modifies file`() {
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--quiet",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertDoesNotContain(err.toString(testCharset), "Done formatting")
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-start and --range-end with --enable-editorconfig applies editorconfig formatting options`() {
+    val editorConfig = root.resolve(".editorconfig")
+    editorConfig.writeText(
+        """
+        |root = true
+        |[*.kt]
+        |indent_size = 4
+        |"""
+            .trimMargin(),
+        UTF_8,
+    )
+
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--enable-editorconfig",
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |    val selected = 2
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-start and --range-end preserves CRLF line endings in file`() {
+    val code = "fun untouched ( ) =   1\r\n\r\nfun test() {\r\n  val selected    =   2\r\n}\r\n"
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        "fun untouched ( ) =   1\r\n\r\nfun test() {\r\n  val selected = 2\r\n}\r\n",
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-start and --range-end preserves CRLF line endings with shebang`() {
+    val code =
+        "#!/usr/bin/env kotlin\r\nfun untouched ( ) =   1\r\n\r\nfun test() {\r\n  val selected    =   2\r\n}\r\n"
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        "#!/usr/bin/env kotlin\r\nfun untouched ( ) =   1\r\n\r\nfun test() {\r\n  val selected = 2\r\n}\r\n",
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-start and --range-end ignores UTF-8 BOM in file`() {
+    val code = "\uFEFFfun untouched ( ) =   1\n\nfun test() {\n  val selected    =   2\n}\n"
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--range-start=$startOffset",
+            "--range-end=${startOffset + 10}",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        "fun untouched ( ) =   1\n\nfun test() {\n  val selected = 2\n}\n",
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `--range-start and --range-end reports syntax error with filename and position`() {
+    val code = "fun test( {\n"
+    val file = root.resolve("broken.kt")
+    file.writeText(code, UTF_8)
+
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf("--range-start=0", "--range-end=5", file.toString()),
+    )
+        .run()
+
+    assertEquals(1, exitCode)
+    assertContains(err.toString(testCharset), "broken.kt:1:")
+  }
+
+  @Test
+  fun `@argfile containing range-start and range-end options formats selected statement`() {
+    val file = root.resolve("foo.kt")
+    val code =
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected    =   2
+        |}
+        |"""
+            .trimMargin()
+    file.writeText(code, UTF_8)
+
+    val startOffset = code.indexOf("val selected")
+    val endOffset = startOffset + 15
+    val argfile = root.resolve("argfile")
+    argfile.writeText(
+        "--range-start=$startOffset\n--range-end=$endOffset\n${file.canonicalPath}\n",
+        UTF_8,
+    )
+
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf("@" + argfile.canonicalPath),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun untouched ( ) =   1
+        |
+        |fun test() {
+        |  val selected = 2
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `Multiple disjoint --offset and --length ranges format only targeted regions`() {
+    val code =
+        """
+        |fun test1() {
+        |  val first    =   1
+        |  val untouched    =   2
+        |  val second    =   3
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val firstOffset = code.indexOf("val first")
+    val secondOffset = code.indexOf("val second")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--offset=$firstOffset",
+            "--length=10",
+            "--offset=$secondOffset",
+            "--length=10",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun test1() {
+        |  val first = 1
+        |  val untouched    =   2
+        |  val second = 3
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
+    )
+  }
+
+  @Test
+  fun `Combined --range-start, --range-end, and --lines options format union of selections`() {
+    val code =
+        """
+        |fun test() {
+        |  val first    =   1
+        |  val untouched    =   2
+        |  val third    =   3
+        |}
+        |"""
+            .trimMargin()
+    val file = root.resolve("foo.kt")
+    file.writeText(code, UTF_8)
+
+    val thirdOffset = code.indexOf("val third")
+    val exitCode = Main(
+        emptyInput,
+        PrintStream(out),
+        PrintStream(err),
+        arrayOf(
+            "--lines=2",
+            "--range-start=$thirdOffset",
+            "--range-end=${thirdOffset + 10}",
+            file.toString(),
+        ),
+    )
+        .run()
+
+    assertEquals(0, exitCode)
+    assertEquals(
+        """
+        |fun test() {
+        |  val first = 1
+        |  val untouched    =   2
+        |  val third = 3
+        |}
+        |"""
+            .trimMargin(),
+        file.readText(UTF_8),
     )
   }
 }
