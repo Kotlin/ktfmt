@@ -50,7 +50,7 @@ val generateSources =
 
 tasks {
   // Run tests with UTF-16 encoding
-  test {
+  withType<Test> {
     useJUnitPlatform()
     jvmArgs("-Dfile.encoding=UTF-16")
   }
@@ -90,6 +90,27 @@ tasks {
     archiveClassifier = "with-dependencies"
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     failOnDuplicateEntries = true
+    minimize {
+      r8 {
+        keepRuleFiles.from(layout.projectDirectory.file("src/main/rules.txt"))
+      }
+    }
+  }
+
+  val testShadow =
+      register("testShadow", Test::class) {
+        group = "verification"
+        description =
+            "Runs unit tests against the R8-processed shadowed JAR to ensure Maven API compatibility."
+        // Replace normal Jar with shadowJar in tests.
+        classpath =
+            (sourceSets["test"].runtimeClasspath - sourceSets["main"].output) +
+                files(shadowJar.flatMap { it.archiveFile })
+        testClassesDirs = sourceSets["test"].output.classesDirs
+      }
+
+  check {
+    dependsOn(testShadow)
   }
 }
 

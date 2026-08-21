@@ -1,0 +1,28 @@
+-dontobfuscate
+-keepattributes SourceFile, LineNumberTable
+
+
+-dontwarn com.google.auto.**
+-dontwarn gnu.trove.**
+-dontwarn kotlin.annotations.jvm.**
+-dontwarn kotlinx.coroutines.internal.intellij.**
+-dontwarn org.checkerframework.checker.nullness.qual.Nullable
+-dontwarn org.jetbrains.annotations.**
+-dontwarn org.jetbrains.kotlin.com.google.errorprone.annotations.**
+-dontwarn org.jetbrains.kotlin.com.google.j2objc.annotations.**
+-dontwarn org.jetbrains.kotlin.com.intellij.util.**
+
+
+# Keep all ktfmt library classes and methods for Maven API, CLI, and unit test compatibility.
+-keep class org.jetbrains.ktfmt.** { *; }
+
+# IntelliJ platform classes required for Kotlin AST parsing & CoreApplicationEnvironment.
+-keep class org.jetbrains.kotlin.com.intellij.**
+
+# Kotlin AST PSI and KDoc elements (keep constructors for reflective ASTFactory instantiation).
+-keepclassmembers class org.jetbrains.kotlin.psi.** {
+    public <init>(...);
+}
+-keepclassmembers class org.jetbrains.kotlin.kdoc.** {
+    public <init>(...);
+}
