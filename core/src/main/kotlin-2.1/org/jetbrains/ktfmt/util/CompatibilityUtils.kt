@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("IncorrectPackageName", "PackageDirectoryMismatch")
-
 package org.jetbrains.ktfmt.util
 
 import org.jetbrains.kotlin.psi.KtContextReceiverList

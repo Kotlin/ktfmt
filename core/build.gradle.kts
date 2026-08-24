@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import org.jetbrains.dokka.gradle.tasks.DokkaGeneratePublicationTask
 import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.ktfmt.GenerateKtfmtFileTask
@@ -44,48 +45,43 @@ dependencies {
 
 val generateSources =
     tasks.register("generateSources") {
+      description = "Generate sources"
       outputs.dir(layout.buildDirectory.dir("generated/main/kotlin"))
       dependsOn(tasks.withType<GenerateKtfmtFileTask>())
     }
 
+// Match a correct source set by the current Kotlin version (e.g., 2.3.0-beta1 -> 2.3)
+val compatibilitySources = run {
+  val kotlinVersion = rootProject.libs.versions.kotlin.get().substringBeforeLast(".")
+  val sourceRoot = layout.projectDirectory.dir("src/main/kotlin-$kotlinVersion")
+  require(sourceRoot.asFile.isDirectory) {
+    "No compatibility sources for Kotlin $kotlinVersion: expected $sourceRoot."
+  }
+  sourceRoot
+}
+
 tasks {
-  // Run tests with UTF-16 encoding
   test {
     useJUnitPlatform()
     jvmArgs("-Dfile.encoding=UTF-16")
   }
 
-  // Handle multiple versions of Kotlin here
-  withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    // Only get major and minor version, e.g. 1.8.0-beta1 -> 1.8
-    val kotlinVersion = rootProject.libs.versions.kotlin.get().substringBeforeLast(".")
-    exclude {
-      val path = it.path
-      "org/jetbrains/ktfmt/util/kotlin-" in path && "kotlin-$kotlinVersion" !in path
-    }
-  }
-
-  // Add main class to jar manifest
   withType(Jar::class) { manifest { attributes["Main-Class"] = "org.jetbrains.ktfmt.cli.Main" } }
 
-  // Sources
-  register("sourcesJar", Jar::class) {
+  register<Jar>("sourcesJar") {
+    description = "Sources jar including generated sources and compatibility utils"
     archiveClassifier = "sources"
     from(sourceSets["main"].allSource)
   }
 
-  // Javadoc
-  register("javadocJar", Jar::class) {
-    val dokkaJavadocTask = named(
-        "dokkaGeneratePublicationJavadoc",
-        org.jetbrains.dokka.gradle.tasks.DokkaGeneratePublicationTask::class,
-    )
+  register<Jar>("javadocJar") {
+    description = "Dokka-generated Javadoc jar"
+    val dokkaJavadocTask = named<DokkaGeneratePublicationTask>("dokkaGeneratePublicationJavadoc")
     dependsOn(dokkaJavadocTask)
     from(dokkaJavadocTask.flatMap { it.outputDirectory })
     archiveClassifier = "javadoc"
   }
 
-  // Fat jar
   shadowJar {
     archiveClassifier = "with-dependencies"
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -104,8 +100,8 @@ kotlin {
   sourceSets {
     main {
       kotlin {
-        // Include generated code
         srcDir(generateSources)
+        srcDir(compatibilitySources)
       }
     }
   }

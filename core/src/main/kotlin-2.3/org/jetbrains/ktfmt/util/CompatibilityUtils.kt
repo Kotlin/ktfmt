@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("IncorrectPackageName", "PackageDirectoryMismatch")
-
 package org.jetbrains.ktfmt.util
 
 import org.jetbrains.kotlin.psi.KtContextReceiverList
@@ -27,8 +25,7 @@ fun KtContextReceiverList.listToVisit(): List<KtElement> {
   return contextParameters().ifEmpty { contextReceivers() }
 }
 
-val CONTEXT_PARAMETER_LIST = KtStubElementTypes.CONTEXT_RECEIVER_LIST
+val CONTEXT_PARAMETER_LIST = KtStubElementTypes.CONTEXT_PARAMETER_LIST
 
-/** No val/var keyword in destructuring statements until Kotlin 2.3. */
 val KtDestructuringDeclarationEntry.ownValOrVarKeywordText: String?
-  get() = null
+  get() = ownValOrVarKeyword?.text
