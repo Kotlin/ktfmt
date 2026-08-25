@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import shutil
 import subprocess
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
@@ -10,8 +11,8 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 PORT = 8000
 
-def do_format(binary, code, experimental):
-    args = [binary]
+def do_format(jar, code, experimental):
+    args = ["java", "-jar", jar]
     if experimental:
         args.append("--experimental-engine")
     args.append("-")
@@ -28,7 +29,7 @@ def do_format(binary, code, experimental):
 
 
 class PlaygroundHandler(SimpleHTTPRequestHandler):
-    binary = ""
+    jar = ""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(SCRIPT_DIR), **kwargs)
@@ -41,8 +42,8 @@ class PlaygroundHandler(SimpleHTTPRequestHandler):
         length = int(self.headers.get("Content-Length") or 0)
         code = self.rfile.read(length).decode("utf-8", "replace")
 
-        default_ok, default_text = do_format(self.binary, code, experimental=False)
-        experimental_ok, experimental_text = do_format(self.binary, code, experimental=True)
+        default_ok, default_text = do_format(self.jar, code, experimental=False)
+        experimental_ok, experimental_text = do_format(self.jar, code, experimental=True)
         payload = json.dumps(
             {
                 "default": {"ok": default_ok, "text": default_text},
@@ -62,14 +63,16 @@ class PlaygroundHandler(SimpleHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("binary")
+    parser.add_argument("jar")
     args = parser.parse_args()
 
-    if not os.path.isfile(args.binary) or not os.access(args.binary, os.X_OK):
-        parser.error(f"not an executable ktfmt binary: {args.binary}")
+    if not os.path.isfile(args.jar):
+        parser.error(f"not a ktfmt jar: {args.jar}")
+    if shutil.which("java") is None:
+        parser.error("'java' not found on PATH")
 
-    PlaygroundHandler.binary = args.binary
-    print(f"ktfmt playground on http://localhost:{PORT}  (binary: {args.binary})")
+    PlaygroundHandler.jar = args.jar
+    print(f"ktfmt playground on http://localhost:{PORT}  (jar: {args.jar})")
     try:
         HTTPServer(("127.0.0.1", PORT), PlaygroundHandler).serve_forever()
     except KeyboardInterrupt:
