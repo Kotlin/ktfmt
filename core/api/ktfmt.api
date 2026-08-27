@@ -1,3 +1,6 @@
+public abstract interface annotation class org/jetbrains/ktfmt/annotations/InternalKtfmtTestApi : java/lang/annotation/Annotation {
+}
+
 public final class org/jetbrains/ktfmt/cli/EditorConfigResolver {
 	public static final field INSTANCE Lorg/jetbrains/ktfmt/cli/EditorConfigResolver;
 	public final fun resolveFormattingOptions (Ljava/io/File;Lorg/jetbrains/ktfmt/format/FormattingOptions;)Lorg/jetbrains/ktfmt/format/FormattingOptions;
@@ -127,8 +130,7 @@ public final class org/jetbrains/ktfmt/format/Formatter {
 	public static final fun format (Ljava/lang/String;Lorg/jetbrains/ktfmt/format/FileType;)Ljava/lang/String;
 	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lorg/jetbrains/ktfmt/format/KotlinCode;)Ljava/lang/String;
 	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lorg/jetbrains/ktfmt/format/KotlinCode;Lcom/google/common/collect/RangeSet;)Ljava/lang/String;
-	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lorg/jetbrains/ktfmt/format/KotlinCode;Lcom/google/common/collect/RangeSet;Lcom/google/common/collect/RangeSet;)Ljava/lang/String;
-	public static synthetic fun format$default (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lorg/jetbrains/ktfmt/format/KotlinCode;Lcom/google/common/collect/RangeSet;Lcom/google/common/collect/RangeSet;ILjava/lang/Object;)Ljava/lang/String;
+	public static synthetic fun format$default (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lorg/jetbrains/ktfmt/format/KotlinCode;Lcom/google/common/collect/RangeSet;ILjava/lang/Object;)Ljava/lang/String;
 }
 
 public final class org/jetbrains/ktfmt/format/FormattingOptions {
@@ -855,5 +857,9 @@ public final class org/jetbrains/ktfmt/util/CompatibilityUtilsKt {
 public final class org/jetbrains/ktfmt/util/Ktfmt {
 	public static final field INSTANCE Lorg/jetbrains/ktfmt/util/Ktfmt;
 	public static final field version Ljava/lang/String;
+}
+
+public final class org/jetbrains/ktfmt/util/RangesKt {
+	public static final fun plus (Lcom/google/common/collect/RangeSet;Lcom/google/common/collect/RangeSet;)Lcom/google/common/collect/RangeSet;
 }
 

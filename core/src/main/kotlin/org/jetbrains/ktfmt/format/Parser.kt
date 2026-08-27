@@ -31,6 +31,7 @@ import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
+import org.jetbrains.ktfmt.annotations.InternalKtfmtTestApi
 
 /** Parser parses a Kotlin file given as a string and returns its parse tree. */
 object Parser {
@@ -69,7 +70,7 @@ object Parser {
     return ktFile
   }
 
-  /** Only for tests */
+  @InternalKtfmtTestApi
   internal fun parse(code: String): KtFile = parse(KotlinCode(code, FileType.REGULAR))
 
   private fun throwParseError(fileContents: String, error: PsiErrorElement): Nothing {

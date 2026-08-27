@@ -16,9 +16,11 @@
 
 package org.jetbrains.ktfmt.format
 
+import org.jetbrains.ktfmt.annotations.InternalKtfmtTestApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
+@OptIn(InternalKtfmtTestApi::class)
 class KotlinInputTest {
   @Test
   fun `Comments are toks not tokens`() {
