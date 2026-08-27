@@ -213,7 +213,7 @@ public final class org/jetbrains/ktfmt/format/KotlinInput : com/google/googlejav
 	public fun getkN ()I
 }
 
-public class org/jetbrains/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/ktfmt/format/visitor/AbstractFormatterVisitor, org/jetbrains/ktfmt/format/visitor/AnnotationFormatter, org/jetbrains/ktfmt/format/visitor/CallFormatter, org/jetbrains/ktfmt/format/visitor/ControlFlowExpressionFormatter, org/jetbrains/ktfmt/format/visitor/ExpressionFormatter, org/jetbrains/ktfmt/format/visitor/FileFormatter, org/jetbrains/ktfmt/format/visitor/ListFormatter, org/jetbrains/ktfmt/format/visitor/TypeFormatter {
+public class org/jetbrains/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/ktfmt/format/visitor/AbstractFormatterVisitor, org/jetbrains/ktfmt/format/visitor/AnnotationFormatter, org/jetbrains/ktfmt/format/visitor/CallFormatter, org/jetbrains/ktfmt/format/visitor/ControlFlowExpressionFormatter, org/jetbrains/ktfmt/format/visitor/DeclarationFormatter, org/jetbrains/ktfmt/format/visitor/ExpressionFormatter, org/jetbrains/ktfmt/format/visitor/FileFormatter, org/jetbrains/ktfmt/format/visitor/ListFormatter, org/jetbrains/ktfmt/format/visitor/TypeFormatter {
 	public fun <init> (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/OpsBuilder;)V
 	public fun getBlockIndent ()Lorg/jetbrains/ktfmt/format/visitor/Indentation$Const;
 	public fun getBuilder ()Lcom/google/googlejavaformat/OpsBuilder;
@@ -222,24 +222,6 @@ public class org/jetbrains/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/kt
 	public fun getInImport ()Z
 	public fun getOptions ()Lorg/jetbrains/ktfmt/format/FormattingOptions;
 	public fun setInImport (Z)V
-	public fun visitBlockExpression (Lorg/jetbrains/kotlin/psi/KtBlockExpression;)V
-	public fun visitCallExpression (Lorg/jetbrains/kotlin/psi/KtCallExpression;)V
-	public fun visitClassBody (Lorg/jetbrains/kotlin/psi/KtClassBody;)V
-	public fun visitClassInitializer (Lorg/jetbrains/kotlin/psi/KtClassInitializer;)V
-	public fun visitClassOrObject (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)V
-	public fun visitConstructorDelegationCall (Lorg/jetbrains/kotlin/psi/KtConstructorDelegationCall;)V
-	public fun visitDelegatedSuperTypeEntry (Lorg/jetbrains/kotlin/psi/KtDelegatedSuperTypeEntry;)V
-	public fun visitDestructuringDeclaration (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclaration;)V
-	public fun visitDestructuringDeclarationEntry (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclarationEntry;)V
-	public fun visitElement (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
-	public fun visitEnumEntry (Lorg/jetbrains/kotlin/psi/KtEnumEntry;)V
-	public fun visitNamedFunction (Lorg/jetbrains/kotlin/psi/KtNamedFunction;)V
-	public fun visitParameter (Lorg/jetbrains/kotlin/psi/KtParameter;)V
-	public fun visitPrimaryConstructor (Lorg/jetbrains/kotlin/psi/KtPrimaryConstructor;)V
-	public fun visitProperty (Lorg/jetbrains/kotlin/psi/KtProperty;)V
-	public fun visitSecondaryConstructor (Lorg/jetbrains/kotlin/psi/KtSecondaryConstructor;)V
-	public fun visitSuperTypeCallEntry (Lorg/jetbrains/kotlin/psi/KtSuperTypeCallEntry;)V
-	public fun visitTypeAlias (Lorg/jetbrains/kotlin/psi/KtTypeAlias;)V
 }
 
 public final class org/jetbrains/ktfmt/format/KotlinTok : com/google/googlejavaformat/Input$Tok {
@@ -375,6 +357,7 @@ public abstract class org/jetbrains/ktfmt/format/visitor/AbstractFormatterVisito
 	public fun visitDestructuringDeclarationEntry (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclarationEntry;)V
 	public fun visitDoWhileExpression (Lorg/jetbrains/kotlin/psi/KtDoWhileExpression;)V
 	public fun visitDynamicType (Lorg/jetbrains/kotlin/psi/KtDynamicType;)V
+	public fun visitElement (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
 	public fun visitEnumEntry (Lorg/jetbrains/kotlin/psi/KtEnumEntry;)V
 	public synthetic fun visitFileAnnotationList (Lorg/jetbrains/kotlin/psi/KtFileAnnotationList;Ljava/lang/Object;)Ljava/lang/Object;
 	public fun visitFileAnnotationList (Lorg/jetbrains/kotlin/psi/KtFileAnnotationList;Ljava/lang/Void;)Ljava/lang/Void;
@@ -440,6 +423,7 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/AnnotationFor
 public abstract interface class org/jetbrains/ktfmt/format/visitor/CallFormatter : org/jetbrains/ktfmt/format/visitor/KotlinAstFormatter {
 	public fun formatArgument (Lorg/jetbrains/kotlin/psi/KtValueArgument;ZLcom/google/googlejavaformat/Output$BreakTag;)V
 	public fun formatArrayAccessExpression (Lorg/jetbrains/kotlin/psi/KtArrayAccessExpression;)V
+	public fun formatCallExpression (Lorg/jetbrains/kotlin/psi/KtCallExpression;)V
 	public fun formatChainedBlockLikeCall (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;Z)V
 	public fun formatChainedScopingFunction (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;Z)V
 	public fun formatFunctionCall (Lorg/jetbrains/kotlin/psi/KtExpression;Lorg/jetbrains/kotlin/psi/KtTypeArgumentList;Lorg/jetbrains/kotlin/psi/KtValueArgumentList;Lorg/jetbrains/kotlin/psi/KtLambdaArgument;Lorg/jetbrains/ktfmt/format/visitor/Indentation;Lorg/jetbrains/ktfmt/format/visitor/Indentation;)V
@@ -464,6 +448,32 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/ControlFlowEx
 	public fun formatWhenConditionWithExpression (Lorg/jetbrains/kotlin/psi/KtWhenConditionWithExpression;)V
 	public fun formatWhenExpression (Lorg/jetbrains/kotlin/psi/KtWhenExpression;)V
 	public fun formatWhileExpression (Lorg/jetbrains/kotlin/psi/KtWhileExpression;)V
+}
+
+public abstract interface class org/jetbrains/ktfmt/format/visitor/DeclarationFormatter : org/jetbrains/ktfmt/format/visitor/KotlinAstFormatter {
+	public fun formatBlockExpression (Lorg/jetbrains/kotlin/psi/KtBlockExpression;)V
+	public fun formatClassBody (Lorg/jetbrains/kotlin/psi/KtClassBody;)V
+	public fun formatClassInitializer (Lorg/jetbrains/kotlin/psi/KtClassInitializer;)V
+	public fun formatClassOrObject (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)V
+	public fun formatConstructorDelegationCall (Lorg/jetbrains/kotlin/psi/KtConstructorDelegationCall;)V
+	public fun formatDelegatedSuperTypeEntry (Lorg/jetbrains/kotlin/psi/KtDelegatedSuperTypeEntry;)V
+	public fun formatDestructuringDeclaration (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclaration;)V
+	public fun formatDestructuringDeclarationEntry (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclarationEntry;)V
+	public fun formatEnumEntry (Lorg/jetbrains/kotlin/psi/KtEnumEntry;)V
+	public fun formatNamedFunction (Lorg/jetbrains/kotlin/psi/KtNamedFunction;)V
+	public fun formatParameter (Lorg/jetbrains/kotlin/psi/KtParameter;)V
+	public fun formatPrimaryConstructor (Lorg/jetbrains/kotlin/psi/KtPrimaryConstructor;)V
+	public fun formatProperty (Lorg/jetbrains/kotlin/psi/KtProperty;)V
+	public fun formatSecondaryConstructor (Lorg/jetbrains/kotlin/psi/KtSecondaryConstructor;)V
+	public fun formatSuperTypeCallEntry (Lorg/jetbrains/kotlin/psi/KtSuperTypeCallEntry;)V
+}
+
+public final class org/jetbrains/ktfmt/format/visitor/DeclarationFormatter$DeclarationKind : java/lang/Enum {
+	public static final field FIELD Lorg/jetbrains/ktfmt/format/visitor/DeclarationFormatter$DeclarationKind;
+	public static final field PARAMETER Lorg/jetbrains/ktfmt/format/visitor/DeclarationFormatter$DeclarationKind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/jetbrains/ktfmt/format/visitor/DeclarationFormatter$DeclarationKind;
+	public static fun values ()[Lorg/jetbrains/ktfmt/format/visitor/DeclarationFormatter$DeclarationKind;
 }
 
 public abstract interface class org/jetbrains/ktfmt/format/visitor/ExpressionFormatter : org/jetbrains/ktfmt/format/visitor/KotlinAstFormatter {
@@ -539,30 +549,30 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/KotlinAstForm
 	public abstract fun formatArrayAccessExpression (Lorg/jetbrains/kotlin/psi/KtArrayAccessExpression;)V
 	public abstract fun formatBinaryExpression (Lorg/jetbrains/kotlin/psi/KtBinaryExpression;)V
 	public abstract fun formatBinaryWithTypeRHSExpression (Lorg/jetbrains/kotlin/psi/KtBinaryExpressionWithTypeRHS;)V
-	public fun formatBlockExpression (Lorg/jetbrains/kotlin/psi/KtBlockExpression;)V
+	public abstract fun formatBlockExpression (Lorg/jetbrains/kotlin/psi/KtBlockExpression;)V
 	public abstract fun formatBreakExpression (Lorg/jetbrains/kotlin/psi/KtBreakExpression;)V
-	public fun formatCallExpression (Lorg/jetbrains/kotlin/psi/KtCallExpression;)V
+	public abstract fun formatCallExpression (Lorg/jetbrains/kotlin/psi/KtCallExpression;)V
 	public abstract fun formatCallableReferenceExpression (Lorg/jetbrains/kotlin/psi/KtCallableReferenceExpression;)V
 	public abstract fun formatCatchSection (Lorg/jetbrains/kotlin/psi/KtCatchClause;)V
 	public abstract fun formatChainedBlockLikeCall (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;Z)V
 	public abstract fun formatChainedScopingFunction (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;Z)V
-	public fun formatClassBody (Lorg/jetbrains/kotlin/psi/KtClassBody;)V
-	public fun formatClassInitializer (Lorg/jetbrains/kotlin/psi/KtClassInitializer;)V
+	public abstract fun formatClassBody (Lorg/jetbrains/kotlin/psi/KtClassBody;)V
+	public abstract fun formatClassInitializer (Lorg/jetbrains/kotlin/psi/KtClassInitializer;)V
 	public abstract fun formatClassLiteralExpression (Lorg/jetbrains/kotlin/psi/KtClassLiteralExpression;)V
-	public fun formatClassOrObject (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)V
+	public abstract fun formatClassOrObject (Lorg/jetbrains/kotlin/psi/KtClassOrObject;)V
 	public abstract fun formatCollectionLiteralExpression (Lorg/jetbrains/kotlin/psi/KtCollectionLiteralExpression;)V
 	public abstract fun formatCommaSeparatedList (Ljava/lang/Iterable;ZZZLjava/lang/String;Ljava/lang/String;ZZ)Lcom/google/googlejavaformat/Output$BreakTag;
 	public static synthetic fun formatCommaSeparatedList$default (Lorg/jetbrains/ktfmt/format/visitor/KotlinAstFormatter;Ljava/lang/Iterable;ZZZLjava/lang/String;Ljava/lang/String;ZZILjava/lang/Object;)Lcom/google/googlejavaformat/Output$BreakTag;
 	public abstract fun formatConstantExpression (Lorg/jetbrains/kotlin/psi/KtConstantExpression;)V
-	public fun formatConstructorDelegationCall (Lorg/jetbrains/kotlin/psi/KtConstructorDelegationCall;)V
+	public abstract fun formatConstructorDelegationCall (Lorg/jetbrains/kotlin/psi/KtConstructorDelegationCall;)V
 	public abstract fun formatContextReceiverList (Lorg/jetbrains/kotlin/psi/KtContextReceiverList;)V
 	public abstract fun formatContinueExpression (Lorg/jetbrains/kotlin/psi/KtContinueExpression;)V
-	public fun formatDelegatedSuperTypeEntry (Lorg/jetbrains/kotlin/psi/KtDelegatedSuperTypeEntry;)V
-	public fun formatDestructuringDeclaration (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclaration;)V
-	public fun formatDestructuringDeclarationEntry (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclarationEntry;)V
+	public abstract fun formatDelegatedSuperTypeEntry (Lorg/jetbrains/kotlin/psi/KtDelegatedSuperTypeEntry;)V
+	public abstract fun formatDestructuringDeclaration (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclaration;)V
+	public abstract fun formatDestructuringDeclarationEntry (Lorg/jetbrains/kotlin/psi/KtDestructuringDeclarationEntry;)V
 	public abstract fun formatDoWhileExpression (Lorg/jetbrains/kotlin/psi/KtDoWhileExpression;)V
 	public abstract fun formatDynamicType (Lorg/jetbrains/kotlin/psi/KtDynamicType;)V
-	public fun formatEnumEntry (Lorg/jetbrains/kotlin/psi/KtEnumEntry;)V
+	public abstract fun formatEnumEntry (Lorg/jetbrains/kotlin/psi/KtEnumEntry;)V
 	public abstract fun formatFileAnnotationList (Lorg/jetbrains/kotlin/psi/KtFileAnnotationList;)V
 	public abstract fun formatFinallySection (Lorg/jetbrains/kotlin/psi/KtFinallySection;)V
 	public abstract fun formatForExpression (Lorg/jetbrains/kotlin/psi/KtForExpression;)V
@@ -583,31 +593,31 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/KotlinAstForm
 	public abstract fun formatLambdaOrScopingFunction (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;Z)V
 	public static synthetic fun formatLambdaOrScopingFunction$default (Lorg/jetbrains/ktfmt/format/visitor/KotlinAstFormatter;Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;ZILjava/lang/Object;)V
 	public abstract fun formatModifierList (Lorg/jetbrains/kotlin/psi/KtModifierList;)V
-	public fun formatNamedFunction (Lorg/jetbrains/kotlin/psi/KtNamedFunction;)V
+	public abstract fun formatNamedFunction (Lorg/jetbrains/kotlin/psi/KtNamedFunction;)V
 	public abstract fun formatNullableType (Lorg/jetbrains/kotlin/psi/KtNullableType;)V
 	public abstract fun formatPackageDirective (Lorg/jetbrains/kotlin/psi/KtPackageDirective;)V
-	public fun formatParameter (Lorg/jetbrains/kotlin/psi/KtParameter;)V
+	public abstract fun formatParameter (Lorg/jetbrains/kotlin/psi/KtParameter;)V
 	public abstract fun formatParameterList (Lorg/jetbrains/kotlin/psi/KtParameterList;)V
 	public abstract fun formatParenthesizedExpression (Lorg/jetbrains/kotlin/psi/KtParenthesizedExpression;)V
 	public abstract fun formatPostfixExpression (Lorg/jetbrains/kotlin/psi/KtPostfixExpression;)V
 	public abstract fun formatPrefixExpression (Lorg/jetbrains/kotlin/psi/KtPrefixExpression;)V
-	public fun formatPrimaryConstructor (Lorg/jetbrains/kotlin/psi/KtPrimaryConstructor;)V
-	public fun formatProperty (Lorg/jetbrains/kotlin/psi/KtProperty;)V
+	public abstract fun formatPrimaryConstructor (Lorg/jetbrains/kotlin/psi/KtPrimaryConstructor;)V
+	public abstract fun formatProperty (Lorg/jetbrains/kotlin/psi/KtProperty;)V
 	public abstract fun formatQualifiedExpression (Lorg/jetbrains/kotlin/psi/KtQualifiedExpression;)V
 	public abstract fun formatReferenceExpression (Lorg/jetbrains/kotlin/psi/KtReferenceExpression;)V
 	public abstract fun formatReturnExpression (Lorg/jetbrains/kotlin/psi/KtReturnExpression;)V
-	public fun formatSecondaryConstructor (Lorg/jetbrains/kotlin/psi/KtSecondaryConstructor;)V
+	public abstract fun formatSecondaryConstructor (Lorg/jetbrains/kotlin/psi/KtSecondaryConstructor;)V
 	public abstract fun formatSimpleNameExpression (Lorg/jetbrains/kotlin/psi/KtSimpleNameExpression;)V
 	public abstract fun formatStatement (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
 	public abstract fun formatStatements ([Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
 	public abstract fun formatStringTemplateExpression (Lorg/jetbrains/kotlin/psi/KtStringTemplateExpression;)V
 	public abstract fun formatSuperExpression (Lorg/jetbrains/kotlin/psi/KtSuperExpression;)V
-	public fun formatSuperTypeCallEntry (Lorg/jetbrains/kotlin/psi/KtSuperTypeCallEntry;)V
+	public abstract fun formatSuperTypeCallEntry (Lorg/jetbrains/kotlin/psi/KtSuperTypeCallEntry;)V
 	public abstract fun formatSuperTypeList (Lorg/jetbrains/kotlin/psi/KtSuperTypeList;)V
 	public abstract fun formatThisExpression (Lorg/jetbrains/kotlin/psi/KtThisExpression;)V
 	public abstract fun formatThrowExpression (Lorg/jetbrains/kotlin/psi/KtThrowExpression;)V
 	public abstract fun formatTryExpression (Lorg/jetbrains/kotlin/psi/KtTryExpression;)V
-	public fun formatTypeAlias (Lorg/jetbrains/kotlin/psi/KtTypeAlias;)V
+	public abstract fun formatTypeAlias (Lorg/jetbrains/kotlin/psi/KtTypeAlias;)V
 	public abstract fun formatTypeArgumentList (Lorg/jetbrains/kotlin/psi/KtTypeArgumentList;)V
 	public abstract fun formatTypeConstraint (Lorg/jetbrains/kotlin/psi/KtTypeConstraint;)V
 	public abstract fun formatTypeConstraintList (Lorg/jetbrains/kotlin/psi/KtTypeConstraintList;)V
@@ -671,6 +681,7 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/TypeFormatter
 	public fun formatIntersectionType (Lorg/jetbrains/kotlin/psi/KtIntersectionType;)V
 	public fun formatNullableType (Lorg/jetbrains/kotlin/psi/KtNullableType;)V
 	public fun formatType (Lorg/jetbrains/kotlin/psi/KtElement;Lorg/jetbrains/kotlin/psi/KtModifierList;Lorg/jetbrains/kotlin/psi/KtTypeElement;)V
+	public fun formatTypeAlias (Lorg/jetbrains/kotlin/psi/KtTypeAlias;)V
 	public fun formatTypeConstraint (Lorg/jetbrains/kotlin/psi/KtTypeConstraint;)V
 	public fun formatTypeParameter (Lorg/jetbrains/kotlin/psi/KtTypeParameter;)V
 	public fun formatTypeProjection (Lorg/jetbrains/kotlin/psi/KtTypeProjection;)V

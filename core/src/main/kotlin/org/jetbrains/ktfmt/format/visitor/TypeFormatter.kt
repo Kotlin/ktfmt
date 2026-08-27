@@ -2,6 +2,7 @@
 
 package org.jetbrains.ktfmt.format.visitor
 
+import com.google.googlejavaformat.Doc
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtDynamicType
 import org.jetbrains.kotlin.psi.KtElement
@@ -10,6 +11,7 @@ import org.jetbrains.kotlin.psi.KtIntersectionType
 import org.jetbrains.kotlin.psi.KtModifierList
 import org.jetbrains.kotlin.psi.KtNullableType
 import org.jetbrains.kotlin.psi.KtProjectionKind
+import org.jetbrains.kotlin.psi.KtTypeAlias
 import org.jetbrains.kotlin.psi.KtTypeConstraint
 import org.jetbrains.kotlin.psi.KtTypeElement
 import org.jetbrains.kotlin.psi.KtTypeParameter
@@ -17,6 +19,7 @@ import org.jetbrains.kotlin.psi.KtTypeProjection
 import org.jetbrains.kotlin.psi.KtTypeReference
 import org.jetbrains.kotlin.psi.KtUserType
 import org.jetbrains.kotlin.psi.psiUtil.children
+import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 
 interface TypeFormatter : KotlinAstFormatter {
   override fun formatTypeReference(type: KtTypeReference) {
@@ -117,6 +120,28 @@ interface TypeFormatter : KotlinAstFormatter {
     builder.token("->")
     builder.space()
     builder.block(expressionBreakIndent) { format(type.returnTypeReference) }
+  }
+
+  /** Example `private typealias TextChangedListener = (string: String) -> Unit` */
+  override fun formatTypeAlias(typeAlias: KtTypeAlias) {
+    builder.sync(typeAlias)
+    builder.block(ZERO) {
+      format(typeAlias.modifierList)
+      builder.token("typealias")
+      builder.space()
+      builder.token(typeAlias.nameIdentifier?.text ?: fail())
+      format(typeAlias.typeParameterList)
+
+      builder.space()
+      builder.token("=")
+      builder.breakOp(Doc.FillMode.INDEPENDENT, " ", expressionBreakIndent)
+      builder.block(expressionBreakIndent) {
+        format(typeAlias.getTypeReference())
+        format(typeAlias.typeConstraintList)
+        builder.guessToken(";")
+      }
+      builder.forcedBreak()
+    }
   }
 
   fun formatType(type: KtElement, modifierList: KtModifierList?, typeElement: KtTypeElement?) {

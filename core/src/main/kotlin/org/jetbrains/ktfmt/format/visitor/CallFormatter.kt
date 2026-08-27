@@ -68,6 +68,18 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
+  override fun formatCallExpression(callExpression: KtCallExpression) {
+    builder.sync(callExpression)
+    with(callExpression) {
+      formatFunctionCall(
+          calleeExpression,
+          typeArgumentList,
+          valueArgumentList,
+          trailingLambda,
+      )
+    }
+  }
+
   /**
    * Format a single function call expression.
    *

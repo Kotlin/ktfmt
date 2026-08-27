@@ -145,9 +145,7 @@ interface KotlinAstFormatter {
 
   fun formatStatements(statements: Array<PsiElement>)
 
-  fun formatNamedFunction(function: KtNamedFunction) {
-    TODO("Unreachable code path")
-  }
+  fun formatNamedFunction(function: KtNamedFunction)
 
   fun formatTypeReference(type: KtTypeReference)
 
@@ -173,29 +171,17 @@ interface KotlinAstFormatter {
 
   fun formatFunctionType(type: KtFunctionType)
 
-  fun formatClassOrObject(classOrObject: KtClassOrObject) {
-    TODO("Unreachable code path")
-  }
+  fun formatClassOrObject(classOrObject: KtClassOrObject)
 
-  fun formatProperty(property: KtProperty) {
-    TODO("Unreachable code path")
-  }
+  fun formatProperty(property: KtProperty)
 
-  fun formatPrimaryConstructor(constructor: KtPrimaryConstructor) {
-    TODO("Unreachable code path")
-  }
+  fun formatPrimaryConstructor(constructor: KtPrimaryConstructor)
 
-  fun formatSecondaryConstructor(constructor: KtSecondaryConstructor) {
-    TODO("Unreachable code path")
-  }
+  fun formatSecondaryConstructor(constructor: KtSecondaryConstructor)
 
-  fun formatConstructorDelegationCall(call: KtConstructorDelegationCall) {
-    TODO("Unreachable code path")
-  }
+  fun formatConstructorDelegationCall(call: KtConstructorDelegationCall)
 
-  fun formatClassInitializer(initializer: KtClassInitializer) {
-    TODO("Unreachable code path")
-  }
+  fun formatClassInitializer(initializer: KtClassInitializer)
 
   /** @param wrapInBlock if true places the argument expression in a block. */
   fun formatArgument(
@@ -206,17 +192,11 @@ interface KotlinAstFormatter {
 
   fun formatSuperTypeList(list: KtSuperTypeList)
 
-  fun formatSuperTypeCallEntry(call: KtSuperTypeCallEntry) {
-    TODO("Unreachable code path")
-  }
+  fun formatSuperTypeCallEntry(call: KtSuperTypeCallEntry)
 
-  fun formatDelegatedSuperTypeEntry(specifier: KtDelegatedSuperTypeEntry) {
-    TODO("Unreachable code path")
-  }
+  fun formatDelegatedSuperTypeEntry(specifier: KtDelegatedSuperTypeEntry)
 
-  fun formatClassBody(body: KtClassBody) {
-    TODO("Unreachable code path")
-  }
+  fun formatClassBody(body: KtClassBody)
 
   fun formatValueArgumentList(list: KtValueArgumentList): BreakTag?
 
@@ -226,15 +206,11 @@ interface KotlinAstFormatter {
 
   fun formatParameterList(list: KtParameterList)
 
-  fun formatParameter(parameter: KtParameter) {
-    TODO("Unreachable code path")
-  }
+  fun formatParameter(parameter: KtParameter)
 
   fun formatQualifiedExpression(expression: KtQualifiedExpression)
 
-  fun formatCallExpression(callExpression: KtCallExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatCallExpression(callExpression: KtCallExpression)
 
   /**
    * @param brokeBeforeBrace used for tracking if a break was taken right before the lambda
@@ -276,9 +252,7 @@ interface KotlinAstFormatter {
 
   fun formatWhenExpression(expression: KtWhenExpression)
 
-  fun formatBlockExpression(expression: KtBlockExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatBlockExpression(expression: KtBlockExpression)
 
   fun formatWhenConditionWithExpression(condition: KtWhenConditionWithExpression)
 
@@ -322,21 +296,13 @@ interface KotlinAstFormatter {
 
   fun formatThrowExpression(expression: KtThrowExpression)
 
-  fun formatEnumEntry(enumEntry: KtEnumEntry) {
-    TODO("Unreachable code path")
-  }
+  fun formatEnumEntry(enumEntry: KtEnumEntry)
 
-  fun formatTypeAlias(typeAlias: KtTypeAlias) {
-    TODO("Unreachable code path")
-  }
+  fun formatTypeAlias(typeAlias: KtTypeAlias)
 
-  fun formatDestructuringDeclaration(destructuringDeclaration: KtDestructuringDeclaration) {
-    TODO("Unreachable code path")
-  }
+  fun formatDestructuringDeclaration(destructuringDeclaration: KtDestructuringDeclaration)
 
-  fun formatDestructuringDeclarationEntry(multiDeclarationEntry: KtDestructuringDeclarationEntry) {
-    TODO("Unreachable code path")
-  }
+  fun formatDestructuringDeclarationEntry(multiDeclarationEntry: KtDestructuringDeclarationEntry)
 
   fun formatPackageDirective(directive: KtPackageDirective)
 

@@ -1,5 +1,7 @@
 package org.jetbrains.ktfmt.format.visitor
 
+import com.google.common.base.Throwables
+import com.google.googlejavaformat.FormattingError
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtAnnotation
@@ -28,6 +30,7 @@ import org.jetbrains.kotlin.psi.KtDestructuringDeclarationEntry
 import org.jetbrains.kotlin.psi.KtDoWhileExpression
 import org.jetbrains.kotlin.psi.KtDynamicType
 import org.jetbrains.kotlin.psi.KtEnumEntry
+import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtFileAnnotationList
 import org.jetbrains.kotlin.psi.KtFinallySection
@@ -412,5 +415,26 @@ abstract class AbstractFormatterVisitor : KtTreeVisitorVoid(), KotlinAstFormatte
   ): Void? {
     formatFileAnnotationList(fileAnnotationList)
     return null
+  }
+
+  /**
+   * visitElement is called for almost all types of AST nodes. We use it to keep track of whether
+   * we're currently inside an expression or not.
+   *
+   * @throws FormattingError
+   */
+  override fun visitElement(element: PsiElement) {
+    inExpression.addLast(element is KtExpression || inExpression.last())
+    val previous = builder.depth()
+    try {
+      super.visitElement(element)
+    } catch (e: FormattingError) {
+      throw e
+    } catch (t: Throwable) {
+      throw FormattingError(builder.diagnostic(Throwables.getStackTraceAsString(t)))
+    } finally {
+      inExpression.removeLast()
+    }
+    builder.checkClosed(previous)
   }
 }
