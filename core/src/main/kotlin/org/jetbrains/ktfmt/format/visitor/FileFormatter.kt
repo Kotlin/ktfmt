@@ -101,9 +101,7 @@ interface FileFormatter : KotlinAstFormatter {
 
     val importedReference = directive.importedReference
     if (importedReference != null) {
-      inImport = true
       format(importedReference)
-      inImport = false
     }
     if (directive.isAllUnder) {
       builder.token(".")

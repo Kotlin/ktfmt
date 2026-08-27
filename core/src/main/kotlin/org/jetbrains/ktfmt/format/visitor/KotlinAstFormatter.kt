@@ -3,7 +3,6 @@ package org.jetbrains.ktfmt.format.visitor
 import com.google.googlejavaformat.FormattingError
 import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.Output.BreakTag
-import java.util.ArrayDeque
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtAnnotation
@@ -130,10 +129,8 @@ interface KotlinAstFormatter {
   val blockIndent: Indentation.Const
   val expressionBreakIndent: Indentation.Const
 
-  /** A record of whether we have visited into an expression. */
-  val inExpression: ArrayDeque<Boolean>
-
-  var inImport: Boolean
+  val inExpression: Boolean
+  val inImport: Boolean
 
   fun format(element: PsiElement?)
 
@@ -463,7 +460,7 @@ interface KotlinAstFormatter {
    * covered by an area marked by this method.
    */
   fun markForPartialFormat() {
-    if (!inExpression.last()) {
+    if (!inExpression) {
       builder.markForPartialFormat()
     }
   }

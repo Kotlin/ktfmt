@@ -18,9 +18,7 @@
 
 package org.jetbrains.ktfmt.format
 
-import com.google.common.collect.ImmutableList
 import com.google.googlejavaformat.OpsBuilder
-import java.util.ArrayDeque
 import org.jetbrains.ktfmt.format.visitor.AbstractFormatterVisitor
 import org.jetbrains.ktfmt.format.visitor.AnnotationFormatter
 import org.jetbrains.ktfmt.format.visitor.CallFormatter
@@ -56,10 +54,4 @@ open class KotlinInputAstVisitor(
    */
   override val expressionBreakIndent: Indentation.Const =
       Indentation.Const(options.continuationIndent)
-
-  /** A record of whether we have visited into an expression. */
-  override val inExpression = ArrayDeque(ImmutableList.of(false))
-
-  /** Tracks whether we are handling an import directive */
-  override var inImport = false
 }

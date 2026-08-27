@@ -1,7 +1,9 @@
 package org.jetbrains.ktfmt.format.visitor
 
 import com.google.common.base.Throwables
+import com.google.common.collect.ImmutableList
 import com.google.googlejavaformat.FormattingError
+import java.util.ArrayDeque
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtAnnotation
@@ -86,6 +88,13 @@ import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.KtWhileExpression
 
 abstract class AbstractFormatterVisitor : KtTreeVisitorVoid(), KotlinAstFormatter {
+
+  private val inExpressionTracker = ArrayDeque(ImmutableList.of(false))
+
+  override val inExpression: Boolean
+    get() = inExpressionTracker.last()
+
+  override var inImport: Boolean = false
 
   override fun format(element: PsiElement?) {
     element?.accept(this)
@@ -386,7 +395,9 @@ abstract class AbstractFormatterVisitor : KtTreeVisitorVoid(), KotlinAstFormatte
   }
 
   override fun visitImportDirective(directive: KtImportDirective) {
+    inImport = true
     formatImportDirective(directive)
+    inImport = false
   }
 
   override fun visitAnnotatedExpression(expression: KtAnnotatedExpression) {
@@ -424,7 +435,7 @@ abstract class AbstractFormatterVisitor : KtTreeVisitorVoid(), KotlinAstFormatte
    * @throws FormattingError
    */
   override fun visitElement(element: PsiElement) {
-    inExpression.addLast(element is KtExpression || inExpression.last())
+    inExpressionTracker.addLast(element is KtExpression || inExpressionTracker.last())
     val previous = builder.depth()
     try {
       super.visitElement(element)
@@ -433,7 +444,7 @@ abstract class AbstractFormatterVisitor : KtTreeVisitorVoid(), KotlinAstFormatte
     } catch (t: Throwable) {
       throw FormattingError(builder.diagnostic(Throwables.getStackTraceAsString(t)))
     } finally {
-      inExpression.removeLast()
+      inExpressionTracker.removeLast()
     }
     builder.checkClosed(previous)
   }

@@ -218,10 +218,7 @@ public class org/jetbrains/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/kt
 	public fun getBlockIndent ()Lorg/jetbrains/ktfmt/format/visitor/Indentation$Const;
 	public fun getBuilder ()Lcom/google/googlejavaformat/OpsBuilder;
 	public fun getExpressionBreakIndent ()Lorg/jetbrains/ktfmt/format/visitor/Indentation$Const;
-	public fun getInExpression ()Ljava/util/ArrayDeque;
-	public fun getInImport ()Z
 	public fun getOptions ()Lorg/jetbrains/ktfmt/format/FormattingOptions;
-	public fun setInImport (Z)V
 }
 
 public final class org/jetbrains/ktfmt/format/KotlinTok : com/google/googlejavaformat/Input$Tok {
@@ -329,6 +326,9 @@ public final class org/jetbrains/ktfmt/format/WhitespaceTombstones {
 public abstract class org/jetbrains/ktfmt/format/visitor/AbstractFormatterVisitor : org/jetbrains/kotlin/psi/KtTreeVisitorVoid, org/jetbrains/ktfmt/format/visitor/KotlinAstFormatter {
 	public fun <init> ()V
 	public fun format (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
+	public fun getInExpression ()Z
+	public fun getInImport ()Z
+	public fun setInImport (Z)V
 	public fun visitAnnotatedExpression (Lorg/jetbrains/kotlin/psi/KtAnnotatedExpression;)V
 	public fun visitAnnotation (Lorg/jetbrains/kotlin/psi/KtAnnotation;)V
 	public fun visitAnnotationEntry (Lorg/jetbrains/kotlin/psi/KtAnnotationEntry;)V
@@ -635,11 +635,10 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/KotlinAstForm
 	public abstract fun getBlockIndent ()Lorg/jetbrains/ktfmt/format/visitor/Indentation$Const;
 	public abstract fun getBuilder ()Lcom/google/googlejavaformat/OpsBuilder;
 	public abstract fun getExpressionBreakIndent ()Lorg/jetbrains/ktfmt/format/visitor/Indentation$Const;
-	public abstract fun getInExpression ()Ljava/util/ArrayDeque;
+	public abstract fun getInExpression ()Z
 	public abstract fun getInImport ()Z
 	public abstract fun getOptions ()Lorg/jetbrains/ktfmt/format/FormattingOptions;
 	public fun markForPartialFormat ()V
-	public abstract fun setInImport (Z)V
 }
 
 public abstract interface class org/jetbrains/ktfmt/format/visitor/ListFormatter : org/jetbrains/ktfmt/format/visitor/KotlinAstFormatter {
