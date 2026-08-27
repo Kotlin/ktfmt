@@ -1,8 +1,6 @@
 package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.Doc
-import com.google.googlejavaformat.Indent
-import com.google.googlejavaformat.Indent.Const.ZERO
 import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.Output.BreakTag
 import java.util.Optional
@@ -12,7 +10,6 @@ import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.kotlin.psi.KtLabeledExpression
 import org.jetbrains.kotlin.psi.KtLambdaArgument
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtPostfixExpression
@@ -29,11 +26,9 @@ import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.kotlin.psi.psiUtil.startsWithComment
 import org.jetbrains.ktfmt.format.ParseError
+import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 
 interface CallFormatter : KotlinAstFormatter {
-  val doubleExpressionBreakIndent: Indent.Const
-  val blockPlusExpressionBreakIndent: Indent.Const
-
   override fun formatArgument(
       argument: KtValueArgument,
       wrapInBlock: Boolean,
@@ -74,9 +69,8 @@ interface CallFormatter : KotlinAstFormatter {
       typeArgumentList: KtTypeArgumentList?,
       argumentList: KtValueArgumentList?,
       lambdaArguments: List<KtLambdaArgument>,
-      argumentsIndent: Indent,
-      lambdaIndent: Indent,
-      negativeLambdaIndent: Indent,
+      argumentsIndent: Indentation,
+      lambdaIndent: Indentation,
   ) {
     // Apply the lambda indent to the callee, type args, value args, and the lambda.
     // This is undone for the first three by the negative lambda indent.
@@ -87,7 +81,7 @@ interface CallFormatter : KotlinAstFormatter {
       // This is based on if there is a break in the argument list
       var brokeBeforeBrace: BreakTag? = null
 
-      builder.block(negativeLambdaIndent) {
+      builder.block(-lambdaIndent) {
         format(callee)
         builder.block(argumentsIndent) {
           builder.block(ZERO) { format(typeArgumentList) }
@@ -125,9 +119,9 @@ interface CallFormatter : KotlinAstFormatter {
     val hasComments = bodyExpression.children().any { it is PsiComment }
     val hasArrow = lambdaExpression.functionLiteral.arrow != null
 
-    fun ifBrokeBeforeBrace(onTrue: Indent, onFalse: Indent): Indent {
+    fun ifBrokeBeforeBrace(onTrue: Indentation, onFalse: Indentation): Indentation {
       if (brokeBeforeBrace == null) return onFalse
-      return Indent.If.make(brokeBeforeBrace, onTrue, onFalse)
+      return Indentation.Conditional(brokeBeforeBrace, onTrue, onFalse)
     }
 
     /**
@@ -141,9 +135,9 @@ interface CallFormatter : KotlinAstFormatter {
      * These conditional indents should not be used inside interior blocks, since that would apply
      * the condition twice.
      */
-    val bracePlusBlockIndent = ifBrokeBeforeBrace(blockPlusExpressionBreakIndent, blockIndent)
+    val bracePlusBlockIndent = ifBrokeBeforeBrace(blockIndent + expressionBreakIndent, blockIndent)
     val bracePlusExpressionIndent =
-        ifBrokeBeforeBrace(doubleExpressionBreakIndent, expressionBreakIndent)
+        ifBrokeBeforeBrace(expressionBreakIndent * 2, expressionBreakIndent)
     val bracePlusZeroIndent = ifBrokeBeforeBrace(expressionBreakIndent, ZERO)
 
     builder.token("{")
@@ -295,36 +289,21 @@ interface CallFormatter : KotlinAstFormatter {
         Optional.of(breakToExpr),
     )
 
-    var carry = expr
-    if (carry is KtQualifiedExpression && carry.receiverExpression is KtSimpleNameExpression) {
-      format(carry.receiverExpression)
-      builder.token(carry.operationSign.value)
-      carry = carry.selectorExpression
+    val scopingLambda = expr.scopingLambda ?: throw AssertionError(expr)
+    scopingLambda.receiverExpression?.let {
+      format(it)
+      builder.token(scopingLambda.operation!!.value)
     }
-    if (carry is KtCallExpression) {
-      format(carry.calleeExpression)
+    scopingLambda.calleeExpression?.let {
+      format(it)
       builder.space()
-      carry = carry.lambdaArguments[0].getArgumentExpression()
     }
-    if (carry is KtLabeledExpression) {
-      format(carry.labelQualifier)
-      carry = carry.baseExpression ?: fail()
+    scopingLambda.labeledExpression?.let {
+      format(it.labelQualifier)
     }
-    if (carry is KtLambdaExpression) {
-      formatLambdaExpression(carry, brokeBeforeBrace = breakToExpr)
-      return
-    }
-
-    throw AssertionError(carry)
+    formatLambdaExpression(scopingLambda.lambdaExpression, breakToExpr)
   }
 
-  /**
-   * Example: "com.facebook.bla.bla" in imports or "a.b.c.d" in expressions.
-   *
-   * There's a few cases that are different. We deal with imports by keeping them on the same line.
-   * For regular chained expressions we go the left most descendant so we can start indentation only
-   * before the first break (a `.` or `?.`), and keep the seem indentation for this chain of calls.
-   */
   override fun formatQualifiedExpression(expression: KtQualifiedExpression) {
     builder.sync(expression)
     val receiver = expression.receiverExpression
@@ -366,16 +345,6 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
-  /**
-   * Handles a chain of qualified expressions, i.e. `a[5].b!!.c()[4].f()`
-   *
-   * This is by far the most complicated part of this formatter. We start by breaking the expression
-   * to the steps it is executed in (which are in the opposite order of how the syntax tree is
-   * built).
-   *
-   * We then calculate information to know which parts need to be groups, and finally go part by
-   * part, emitting it to the [builder] while closing and opening groups.
-   */
   private fun emitQualifiedExpression(expression: KtExpression) {
     val parts = expression.chainParts
     // whether we want to make a lambda look like a block, this make Kotlin DSLs look as expected
@@ -420,8 +389,7 @@ interface CallFormatter : KotlinAstFormatter {
                   index == parts.size - 1 ||
                       !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
               val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
-              val lambdaIndentElse = if (isTrailingLambda) expressionBreakNegativeIndent else ZERO
-              val negativeLambdaIndentElse = if (isTrailingLambda) expressionBreakIndent else ZERO
+              val lambdaIndentElse = if (isTrailingLambda) -expressionBreakIndent else ZERO
 
               // emit `(1, 2) { it }` from `doIt(1, 2) { it }`
               formatFunctionCall(
@@ -429,9 +397,9 @@ interface CallFormatter : KotlinAstFormatter {
                   selectorExpression.typeArgumentList,
                   selectorExpression.valueArgumentList,
                   selectorExpression.lambdaArguments,
-                  argumentsIndent = Indent.If.make(nameTag, expressionBreakIndent, argsIndentElse),
-                  lambdaIndent = Indent.If.make(nameTag, ZERO, lambdaIndentElse),
-                  negativeLambdaIndent = Indent.If.make(nameTag, ZERO, negativeLambdaIndentElse),
+                  argumentsIndent =
+                      Indentation.Conditional(nameTag, expressionBreakIndent, argsIndentElse),
+                  lambdaIndent = Indentation.Conditional(nameTag, ZERO, lambdaIndentElse),
               )
             }
           }
@@ -583,7 +551,6 @@ interface CallFormatter : KotlinAstFormatter {
         index == parts.indices.last
   }
 
-  /** Example `a[3]`, `b["a", 5]` or `a.b.c[4]` */
   override fun formatArrayAccessExpression(expression: KtArrayAccessExpression) {
     builder.sync(expression)
     if (expression.arrayExpression is KtQualifiedExpression) {
@@ -594,10 +561,6 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
-  /**
-   * Example `[3]` in `a[3]` or `a[3].b` Separated since it needs to be used from a top level array
-   * expression (`a[3]`) and from within a qualified chain (`a[3].b)
-   */
   private fun formatArrayAccessBrackets(expression: KtArrayAccessExpression) {
     builder.block(expressionBreakIndent) {
       formatCommaSeparatedList(

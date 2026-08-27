@@ -22,8 +22,6 @@ import com.google.common.base.Throwables
 import com.google.common.collect.ImmutableList
 import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.FormattingError
-import com.google.googlejavaformat.Indent
-import com.google.googlejavaformat.Indent.Const.ZERO
 import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.Output.BreakTag
 import java.util.ArrayDeque
@@ -107,17 +105,21 @@ import org.jetbrains.ktfmt.format.visitor.AnnotationFormatter
 import org.jetbrains.ktfmt.format.visitor.CallFormatter
 import org.jetbrains.ktfmt.format.visitor.ExpressionFormatter
 import org.jetbrains.ktfmt.format.visitor.FileFormatter
+import org.jetbrains.ktfmt.format.visitor.Indentation
+import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 import org.jetbrains.ktfmt.format.visitor.ListFormatter
 import org.jetbrains.ktfmt.format.visitor.TypeFormatter
-import org.jetbrains.ktfmt.format.visitor.asIndent
 import org.jetbrains.ktfmt.format.visitor.block
+import org.jetbrains.ktfmt.format.visitor.breakOp
 import org.jetbrains.ktfmt.format.visitor.fenceComments
+import org.jetbrains.ktfmt.format.visitor.forcedBreak
 import org.jetbrains.ktfmt.format.visitor.hasEmptyParenthesis
 import org.jetbrains.ktfmt.format.visitor.hasLineBreakingCommentBefore
 import org.jetbrains.ktfmt.format.visitor.isBlockLikeCall
 import org.jetbrains.ktfmt.format.visitor.isChainedBlockLikeCall
 import org.jetbrains.ktfmt.format.visitor.isChainedScopingFunction
 import org.jetbrains.ktfmt.format.visitor.isLambdaOrScopingFunction
+import org.jetbrains.ktfmt.format.visitor.open
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
 import org.jetbrains.ktfmt.util.CONTEXT_PARAMETER_LIST
@@ -137,20 +139,14 @@ open class KotlinInputAstVisitor(
     TypeFormatter {
 
   /** Standard indentation for a block */
-  override val blockIndent: Indent.Const = options.blockIndent.asIndent
+  override val blockIndent: Indentation.Const = Indentation.Const(options.blockIndent)
 
   /**
    * Standard indentation for a long expression or function call, it is different than block
    * indentation on purpose
    */
-  override val expressionBreakIndent: Indent.Const = options.continuationIndent.asIndent
-
-  override val blockPlusExpressionBreakIndent: Indent.Const =
-      (options.blockIndent + options.continuationIndent).asIndent
-
-  override val doubleExpressionBreakIndent: Indent.Const = (options.continuationIndent * 2).asIndent
-
-  override val expressionBreakNegativeIndent: Indent.Const = (-options.continuationIndent).asIndent
+  override val expressionBreakIndent: Indentation.Const =
+      Indentation.Const(options.continuationIndent)
 
   /** A record of whether we have visited into an expression. */
   override val inExpression = ArrayDeque(ImmutableList.of(false))
@@ -261,7 +257,7 @@ open class KotlinInputAstVisitor(
           }
           emitTypeOrDelegationCall {
             builder.space()
-            builder.block(expressionBreakNegativeIndent) { visit(typeOrDelegationCall) }
+            builder.block(-expressionBreakIndent) { visit(typeOrDelegationCall) }
           }
         }
       }
@@ -293,7 +289,12 @@ open class KotlinInputAstVisitor(
       bodyBlockExpression: PsiElement,
       emitChildren: (Array<PsiElement>) -> Unit,
   ) {
-    builder.token("{", Doc.Token.RealOrImaginary.REAL, blockIndent, Optional.of(blockIndent))
+    builder.token(
+        "{",
+        Doc.Token.RealOrImaginary.REAL,
+        blockIndent.indent,
+        Optional.of(blockIndent.indent),
+    )
     val statements = bodyBlockExpression.children
     if (statements.isNotEmpty()) {
       builder.block(blockIndent) {
@@ -904,7 +905,12 @@ open class KotlinInputAstVisitor(
       emitKeywordWithCondition("when", expression.subjectExpression)
 
       builder.space()
-      builder.token("{", Doc.Token.RealOrImaginary.REAL, blockIndent, Optional.of(blockIndent))
+      builder.token(
+          "{",
+          Doc.Token.RealOrImaginary.REAL,
+          blockIndent.indent,
+          Optional.of(blockIndent.indent),
+      )
 
       expression.entries.forEachIndexed { index, whenEntry ->
         builder.block(blockIndent) {
@@ -1454,7 +1460,7 @@ open class KotlinInputAstVisitor(
         builder.block(expressionBreakIndent) {
           builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
           visit(condition)
-          builder.breakOp(Doc.FillMode.UNIFIED, "", expressionBreakNegativeIndent)
+          builder.breakOp(Doc.FillMode.UNIFIED, "", -expressionBreakIndent)
         }
       } else {
         builder.block(ZERO) { visit(condition) }

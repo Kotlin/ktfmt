@@ -1,7 +1,6 @@
 package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.FormattingError
-import com.google.googlejavaformat.Indent
 import com.google.googlejavaformat.Indent.Const.ZERO
 import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.Output.BreakTag
@@ -129,9 +128,8 @@ interface KotlinAstFormatter {
   val options: FormattingOptions
   val builder: OpsBuilder
 
-  val blockIndent: Indent.Const
-  val expressionBreakIndent: Indent.Const
-  val expressionBreakNegativeIndent: Indent.Const
+  val blockIndent: Indentation.Const
+  val expressionBreakIndent: Indentation.Const
 
   /** A record of whether we have visited into an expression. */
   val inExpression: ArrayDeque<Boolean>
@@ -200,11 +198,7 @@ interface KotlinAstFormatter {
     TODO("Unreachable code path")
   }
 
-  /**
-   * Example `a` in `foo(a)`, or `*a`, or `limit = 50`
-   *
-   * @param wrapInBlock if true places the argument expression in a block.
-   */
+  /** @param wrapInBlock if true places the argument expression in a block. */
   fun formatArgument(
       argument: KtValueArgument,
       wrapInBlock: Boolean,
@@ -237,17 +231,13 @@ interface KotlinAstFormatter {
     TODO("Unreachable code path")
   }
 
-  fun formatQualifiedExpression(expression: KtQualifiedExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatQualifiedExpression(expression: KtQualifiedExpression)
 
   fun formatCallExpression(callExpression: KtCallExpression) {
     TODO("Unreachable code path")
   }
 
   /**
-   * Example `{ 1 + 1 }` (as lambda) or `{ (x, y) -> x + y }`
-   *
    * @param brokeBeforeBrace used for tracking if a break was taken right before the lambda
    *   expression. Useful for scoping functions where we want good looking indentation. For example,
    *   here we have correct indentation before `bar()` and `car()` because we can detect the break
@@ -530,20 +520,13 @@ interface KotlinAstFormatter {
   /** See [isLambdaOrScopingFunction] for examples. */
   fun formatLambdaOrScopingFunction(expr: PsiElement?, emitLeadingBreak: Boolean = true)
 
-  /**
-   * Examples `foo<T>(a, b)`, `foo(a)`, `boo()`, `super(a)`
-   *
-   * @param lambdaIndent how to indent [lambdaArguments], if present
-   * @param negativeLambdaIndent the negative indentation of [lambdaIndent]
-   */
   fun formatFunctionCall(
       callee: KtExpression?,
       typeArgumentList: KtTypeArgumentList?,
       argumentList: KtValueArgumentList?,
       lambdaArguments: List<KtLambdaArgument>,
-      argumentsIndent: Indent = expressionBreakIndent,
-      lambdaIndent: Indent = ZERO,
-      negativeLambdaIndent: Indent = ZERO,
+      argumentsIndent: Indentation = expressionBreakIndent,
+      lambdaIndent: Indentation = Indentation.ZERO,
   )
 
   /**

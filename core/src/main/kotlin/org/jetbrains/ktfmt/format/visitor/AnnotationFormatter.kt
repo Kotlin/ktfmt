@@ -1,7 +1,6 @@
 package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.Doc
-import com.google.googlejavaformat.Indent.Const.ZERO
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtAnnotation
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
@@ -9,6 +8,7 @@ import org.jetbrains.kotlin.psi.KtAnnotationUseSiteTarget
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtReturnExpression
+import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 
 interface AnnotationFormatter : KotlinAstFormatter {
   override fun formatAnnotatedExpression(expression: KtAnnotatedExpression) {

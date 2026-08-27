@@ -1,6 +1,5 @@
 package org.jetbrains.ktfmt.format.visitor
 
-import com.google.googlejavaformat.Indent.Const.ZERO
 import com.google.googlejavaformat.OpsBuilder
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
@@ -53,7 +52,7 @@ interface FileFormatter : KotlinAstFormatter {
   }
 
   override fun formatStatement(statement: PsiElement) {
-    builder.block(ZERO) { format(statement) }
+    builder.block { format(statement) }
     builder.guessToken(";")
   }
 

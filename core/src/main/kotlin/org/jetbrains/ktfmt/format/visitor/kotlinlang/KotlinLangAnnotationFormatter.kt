@@ -1,13 +1,14 @@
 package org.jetbrains.ktfmt.format.visitor.kotlinlang
 
 import com.google.googlejavaformat.Doc
-import com.google.googlejavaformat.Indent.Const.ZERO
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtReturnExpression
 import org.jetbrains.ktfmt.format.visitor.AnnotationFormatter
+import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 import org.jetbrains.ktfmt.format.visitor.block
+import org.jetbrains.ktfmt.format.visitor.breakOp
 import org.jetbrains.ktfmt.format.visitor.isBinaryExpression
 import org.jetbrains.ktfmt.format.visitor.sync
 
