@@ -3,7 +3,6 @@ package org.jetbrains.ktfmt.format.visitor
 import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.OpsBuilder
 import java.util.Optional
-import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtBreakExpression
 import org.jetbrains.kotlin.psi.KtCatchClause
@@ -123,10 +122,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
 
   override fun formatWhenConditionInRange(condition: KtWhenConditionInRange) {
     builder.sync(condition)
-    // TODO: replace with 'condition.isNegated' once https://youtrack.jetbrains.com/issue/KT-34395
-    // is fixed.
-    val isNegated = condition.firstChild?.node?.findChildByType(KtTokens.NOT_IN) != null
-    builder.token(if (isNegated) "!in" else "in")
+    builder.token(if (condition.isNegated) "!in" else "in")
     builder.space()
     format(condition.rangeExpression)
   }
