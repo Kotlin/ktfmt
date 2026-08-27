@@ -51,7 +51,14 @@ class KotlinTok(
 
   override fun isJavadocComment(): Boolean = text.startsWith("/**") && text.length > 4
 
-  override fun isComment(): Boolean = isSlashSlashComment || isSlashStarComment
+  fun isShebang(): Boolean = text.startsWith("#!")
+
+  /**
+   * Shebang is treated like a comment, otherwise it will not be preserved in the output. At the
+   * same time we implicitly know that shebang can only be at the start of the script file, because
+   * otherwise the parser would fail
+   */
+  override fun isComment(): Boolean = isSlashSlashComment || isSlashStarComment || isShebang()
 
   fun kind(): KtToken = kind
 

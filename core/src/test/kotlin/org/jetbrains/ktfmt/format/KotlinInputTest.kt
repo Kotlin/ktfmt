@@ -27,4 +27,12 @@ class KotlinInputTest {
     assertEquals(listOf("class", "F", "{", "}", ""), input.getTokens().map { it.tok.text })
     assertEquals(listOf("/** foo */", " "), input.getTokens()[0].toksBefore.map { it.text })
   }
+
+  @Test
+  fun `Shebang is a tok`() {
+    val code = "#!/bin/kotlinc\nclass F {}"
+    val input = KotlinInput(code, Parser.parse(KotlinCode(code, FileType.SCRIPT)))
+    assertEquals(listOf("class", "F", "{", "}", ""), input.getTokens().map { it.tok.text })
+    assertEquals(listOf("#!/bin/kotlinc", "\n"), input.getTokens()[0].toksBefore.map { it.text })
+  }
 }

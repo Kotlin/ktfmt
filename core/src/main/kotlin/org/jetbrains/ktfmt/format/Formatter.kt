@@ -106,18 +106,11 @@ object Formatter {
       lineRanges: RangeSet<Int>? = null,
       characterRanges: RangeSet<Int>? = null,
   ): String {
-    val (shebang, kotlinCode) =
-        if (code.startsWith("#!")) {
-          code.split("\n".toRegex(), limit = 2)
-        } else {
-          listOf("", code)
-        }
-    checkEscapeSequences(kotlinCode)
-
-    val normalizedKotlinCode = convertLineSeparators(kotlinCode)
+    checkEscapeSequences(code)
+    val normalizedCode = convertLineSeparators(code)
     val formattedCode =
         if (lineRanges == null && characterRanges == null) {
-          FormatterContext(normalizedKotlinCode)
+          FormatterContext(normalizedCode)
               .transform { sortedAndDistinctImports(it) }
               .transform { dropRedundantElements(it, options) }
               .transform { addRedundantElements(it, options) }
@@ -126,16 +119,15 @@ object Formatter {
               .code
         } else {
           val selectedCharacterRanges = characterRangesForPartialFormatting(
-              normalizedKotlinCode,
+              normalizedCode,
               lineRanges,
               characterRanges,
-              shebang,
           )
           val partiallyFormattedCode =
               if (selectedCharacterRanges.isEmpty) {
-                normalizedKotlinCode
+                normalizedCode
               } else {
-                FormatterContext(normalizedKotlinCode)
+                FormatterContext(normalizedCode)
                     .transform {
                       prettyPrint(
                           it,
@@ -154,9 +146,7 @@ object Formatter {
               .code
         }
 
-    return formattedCode
-        .let { convertLineSeparators(it, checkNotNull(Newlines.guessLineSeparator(kotlinCode))) }
-        .let { if (shebang.isEmpty()) it else shebang + "\n" + it }
+    return convertLineSeparators(formattedCode, checkNotNull(Newlines.guessLineSeparator(code)))
   }
 
   /**
@@ -231,53 +221,15 @@ object Formatter {
       code: String,
       lineRanges: RangeSet<Int>?,
       characterRanges: RangeSet<Int>?,
-      shebang: String,
   ): RangeSet<Int> {
     val selectedCharacterRanges = TreeRangeSet.create<Int>()
     if (lineRanges != null) {
-      val adjustedLineRanges = adjustLineRangesForShebang(lineRanges, shebang.isNotEmpty())
-      selectedCharacterRanges.addAll(lineRangesToCharRanges(code, adjustedLineRanges))
+      selectedCharacterRanges.addAll(lineRangesToCharRanges(code, lineRanges))
     }
     if (characterRanges != null) {
-      selectedCharacterRanges.addAll(adjustCharacterRangesForShebang(characterRanges, shebang))
+      selectedCharacterRanges.addAll(characterRanges)
     }
     return selectedCharacterRanges
-  }
-
-  private fun adjustLineRangesForShebang(
-      lineRanges: RangeSet<Int>,
-      hasShebang: Boolean,
-  ): RangeSet<Int> {
-    if (!hasShebang) {
-      return lineRanges
-    }
-
-    val adjusted = TreeRangeSet.create<Int>()
-    for (lineRange in lineRanges.subRangeSet(Range.atLeast(1)).asRanges()) {
-      adjusted.add(Range.closedOpen(lineRange.lowerEndpoint() - 1, lineRange.upperEndpoint() - 1))
-    }
-    return adjusted
-  }
-
-  private fun adjustCharacterRangesForShebang(
-      characterRanges: RangeSet<Int>,
-      shebang: String,
-  ): RangeSet<Int> {
-    if (shebang.isEmpty()) {
-      return characterRanges
-    }
-
-    val adjusted = TreeRangeSet.create<Int>()
-    val kotlinCodeStart = shebang.length + 1
-    for (characterRange in characterRanges.subRangeSet(Range.atLeast(kotlinCodeStart)).asRanges()) {
-      adjusted.add(
-          Range.closedOpen(
-              characterRange.lowerEndpoint() - kotlinCodeStart,
-              characterRange.upperEndpoint() - kotlinCodeStart,
-          ),
-      )
-    }
-    return adjusted
   }
 
   private fun createAstVisitor(options: FormattingOptions, builder: OpsBuilder): PsiElementVisitor {
