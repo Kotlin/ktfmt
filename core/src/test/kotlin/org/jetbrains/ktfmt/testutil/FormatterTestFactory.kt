@@ -9,7 +9,6 @@ import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.readText
 import kotlin.io.path.walk
 import kotlin.io.path.writeText
-import org.jetbrains.ktfmt.format.FileType
 import org.jetbrains.ktfmt.format.Formatter
 import org.jetbrains.ktfmt.format.FormattingOptions
 import org.jetbrains.ktfmt.format.KotlinCode
@@ -145,7 +144,7 @@ abstract class FormatterTestFactory(
     val actual =
         Formatter.format(
             expectation.config.options,
-            KotlinCode(expectation.description.input, FileType.SCRIPT),
+            KotlinCode(expectation.description.input, expectation.config.fileType),
         )
 
     if (actual == expectation.expected) {
@@ -164,7 +163,7 @@ abstract class FormatterTestFactory(
     val reformatted =
         Formatter.format(
             expectation.config.options,
-            KotlinCode(expectation.expected, FileType.SCRIPT),
+            KotlinCode(expectation.expected, expectation.config.fileType),
         )
     assertEquals(
         expectation.expected,

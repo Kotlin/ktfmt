@@ -1,4 +1,5 @@
 // TRAILING_COMMA_STRATEGY NONE
+// FILE_TYPE SCRIPT
 
 val aVar = setOf(
     Env.Dev,

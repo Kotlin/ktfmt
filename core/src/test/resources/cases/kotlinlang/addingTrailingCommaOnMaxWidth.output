@@ -1,3 +1,5 @@
+// FILE_TYPE SCRIPT
+
 functionCall(
     shortArg,
     namedArgument =

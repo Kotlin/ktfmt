@@ -1,3 +1,5 @@
+// FILE_TYPE SCRIPT
+
 val x = { 0 }
 
 foo({ 0 })

@@ -1,4 +1,5 @@
 // MAX_WIDTH 49
+// FILE_TYPE SCRIPT
 
 declareOne(
   kind = DeclarationKind.FIELD,

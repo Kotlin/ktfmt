@@ -1,4 +1,5 @@
 // MAX_WIDTH 25
+// FILE_TYPE SCRIPT
 
 this.red.orange.yellow
     .green
