@@ -209,6 +209,7 @@ class NativeImagePlugin : Plugin<Project> {
     add("--future-defaults=all")
     add("--link-at-build-time=org.jetbrains.ktfmt")
     add("--initialize-at-build-time=org.jetbrains.ktfmt")
+    add($$"--initialize-at-build-time=com.google.googlejavaformat.Indent$Const")
     add("--add-opens=java.base/java.util=ALL-UNNAMED")
     add("--color=always")
     add("-H:+ReportExceptionStackTraces")
