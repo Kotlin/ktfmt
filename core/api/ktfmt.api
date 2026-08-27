@@ -502,20 +502,20 @@ public final class org/jetbrains/ktfmt/format/visitor/Indentation$Companion {
 	public final fun makeCond (Lcom/google/googlejavaformat/Output$BreakTag;Lorg/jetbrains/ktfmt/format/visitor/Indentation;Lorg/jetbrains/ktfmt/format/visitor/Indentation;)Lorg/jetbrains/ktfmt/format/visitor/Indentation;
 }
 
-public final class org/jetbrains/ktfmt/format/visitor/Indentation$Conditional : org/jetbrains/ktfmt/format/visitor/Indentation {
+public final class org/jetbrains/ktfmt/format/visitor/Indentation$Cond : org/jetbrains/ktfmt/format/visitor/Indentation {
 	public fun <init> (Lcom/google/googlejavaformat/Output$BreakTag;Lorg/jetbrains/ktfmt/format/visitor/Indentation;Lorg/jetbrains/ktfmt/format/visitor/Indentation;)V
 	public final fun component1 ()Lcom/google/googlejavaformat/Output$BreakTag;
 	public final fun component2 ()Lorg/jetbrains/ktfmt/format/visitor/Indentation;
 	public final fun component3 ()Lorg/jetbrains/ktfmt/format/visitor/Indentation;
-	public final fun copy (Lcom/google/googlejavaformat/Output$BreakTag;Lorg/jetbrains/ktfmt/format/visitor/Indentation;Lorg/jetbrains/ktfmt/format/visitor/Indentation;)Lorg/jetbrains/ktfmt/format/visitor/Indentation$Conditional;
-	public static synthetic fun copy$default (Lorg/jetbrains/ktfmt/format/visitor/Indentation$Conditional;Lcom/google/googlejavaformat/Output$BreakTag;Lorg/jetbrains/ktfmt/format/visitor/Indentation;Lorg/jetbrains/ktfmt/format/visitor/Indentation;ILjava/lang/Object;)Lorg/jetbrains/ktfmt/format/visitor/Indentation$Conditional;
+	public final fun copy (Lcom/google/googlejavaformat/Output$BreakTag;Lorg/jetbrains/ktfmt/format/visitor/Indentation;Lorg/jetbrains/ktfmt/format/visitor/Indentation;)Lorg/jetbrains/ktfmt/format/visitor/Indentation$Cond;
+	public static synthetic fun copy$default (Lorg/jetbrains/ktfmt/format/visitor/Indentation$Cond;Lcom/google/googlejavaformat/Output$BreakTag;Lorg/jetbrains/ktfmt/format/visitor/Indentation;Lorg/jetbrains/ktfmt/format/visitor/Indentation;ILjava/lang/Object;)Lorg/jetbrains/ktfmt/format/visitor/Indentation$Cond;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCondition ()Lcom/google/googlejavaformat/Output$BreakTag;
 	public final fun getFalseIndent ()Lorg/jetbrains/ktfmt/format/visitor/Indentation;
 	public final fun getTrueIndent ()Lorg/jetbrains/ktfmt/format/visitor/Indentation;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
-	public fun unaryMinus ()Lorg/jetbrains/ktfmt/format/visitor/Indentation$Conditional;
+	public fun unaryMinus ()Lorg/jetbrains/ktfmt/format/visitor/Indentation$Cond;
 	public synthetic fun unaryMinus ()Lorg/jetbrains/ktfmt/format/visitor/Indentation;
 }
 

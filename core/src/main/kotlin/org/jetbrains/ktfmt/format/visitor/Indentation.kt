@@ -20,15 +20,14 @@ sealed class Indentation {
     operator fun times(other: Int): Const = Const(value * other)
   }
 
-  data class Conditional(
+  data class Cond(
       val condition: Output.BreakTag,
       val trueIndent: Indentation,
       val falseIndent: Indentation,
   ) : Indentation() {
     override val indent: Indent = Indent.If.make(condition, trueIndent.indent, falseIndent.indent)
 
-    override operator fun unaryMinus(): Conditional =
-        Conditional(condition, -trueIndent, -falseIndent)
+    override operator fun unaryMinus(): Cond = Cond(condition, -trueIndent, -falseIndent)
   }
 
   abstract operator fun unaryMinus(): Indentation
@@ -43,7 +42,7 @@ sealed class Indentation {
     ): Indentation =
         when {
           condition == null -> falseIndent
-          else -> Conditional(condition, trueIndent, falseIndent)
+          else -> Cond(condition, trueIndent, falseIndent)
         }
   }
 }

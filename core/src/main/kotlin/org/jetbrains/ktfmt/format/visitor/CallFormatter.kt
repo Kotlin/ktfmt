@@ -389,8 +389,8 @@ interface CallFormatter : KotlinAstFormatter {
             postfix =
                 Triple(
                     selectorExpression,
-                    Indentation.Conditional(nameTag, expressionBreakIndent, argsIndentElse),
-                    Indentation.Conditional(nameTag, ZERO, lambdaIndentElse),
+                    Indentation.Cond(nameTag, expressionBreakIndent, argsIndentElse),
+                    Indentation.Cond(nameTag, ZERO, lambdaIndentElse),
                 )
           }
           is KtQualifiedExpression -> {
