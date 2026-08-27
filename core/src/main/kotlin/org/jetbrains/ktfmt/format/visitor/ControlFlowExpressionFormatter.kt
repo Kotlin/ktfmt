@@ -63,7 +63,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
             builder.blankLineWanted(OpsBuilder.BlankLineWanted.PRESERVE)
           }
           builder.forcedBreak()
-          builder.block(ZERO) {
+          builder.block {
             if (whenEntry.elseKeyword != null) {
               builder.token("else")
             } else {
@@ -133,12 +133,12 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
 
   override fun formatIfExpression(expression: KtIfExpression) {
     builder.sync(expression)
-    builder.block(ZERO) {
+    builder.block {
       emitKeywordWithCondition("if", expression.condition)
 
       if (expression.then is KtBlockExpression) {
         builder.space()
-        builder.block(ZERO) { format(expression.then) }
+        builder.block { format(expression.then) }
       } else {
         builder.breakOp(Doc.FillMode.INDEPENDENT, " ", expressionBreakIndent)
         builder.block(expressionBreakIndent) {
@@ -154,11 +154,11 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
           builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
         }
 
-        builder.block(ZERO) {
+        builder.block {
           builder.token("else")
           if (expression.`else` is KtBlockExpression || expression.`else` is KtIfExpression) {
             builder.space()
-            builder.block(ZERO) { format(expression.`else`) }
+            builder.block { format(expression.`else`) }
           } else {
             builder.breakOp(Doc.FillMode.INDEPENDENT, " ", expressionBreakIndent)
             builder.block(expressionBreakIndent) { format(expression.`else`) }
@@ -170,14 +170,14 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
 
   override fun formatForExpression(expression: KtForExpression) {
     builder.sync(expression)
-    builder.block(ZERO) {
+    builder.block {
       builder.token("for")
       builder.space()
       builder.token("(")
       format(expression.loopParameter)
       builder.space()
       builder.token("in")
-      builder.block(ZERO) {
+      builder.block {
         builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
         builder.block(expressionBreakIndent) { format(expression.loopRange) }
       }
@@ -233,7 +233,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     builder.space()
     builder.token("catch")
     builder.space()
-    builder.block(ZERO) {
+    builder.block {
       builder.token("(")
       builder.block(expressionBreakIndent) {
         builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
@@ -277,7 +277,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
       return
     }
 
-    builder.block(ZERO) {
+    builder.block {
       builder.token(keyword)
       builder.space()
       if (surroundConditionWithParens) {
@@ -290,7 +290,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
           builder.breakOp(Doc.FillMode.UNIFIED, "", -expressionBreakIndent)
         }
       } else {
-        builder.block(ZERO) { format(condition) }
+        builder.block { format(condition) }
       }
     }
     if (surroundConditionWithParens) {

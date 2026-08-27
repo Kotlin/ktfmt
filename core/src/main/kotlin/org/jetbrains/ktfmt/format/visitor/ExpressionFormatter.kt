@@ -146,7 +146,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
 
   override fun formatPostfixExpression(expression: KtPostfixExpression) {
     builder.sync(expression)
-    builder.block(ZERO) {
+    builder.block {
       val baseExpression = expression.baseExpression
       val operator = expression.operationReference.text
 
@@ -163,7 +163,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
 
   override fun formatPrefixExpression(expression: KtPrefixExpression) {
     builder.sync(expression)
-    builder.block(ZERO) {
+    builder.block {
       val baseExpression = expression.baseExpression
       val operator = expression.operationReference.text
 

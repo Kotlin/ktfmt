@@ -43,7 +43,7 @@ import org.jetbrains.ktfmt.util.ownValOrVarKeywordText
 interface DeclarationFormatter : KotlinAstFormatter {
   override fun formatNamedFunction(function: KtNamedFunction) {
     builder.sync(function)
-    builder.block(ZERO) {
+    builder.block {
       formatFunctionLikeExpression(
           contextReceiverList =
               function.getStubOrPsiChild(CONTEXT_PARAMETER_LIST) as? KtContextReceiverList,
@@ -65,7 +65,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     val contextReceiverList =
         classOrObject.getStubOrPsiChild(CONTEXT_PARAMETER_LIST) as? KtContextReceiverList
     val modifierList = classOrObject.modifierList
-    builder.block(ZERO) {
+    builder.block {
       if (contextReceiverList != null) {
         formatContextReceiverList(contextReceiverList)
         builder.forcedBreak()
@@ -87,7 +87,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
       val superTypes = classOrObject.getSuperTypeList()
       if (superTypes != null) {
         builder.space()
-        builder.block(ZERO) {
+        builder.block {
           builder.token(":")
           builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
           format(superTypes)
@@ -113,7 +113,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
   override fun formatPrimaryConstructor(constructor: KtPrimaryConstructor) {
 
     builder.sync(constructor)
-    builder.block(ZERO) {
+    builder.block {
       if (constructor.hasConstructorKeyword()) {
         builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
       }
@@ -134,7 +134,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
 
   override fun formatProperty(property: KtProperty) {
     builder.sync(property)
-    builder.block(ZERO) {
+    builder.block {
       declareOne(
           kind = DeclarationKind.FIELD,
           modifiers = property.modifierList,
@@ -158,7 +158,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
 
   override fun formatSecondaryConstructor(constructor: KtSecondaryConstructor) {
     builder.sync(constructor)
-    builder.block(ZERO) {
+    builder.block {
       val delegationCall = constructor.getDelegationCall()
       formatFunctionLikeExpression(
           contextReceiverList =
@@ -179,7 +179,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
   override fun formatConstructorDelegationCall(call: KtConstructorDelegationCall) {
     // Work around a misfeature in kotlin-compiler: call.calleeExpression.accept doesn't call
     // visitReferenceExpression, but calls visitElement instead.
-    builder.block(ZERO) {
+    builder.block {
       builder.token(if (call.isCallToThis) "this" else "super")
       formatFunctionCall(
           null,
@@ -218,7 +218,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
       val members = children.filter { it !is KtEnumEntry }
 
       if (enumEntryList != null) {
-        builder.block(ZERO) {
+        builder.block {
           builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
           for (value in enumEntryList.enumEntries) {
             format(value)
@@ -255,7 +255,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
         builder.blankLineWanted(blankLineBetweenMembers)
 
         markForPartialFormat()
-        builder.block(ZERO) { format(curr) }
+        builder.block { format(curr) }
         markForPartialFormat()
         builder.guessToken(";")
         builder.forcedBreak()
@@ -267,7 +267,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
 
   override fun formatEnumEntry(enumEntry: KtEnumEntry) {
     builder.sync(enumEntry)
-    builder.block(ZERO) {
+    builder.block {
       format(enumEntry.modifierList)
       builder.token(enumEntry.nameIdentifier?.text ?: fail())
       enumEntry.initializerList?.initializers?.forEach { format(it) }
@@ -280,11 +280,11 @@ interface DeclarationFormatter : KotlinAstFormatter {
 
   override fun formatParameter(parameter: KtParameter) {
     builder.sync(parameter)
-    builder.block(ZERO) {
+    builder.block {
       val destructuringDeclaration = parameter.destructuringDeclaration
       val typeReference = parameter.typeReference
       if (destructuringDeclaration != null) {
-        builder.block(ZERO) {
+        builder.block {
           format(destructuringDeclaration)
           if (typeReference != null) {
             builder.token(":")
@@ -394,8 +394,8 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
 
     format(modifiers)
-    builder.block(ZERO) {
-      builder.block(ZERO) {
+    builder.block {
+      builder.block {
         if (valOrVarKeyword != null) {
           builder.token(valOrVarKeyword)
           builder.space()
@@ -480,7 +480,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
 
           when (component) {
             is KtPropertyAccessor -> {
-              builder.block(ZERO) {
+              builder.block {
                 formatFunctionLikeExpression(
                     contextReceiverList = null,
                     modifierList = component.modifierList,
@@ -530,7 +530,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
   ) {
     fun emitTypeOrDelegationCall(block: () -> Unit) {
       if (typeOrDelegationCall != null) {
-        builder.block(ZERO) {
+        builder.block {
           if (typeOrDelegationCall is KtConstructorDelegationCall) {
             builder.space()
           }
@@ -554,13 +554,13 @@ interface DeclarationFormatter : KotlinAstFormatter {
       }
       if (typeParameters != null) {
         builder.space()
-        builder.block(ZERO) { format(typeParameters) }
+        builder.block { format(typeParameters) }
       }
 
       if (name != null || receiverTypeReference != null) {
         builder.space()
       }
-      builder.block(ZERO) {
+      builder.block {
         if (receiverTypeReference != null) {
           format(receiverTypeReference)
           builder.breakOp(Doc.FillMode.INDEPENDENT, "", expressionBreakIndent)
@@ -572,7 +572,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
       }
 
       if (parameterList != null && parameterList.hasEmptyParenthesis) {
-        builder.block(ZERO) {
+        builder.block {
           builder.token("(")
           builder.token(")")
           emitTypeOrDelegationCall {
@@ -607,7 +607,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
         format(bodyExpression)
       } else if (bodyExpression != null) {
         builder.space()
-        builder.block(ZERO) {
+        builder.block {
           formatInitializerExpression(bodyExpression)
         }
       }
@@ -643,8 +643,8 @@ interface DeclarationFormatter : KotlinAstFormatter {
 
   private fun emitBackingField(backingField: KtBackingField) {
     builder.sync(backingField)
-    builder.block(ZERO) {
-      builder.block(ZERO) { builder.token(backingField.namePlaceholder.text) }
+    builder.block {
+      builder.block { builder.token(backingField.namePlaceholder.text) }
 
       val type = backingField.returnTypeReference
       if (type != null) {

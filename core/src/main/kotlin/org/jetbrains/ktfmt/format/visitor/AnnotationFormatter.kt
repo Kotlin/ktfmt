@@ -13,10 +13,10 @@ import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 interface AnnotationFormatter : KotlinAstFormatter {
   override fun formatAnnotatedExpression(expression: KtAnnotatedExpression) {
     builder.sync(expression)
-    builder.block(ZERO) {
+    builder.block {
       val baseExpression = expression.baseExpression
 
-      builder.block(ZERO) {
+      builder.block {
         val annotationEntries = expression.annotationEntries
         for (annotationEntry in annotationEntries) {
           if (annotationEntry !== annotationEntries.first()) {
@@ -48,7 +48,7 @@ interface AnnotationFormatter : KotlinAstFormatter {
    */
   override fun formatAnnotation(annotation: KtAnnotation) {
     builder.sync(annotation)
-    builder.block(ZERO) {
+    builder.block {
       builder.token("@")
       val useSiteTarget = annotation.useSiteTarget
       if (useSiteTarget != null) {
@@ -58,7 +58,7 @@ interface AnnotationFormatter : KotlinAstFormatter {
       builder.block(expressionBreakIndent) {
         builder.token("[")
 
-        builder.block(ZERO) {
+        builder.block {
           var first = true
           builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
           for (value in annotation.entries) {

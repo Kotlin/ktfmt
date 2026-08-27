@@ -37,7 +37,7 @@ interface KotlinLangAnnotationFormatter : AnnotationFormatter {
     builder.sync(expression)
     val baseExpression = expression.baseExpression
 
-    builder.block(ZERO) {
+    builder.block {
       val annotationEntries = expression.annotationEntries
       for ((index, annotationEntry) in annotationEntries.withIndex()) {
         if (index > 0) {

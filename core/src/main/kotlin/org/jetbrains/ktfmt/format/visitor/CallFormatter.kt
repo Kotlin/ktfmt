@@ -110,7 +110,7 @@ interface CallFormatter : KotlinAstFormatter {
       builder.block(-lambdaIndent) {
         format(callee)
         builder.block(argumentsIndent) {
-          builder.block(ZERO) { format(typeArgumentList) }
+          builder.block { format(typeArgumentList) }
           if (argumentList != null) {
             brokeBeforeBrace = formatValueArgumentList(argumentList)
           }
@@ -363,7 +363,7 @@ interface CallFormatter : KotlinAstFormatter {
         }
       }
       receiver is KtWhenExpression -> {
-        builder.block(ZERO) {
+        builder.block {
           format(receiver)
           builder.token(expression.operationSign.value)
           format(expression.selectorExpression)

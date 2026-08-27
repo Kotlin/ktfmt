@@ -19,7 +19,6 @@ import org.jetbrains.kotlin.psi.KtTypeProjection
 import org.jetbrains.kotlin.psi.KtTypeReference
 import org.jetbrains.kotlin.psi.KtUserType
 import org.jetbrains.kotlin.psi.psiUtil.children
-import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 
 interface TypeFormatter : KotlinAstFormatter {
   override fun formatTypeReference(type: KtTypeReference) {
@@ -124,7 +123,7 @@ interface TypeFormatter : KotlinAstFormatter {
 
   override fun formatTypeAlias(typeAlias: KtTypeAlias) {
     builder.sync(typeAlias)
-    builder.block(ZERO) {
+    builder.block {
       format(typeAlias.modifierList)
       builder.token("typealias")
       builder.space()
