@@ -30,6 +30,7 @@ import org.jetbrains.ktfmt.format.FileType
 import org.jetbrains.ktfmt.format.Formatter
 import org.jetbrains.ktfmt.format.KotlinCode
 import org.jetbrains.ktfmt.format.ParseError
+import org.jetbrains.ktfmt.util.plus
 
 private const val EXIT_CODE_FAILURE = 1
 
@@ -160,7 +161,8 @@ class Main(
           if (!args.isPartialFormat()) {
             Formatter.format(formattingOptions, code)
           } else {
-            Formatter.format(formattingOptions, code, args.lineRanges, args.characterRanges)
+            val ranges = args.characterRanges + code.lineRangesToCharRanges(args.lineRanges)
+            Formatter.format(formattingOptions, code, ranges)
           }
       val alreadyFormatted = code.toString() == formattedCode
 

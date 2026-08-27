@@ -19,7 +19,6 @@ package org.jetbrains.ktfmt.format
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Range
 import com.google.common.collect.RangeSet
-import com.google.common.collect.TreeRangeSet
 import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.DocBuilder
 import com.google.googlejavaformat.OpsBuilder
@@ -75,15 +74,11 @@ object Formatter {
   /**
    * Formats the Kotlin code given in [code] and returns it as a string.
    *
-   * @param lineRanges zero-indexed line ranges to format, using closed-open bounds, or null to
-   *   format all code
-   * @param characterRanges zero-indexed character ranges to format, using closed-open bounds, or
-   *   null to use only [lineRanges]
+   * @param characterRanges zero-indexed character ranges to format, using closed-open bounds
    *
-   * When [lineRanges] or [characterRanges] are non-null, only pretty-print replacements are limited
-   * to those ranges. Whole-file cleanup passes, such as import cleanup and multiline string
-   * formatting, still run afterward, mirroring google-java-format's cleanup-after-selection
-   * behavior.
+   * When [characterRanges] are non-null, only pretty-print replacements are limited to those
+   * ranges. Whole-file cleanup passes, such as import cleanup and multiline string formatting,
+   * still run afterward, mirroring google-java-format's cleanup-after-selection behavior.
    */
   @JvmStatic
   @JvmOverloads
@@ -91,11 +86,10 @@ object Formatter {
   fun format(
       options: FormattingOptions,
       code: KotlinCode,
-      lineRanges: RangeSet<Int>? = null,
       characterRanges: RangeSet<Int>? = null,
   ): String {
     val formattedCode =
-        if (lineRanges == null && characterRanges == null) {
+        if (characterRanges == null) {
           FormatterContext(code)
               .transform { sortedAndDistinctImports(it) }
               .transform { dropRedundantElements(it, options) }
@@ -104,13 +98,8 @@ object Formatter {
               .transform { MultilineStringFormatter(options.continuationIndent).format(it) }
               .code
         } else {
-          val selectedCharacterRanges = characterRangesForPartialFormatting(
-              code,
-              lineRanges,
-              characterRanges,
-          )
           val partiallyFormattedCode =
-              if (selectedCharacterRanges.isEmpty) {
+              if (characterRanges.isEmpty) {
                 code
               } else {
                 FormatterContext(code)
@@ -119,7 +108,7 @@ object Formatter {
                           it,
                           options,
                           lineSeparator = "\n",
-                          characterRanges = selectedCharacterRanges.asRanges(),
+                          characterRanges = characterRanges.asRanges(),
                       )
                     }
                     .code
@@ -179,21 +168,6 @@ object Formatter {
     return WhitespaceTombstones.replaceTombstoneWithTrailingWhitespace(
         JavaOutput.applyReplacements(code, javaOutput.getFormatReplacements(tokenRangeSet)),
     )
-  }
-
-  private fun characterRangesForPartialFormatting(
-      code: KotlinCode,
-      lineRanges: RangeSet<Int>?,
-      characterRanges: RangeSet<Int>?,
-  ): RangeSet<Int> {
-    val selectedCharacterRanges = TreeRangeSet.create<Int>()
-    if (lineRanges != null) {
-      selectedCharacterRanges.addAll(code.lineRangesToCharRanges(lineRanges))
-    }
-    if (characterRanges != null) {
-      selectedCharacterRanges.addAll(characterRanges)
-    }
-    return selectedCharacterRanges
   }
 
   private fun createAstVisitor(options: FormattingOptions, builder: OpsBuilder): PsiElementVisitor {
