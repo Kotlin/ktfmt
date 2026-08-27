@@ -31,22 +31,15 @@ import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.stubs.PsiFileStubImpl
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtBackingField
-import org.jetbrains.kotlin.psi.KtBinaryExpression
-import org.jetbrains.kotlin.psi.KtBinaryExpressionWithTypeRHS
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtBreakExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
-import org.jetbrains.kotlin.psi.KtCallableReferenceExpression
 import org.jetbrains.kotlin.psi.KtCatchClause
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtClassInitializer
-import org.jetbrains.kotlin.psi.KtClassLiteralExpression
 import org.jetbrains.kotlin.psi.KtClassOrObject
-import org.jetbrains.kotlin.psi.KtCollectionLiteralExpression
-import org.jetbrains.kotlin.psi.KtConstantExpression
 import org.jetbrains.kotlin.psi.KtConstructorDelegationCall
-import org.jetbrains.kotlin.psi.KtContainerNode
 import org.jetbrains.kotlin.psi.KtContextReceiverList
 import org.jetbrains.kotlin.psi.KtContinueExpression
 import org.jetbrains.kotlin.psi.KtDelegatedSuperTypeEntry
@@ -59,39 +52,24 @@ import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFinallySection
 import org.jetbrains.kotlin.psi.KtForExpression
 import org.jetbrains.kotlin.psi.KtIfExpression
-import org.jetbrains.kotlin.psi.KtImportDirective
-import org.jetbrains.kotlin.psi.KtIsExpression
-import org.jetbrains.kotlin.psi.KtLabelReferenceExpression
-import org.jetbrains.kotlin.psi.KtLabeledExpression
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtModifierList
 import org.jetbrains.kotlin.psi.KtNamedFunction
-import org.jetbrains.kotlin.psi.KtPackageDirective
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtParameterList
-import org.jetbrains.kotlin.psi.KtParenthesizedExpression
-import org.jetbrains.kotlin.psi.KtPostfixExpression
-import org.jetbrains.kotlin.psi.KtPrefixExpression
 import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.jetbrains.kotlin.psi.KtPropertyDelegate
-import org.jetbrains.kotlin.psi.KtQualifiedExpression
-import org.jetbrains.kotlin.psi.KtReferenceExpression
 import org.jetbrains.kotlin.psi.KtReturnExpression
 import org.jetbrains.kotlin.psi.KtSecondaryConstructor
-import org.jetbrains.kotlin.psi.KtSimpleNameExpression
-import org.jetbrains.kotlin.psi.KtStringTemplateExpression
-import org.jetbrains.kotlin.psi.KtSuperExpression
 import org.jetbrains.kotlin.psi.KtSuperTypeCallEntry
-import org.jetbrains.kotlin.psi.KtThisExpression
 import org.jetbrains.kotlin.psi.KtThrowExpression
 import org.jetbrains.kotlin.psi.KtTryExpression
 import org.jetbrains.kotlin.psi.KtTypeAlias
 import org.jetbrains.kotlin.psi.KtTypeConstraintList
 import org.jetbrains.kotlin.psi.KtTypeParameterList
 import org.jetbrains.kotlin.psi.KtTypeReference
-import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtWhenConditionInRange
 import org.jetbrains.kotlin.psi.KtWhenConditionIsPattern
 import org.jetbrains.kotlin.psi.KtWhenConditionWithExpression
@@ -114,12 +92,10 @@ import org.jetbrains.ktfmt.format.visitor.breakOp
 import org.jetbrains.ktfmt.format.visitor.fenceComments
 import org.jetbrains.ktfmt.format.visitor.forcedBreak
 import org.jetbrains.ktfmt.format.visitor.hasEmptyParenthesis
-import org.jetbrains.ktfmt.format.visitor.hasLineBreakingCommentBefore
 import org.jetbrains.ktfmt.format.visitor.isBlockLikeCall
 import org.jetbrains.ktfmt.format.visitor.isChainedBlockLikeCall
 import org.jetbrains.ktfmt.format.visitor.isChainedScopingFunction
 import org.jetbrains.ktfmt.format.visitor.isLambdaOrScopingFunction
-import org.jetbrains.ktfmt.format.visitor.open
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
 import org.jetbrains.ktfmt.format.visitor.trailingLambda
@@ -345,39 +321,6 @@ open class KotlinInputAstVisitor(
     }
   }
 
-  /** Example `this` or `this@Foo` */
-  override fun visitThisExpression(expression: KtThisExpression) {
-    builder.sync(expression)
-    builder.token("this")
-    visit(expression.getTargetLabel())
-  }
-
-  /** Example `Foo` or `@Foo` */
-  override fun visitSimpleNameExpression(expression: KtSimpleNameExpression) {
-    builder.sync(expression)
-    when (expression) {
-      is KtLabelReferenceExpression -> {
-        if (expression.text[0] == '@') {
-          builder.token("@")
-          builder.token(expression.getIdentifier()?.text ?: fail())
-        } else {
-          builder.token(expression.getIdentifier()?.text ?: fail())
-          builder.token("@")
-        }
-      }
-      else -> {
-        if (expression.text.isNotEmpty()) {
-          builder.token(expression.text)
-        }
-      }
-    }
-  }
-
-  override fun visitReferenceExpression(expression: KtReferenceExpression) {
-    builder.sync(expression)
-    builder.token(expression.text)
-  }
-
   override fun visitReturnExpression(expression: KtReturnExpression) {
     builder.sync(expression)
     builder.token("return")
@@ -388,117 +331,6 @@ open class KotlinInputAstVisitor(
       visit(returnedExpression)
     }
     builder.guessToken(";")
-  }
-
-  /**
-   * For example `a + b`, `a + b + c` or `a..b`
-   *
-   * The extra handling here drills to the left most expression and handles it for long chains of
-   * binary expressions that are formatted not accordingly to the associative values That is, we
-   * want to think of `a + b + c` as `(a + b) + c`, whereas the AST parses it as `a + (b + c)`
-   */
-  override fun visitBinaryExpression(expression: KtBinaryExpression) {
-    builder.sync(expression)
-    val op = expression.operationToken
-
-    if (KtTokens.ALL_ASSIGNMENTS.contains(op) && expression.right.isLambdaOrScopingFunction) {
-      // Assignments are statements in Kotlin; we don't have to worry about compound assignment.
-      visit(expression.left)
-      builder.space()
-      builder.token(expression.operationReference.text)
-      formatLambdaOrScopingFunction(expression.right)
-      return
-    }
-
-    val parts =
-        ArrayDeque<KtBinaryExpression>().apply {
-          var current: KtExpression? = expression
-          while (current is KtBinaryExpression && current.operationToken == op) {
-            addFirst(current)
-            current = current.left
-          }
-        }
-
-    val leftMostExpression = parts.first()
-    visit(leftMostExpression.left)
-    for (leftExpression in parts) {
-      val isFirst = leftExpression === leftMostExpression
-
-      when (leftExpression.operationToken) {
-        KtTokens.RANGE,
-        KtTokens.RANGE_UNTIL -> {
-          if (isFirst) {
-            builder.open(expressionBreakIndent)
-          }
-          builder.token(leftExpression.operationReference.text)
-        }
-        KtTokens.ELVIS -> {
-          if (isFirst) {
-            builder.open(expressionBreakIndent)
-          }
-          builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
-          builder.token(leftExpression.operationReference.text)
-          builder.space()
-        }
-        else -> {
-          builder.space()
-          if (isFirst) {
-            builder.open(expressionBreakIndent)
-          }
-          builder.token(leftExpression.operationReference.text)
-          val fillMode =
-              if (leftExpression.operationReference.hasLineBreakingCommentBefore)
-                  Doc.FillMode.INDEPENDENT
-              else Doc.FillMode.UNIFIED
-          builder.breakOp(fillMode, " ", ZERO)
-        }
-      }
-      visit(leftExpression.right)
-    }
-    builder.close()
-  }
-
-  override fun visitPostfixExpression(expression: KtPostfixExpression) {
-    builder.sync(expression)
-    builder.block(ZERO) {
-      val baseExpression = expression.baseExpression
-      val operator = expression.operationReference.text
-
-      visit(baseExpression)
-      if (
-          baseExpression is KtPostfixExpression &&
-              baseExpression.operationReference.text.last() == operator.first()
-      ) {
-        builder.space()
-      }
-      builder.token(operator)
-    }
-  }
-
-  override fun visitPrefixExpression(expression: KtPrefixExpression) {
-    builder.sync(expression)
-    builder.block(ZERO) {
-      val baseExpression = expression.baseExpression
-      val operator = expression.operationReference.text
-
-      builder.token(operator)
-      if (
-          baseExpression is KtPrefixExpression &&
-              operator.last() == baseExpression.operationReference.text.first()
-      ) {
-        builder.space()
-      }
-      visit(baseExpression)
-    }
-  }
-
-  override fun visitLabeledExpression(expression: KtLabeledExpression) {
-    builder.sync(expression)
-    visit(expression.labelQualifier)
-    if (expression.baseExpression !is KtLambdaExpression) {
-      builder.space()
-    }
-    visit(expression.baseExpression)
   }
 
   internal enum class DeclarationKind {
@@ -818,71 +650,6 @@ open class KotlinInputAstVisitor(
     visit(initializer.body)
   }
 
-  override fun visitConstantExpression(expression: KtConstantExpression) {
-    builder.sync(expression)
-    builder.token(expression.text)
-  }
-
-  /** Example `(1 + 1)` */
-  override fun visitParenthesizedExpression(expression: KtParenthesizedExpression) {
-    builder.sync(expression)
-    builder.token("(")
-    visit(expression.expression)
-    builder.token(")")
-  }
-
-  override fun visitPackageDirective(directive: KtPackageDirective) {
-    builder.sync(directive)
-    if (directive.packageKeyword == null) {
-      return
-    }
-    builder.token("package")
-    builder.space()
-    var first = true
-    for (packageName in directive.packageNames) {
-      if (first) {
-        first = false
-      } else {
-        builder.token(".")
-      }
-      builder.token(packageName.getIdentifier()?.text ?: packageName.getReferencedName())
-    }
-
-    builder.guessToken(";")
-    builder.forcedBreak()
-  }
-
-  /** Example `import com.foo.A` */
-  override fun visitImportDirective(directive: KtImportDirective) {
-    builder.sync(directive)
-    builder.token("import")
-    builder.space()
-
-    val importedReference = directive.importedReference
-    if (importedReference != null) {
-      inImport = true
-      visit(importedReference)
-      inImport = false
-    }
-    if (directive.isAllUnder) {
-      builder.token(".")
-      builder.token("*")
-    }
-
-    // Possible alias.
-    val alias = directive.alias?.nameIdentifier
-    if (alias != null) {
-      builder.space()
-      builder.token("as")
-      builder.space()
-      builder.token(alias.text ?: fail())
-    }
-
-    // Force a newline afterwards.
-    builder.guessToken(";")
-    builder.forcedBreak()
-  }
-
   override fun visitSuperTypeCallEntry(call: KtSuperTypeCallEntry) {
     builder.sync(call)
     formatFunctionCall(call.calleeExpression, null, call.valueArgumentList, call.trailingLambda)
@@ -1133,25 +900,6 @@ open class KotlinInputAstVisitor(
     )
   }
 
-  /** Example `"Hello $world!"` or `"""Hello world!"""` */
-  override fun visitStringTemplateExpression(expression: KtStringTemplateExpression) {
-    builder.sync(expression)
-    builder.token(WhitespaceTombstones.replaceTrailingWhitespaceWithTombstone(expression.text))
-  }
-
-  /** Example `super` in `super.doIt(5)` or `super<Foo>` in `super<Foo>.doIt(5)` */
-  override fun visitSuperExpression(expression: KtSuperExpression) {
-    builder.sync(expression)
-    builder.token("super")
-    val superTypeQualifier = expression.superTypeQualifier
-    if (superTypeQualifier != null) {
-      builder.token("<")
-      visit(superTypeQualifier)
-      builder.token(">")
-    }
-    visit(expression.labelQualifier)
-  }
-
   /** Example `for (i in items) { ... }` */
   override fun visitForExpression(expression: KtForExpression) {
     builder.sync(expression)
@@ -1231,101 +979,6 @@ open class KotlinInputAstVisitor(
             initializer = parameter.defaultValue,
         )
       }
-    }
-  }
-
-  /** Example `String::isNullOrEmpty` */
-  override fun visitCallableReferenceExpression(expression: KtCallableReferenceExpression) {
-    builder.sync(expression)
-    visit(expression.receiverExpression)
-
-    // For some reason, expression.receiverExpression doesn't contain the question-mark token in
-    // case of a nullable type, e.g., in String?::isNullOrEmpty.
-    // Instead, KtCallableReferenceExpression exposes a method that looks for the QUEST token in
-    // its children.
-    if (expression.hasQuestionMarks) {
-      builder.token("?")
-    }
-
-    builder.block(expressionBreakIndent) {
-      builder.token("::")
-      builder.breakOp(Doc.FillMode.INDEPENDENT, "", ZERO)
-      visit(expression.callableReference)
-    }
-  }
-
-  override fun visitClassLiteralExpression(expression: KtClassLiteralExpression) {
-    builder.sync(expression)
-    val receiverExpression = expression.receiverExpression
-    if (receiverExpression is KtCallExpression) {
-      formatFunctionCall(
-          receiverExpression.calleeExpression,
-          receiverExpression.typeArgumentList,
-          receiverExpression.valueArgumentList,
-          receiverExpression.trailingLambda,
-      )
-    } else {
-      visit(receiverExpression)
-    }
-    builder.token("::")
-    builder.token("class")
-  }
-
-  /** Example `a is Int` or `b !is Int` */
-  override fun visitIsExpression(expression: KtIsExpression) {
-    builder.sync(expression)
-    val openGroupBeforeLeft = expression.leftHandSide !is KtQualifiedExpression
-    if (openGroupBeforeLeft) builder.open(ZERO)
-    visit(expression.leftHandSide)
-    if (!openGroupBeforeLeft) builder.open(ZERO)
-    val parent = expression.parent
-    if (
-        parent is KtValueArgument ||
-            parent is KtParenthesizedExpression ||
-            parent is KtContainerNode
-    ) {
-      builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
-    } else {
-      builder.space()
-    }
-    visit(expression.operationReference)
-    builder.breakOp(Doc.FillMode.INDEPENDENT, " ", expressionBreakIndent)
-    builder.block(expressionBreakIndent) { visit(expression.typeReference) }
-    builder.close()
-  }
-
-  /** Example `a as Int` or `a as? Int` */
-  override fun visitBinaryWithTypeRHSExpression(expression: KtBinaryExpressionWithTypeRHS) {
-    builder.sync(expression)
-    val openGroupBeforeLeft = expression.left !is KtQualifiedExpression
-    if (openGroupBeforeLeft) builder.open(ZERO)
-    visit(expression.left)
-    if (!openGroupBeforeLeft) builder.open(ZERO)
-    builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
-    visit(expression.operationReference)
-    builder.breakOp(Doc.FillMode.INDEPENDENT, " ", expressionBreakIndent)
-    builder.block(expressionBreakIndent) { visit(expression.right) }
-    builder.close()
-  }
-
-  /**
-   * Example:
-   * ```
-   * fun f() {
-   *   val a: Array<Int> = [1, 2, 3]
-   * }
-   * ```
-   */
-  override fun visitCollectionLiteralExpression(expression: KtCollectionLiteralExpression) {
-    builder.sync(expression)
-    builder.block(expressionBreakIndent) {
-      formatCommaSeparatedList(
-          expression.getInnerExpressions(),
-          forceMultiline = expression.trailingComma != null,
-          prefix = "[",
-          postfix = "]",
-          wrapInBlock = !options.manageTrailingCommas,
-      )
     }
   }
 

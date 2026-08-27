@@ -254,45 +254,27 @@ interface KotlinAstFormatter {
       brokeBeforeBrace: BreakTag?,
   )
 
-  fun formatThisExpression(expression: KtThisExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatThisExpression(expression: KtThisExpression)
 
-  fun formatSimpleNameExpression(expression: KtSimpleNameExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatSimpleNameExpression(expression: KtSimpleNameExpression)
 
-  fun formatReferenceExpression(expression: KtReferenceExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatReferenceExpression(expression: KtReferenceExpression)
 
   fun formatReturnExpression(expression: KtReturnExpression) {
     TODO("Unreachable code path")
   }
 
-  fun formatBinaryExpression(expression: KtBinaryExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatBinaryExpression(expression: KtBinaryExpression)
 
-  fun formatPostfixExpression(expression: KtPostfixExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatPostfixExpression(expression: KtPostfixExpression)
 
-  fun formatPrefixExpression(expression: KtPrefixExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatPrefixExpression(expression: KtPrefixExpression)
 
-  fun formatLabeledExpression(expression: KtLabeledExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatLabeledExpression(expression: KtLabeledExpression)
 
-  fun formatConstantExpression(expression: KtConstantExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatConstantExpression(expression: KtConstantExpression)
 
-  fun formatParenthesizedExpression(expression: KtParenthesizedExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatParenthesizedExpression(expression: KtParenthesizedExpression)
 
   fun formatWhenExpression(expression: KtWhenExpression) {
     TODO("Unreachable code path")
@@ -318,17 +300,11 @@ interface KotlinAstFormatter {
     TODO("Unreachable code path")
   }
 
-  fun formatArrayAccessExpression(expression: KtArrayAccessExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatArrayAccessExpression(expression: KtArrayAccessExpression)
 
-  fun formatStringTemplateExpression(expression: KtStringTemplateExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatStringTemplateExpression(expression: KtStringTemplateExpression)
 
-  fun formatSuperExpression(expression: KtSuperExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatSuperExpression(expression: KtSuperExpression)
 
   fun formatForExpression(expression: KtForExpression) {
     TODO("Unreachable code path")
@@ -350,25 +326,15 @@ interface KotlinAstFormatter {
     TODO("Unreachable code path")
   }
 
-  fun formatCallableReferenceExpression(expression: KtCallableReferenceExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatCallableReferenceExpression(expression: KtCallableReferenceExpression)
 
-  fun formatClassLiteralExpression(expression: KtClassLiteralExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatClassLiteralExpression(expression: KtClassLiteralExpression)
 
-  fun formatIsExpression(expression: KtIsExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatIsExpression(expression: KtIsExpression)
 
-  fun formatBinaryWithTypeRHSExpression(expression: KtBinaryExpressionWithTypeRHS) {
-    TODO("Unreachable code path")
-  }
+  fun formatBinaryWithTypeRHSExpression(expression: KtBinaryExpressionWithTypeRHS)
 
-  fun formatCollectionLiteralExpression(expression: KtCollectionLiteralExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatCollectionLiteralExpression(expression: KtCollectionLiteralExpression)
 
   fun formatTryExpression(expression: KtTryExpression) {
     TODO("Unreachable code path")
@@ -402,15 +368,11 @@ interface KotlinAstFormatter {
     TODO("Unreachable code path")
   }
 
-  fun formatPackageDirective(directive: KtPackageDirective) {
-    TODO("Unreachable code path")
-  }
+  fun formatPackageDirective(directive: KtPackageDirective)
 
   fun formatImportList(importList: KtImportList)
 
-  fun formatImportDirective(directive: KtImportDirective) {
-    TODO("Unreachable code path")
-  }
+  fun formatImportDirective(directive: KtImportDirective)
 
   fun formatAnnotatedExpression(expression: KtAnnotatedExpression)
 
