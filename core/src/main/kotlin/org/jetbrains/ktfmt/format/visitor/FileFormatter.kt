@@ -2,6 +2,7 @@ package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.OpsBuilder
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtScript
@@ -10,41 +11,21 @@ import org.jetbrains.kotlin.psi.KtScriptInitializer
 /** Handles formatting of file-level PSI nodes */
 interface FileFormatter : KotlinAstFormatter {
   override fun formatKtFile(file: KtFile) {
-    markForPartialFormat()
-    val importListEmpty = file.importList?.text?.isBlank() ?: true
-
-    var isFirst = true
-    for (child in file.children) {
-      if (child.text.isBlank()) {
-        continue
-      }
-
-      builder.blankLineWanted(
-          when {
-            isFirst -> OpsBuilder.BlankLineWanted.NO
-            child is PsiComment -> continue
-            child is KtScript && importListEmpty -> OpsBuilder.BlankLineWanted.PRESERVE
-            else -> OpsBuilder.BlankLineWanted.YES
-          },
-      )
-
-      builder.markForPartialFormat()
-      format(child)
-      builder.markForPartialFormat()
-      isFirst = false
-    }
-    markForPartialFormat()
+    formatFile(file)
   }
 
   override fun formatKtScript(script: KtScript) {
+    formatFile(script.blockExpression)
+  }
+
+  private fun formatFile(file: KtElement) {
     markForPartialFormat()
     var lastChildHadBlankLineBefore = false
     var lastChildIsContextReceiver = false
     var first = true
-    for (child in script.blockExpression.children) {
-      if (child.text.isBlank()) {
-        continue
-      }
+    for (child in file.children) {
+      if (child.text.isBlank()) continue
+      if (child is PsiComment) continue
       builder.forcedBreak()
       val childGetsBlankLineBefore = child !is KtProperty
       if (first) {
