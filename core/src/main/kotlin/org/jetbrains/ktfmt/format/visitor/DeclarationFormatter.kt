@@ -2,7 +2,6 @@ package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.OpsBuilder
-import com.google.googlejavaformat.Output
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
@@ -44,7 +43,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
   override fun formatNamedFunction(function: KtNamedFunction) {
     builder.sync(function)
     builder.block {
-      formatFunctionLikeExpression(
+      emitFunctionDeclaration(
           contextReceiverList =
               function.getStubOrPsiChild(CONTEXT_PARAMETER_LIST) as? KtContextReceiverList,
           modifierList = function.modifierList,
@@ -111,13 +110,12 @@ interface DeclarationFormatter : KotlinAstFormatter {
   }
 
   override fun formatPrimaryConstructor(constructor: KtPrimaryConstructor) {
-
     builder.sync(constructor)
     builder.block {
       if (constructor.hasConstructorKeyword()) {
         builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
       }
-      formatFunctionLikeExpression(
+      emitFunctionDeclaration(
           contextReceiverList = null,
           modifierList = constructor.modifierList,
           keyword = if (constructor.hasConstructorKeyword()) "constructor" else null,
@@ -135,8 +133,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
   override fun formatProperty(property: KtProperty) {
     builder.sync(property)
     builder.block {
-      declareOne(
-          kind = DeclarationKind.FIELD,
+      emitPropertyDeclaration(
           modifiers = property.modifierList,
           valOrVarKeyword = property.valOrVarKeyword.text,
           typeParameters = property.typeParameterList,
@@ -160,7 +157,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     builder.sync(constructor)
     builder.block {
       val delegationCall = constructor.getDelegationCall()
-      formatFunctionLikeExpression(
+      emitFunctionDeclaration(
           contextReceiverList =
               constructor.getStubOrPsiChild(CONTEXT_PARAMETER_LIST) as? KtContextReceiverList,
           modifierList = constructor.modifierList,
@@ -270,7 +267,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     builder.block {
       format(enumEntry.modifierList)
       builder.token(enumEntry.nameIdentifier?.text ?: fail())
-      enumEntry.initializerList?.initializers?.forEach { format(it) }
+      format(enumEntry.initializerList)
       enumEntry.body?.let { enumBody ->
         builder.space()
         format(enumBody)
@@ -293,8 +290,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
           }
         }
       } else {
-        declareOne(
-            kind = DeclarationKind.PARAMETER,
+        emitPropertyDeclaration(
             modifiers = parameter.modifierList,
             valOrVarKeyword = parameter.valOrVarKeyword?.text,
             name = parameter.nameIdentifier?.text,
@@ -348,19 +344,13 @@ interface DeclarationFormatter : KotlinAstFormatter {
       multiDeclarationEntry: KtDestructuringDeclarationEntry,
   ) {
     builder.sync(multiDeclarationEntry)
-    declareOne(
+    emitPropertyDeclaration(
         initializer = multiDeclarationEntry.initializer,
-        kind = DeclarationKind.PARAMETER,
         modifiers = multiDeclarationEntry.modifierList,
         name = multiDeclarationEntry.nameIdentifier?.text ?: fail(),
         type = multiDeclarationEntry.typeReference,
         valOrVarKeyword = multiDeclarationEntry.ownValOrVarKeywordText,
     )
-  }
-
-  enum class DeclarationKind {
-    FIELD,
-    PARAMETER,
   }
 
   /**
@@ -371,8 +361,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
    * - `a: Int`
    * - `private val b:
    */
-  private fun declareOne(
-      kind: DeclarationKind,
+  private fun emitPropertyDeclaration(
       modifiers: KtModifierList?,
       valOrVarKeyword: String?,
       typeParameters: KtTypeParameterList? = null,
@@ -384,15 +373,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
       delegate: KtPropertyDelegate? = null,
       accessors: List<KtPropertyAccessor>? = null,
       backingField: KtBackingField? = null,
-  ): Int {
-    val verticalAnnotationBreak = Output.BreakTag()
-
-    val isField = kind == DeclarationKind.FIELD
-
-    if (isField) {
-      builder.blankLineWanted(OpsBuilder.BlankLineWanted.conditional(verticalAnnotationBreak))
-    }
-
+  ) {
     format(modifiers)
     builder.block {
       builder.block {
@@ -481,7 +462,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
           when (component) {
             is KtPropertyAccessor -> {
               builder.block {
-                formatFunctionLikeExpression(
+                emitFunctionDeclaration(
                     contextReceiverList = null,
                     modifierList = component.modifierList,
                     keyword = component.namePlaceholder.text,
@@ -503,12 +484,6 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
 
     builder.guessToken(";")
-
-    if (isField) {
-      builder.blankLineWanted(OpsBuilder.BlankLineWanted.conditional(verticalAnnotationBreak))
-    }
-
-    return 0
   }
 
   /**
@@ -516,7 +491,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
    * @param typeOrDelegationCall for functions, the return typeOrDelegationCall; for classes, the
    *   list of supertypes.
    */
-  private fun formatFunctionLikeExpression(
+  private fun emitFunctionDeclaration(
       contextReceiverList: KtContextReceiverList?,
       modifierList: KtModifierList?,
       keyword: String?,
@@ -540,8 +515,9 @@ interface DeclarationFormatter : KotlinAstFormatter {
       }
     }
 
-    val forceTrailingBreak = name != null
-    builder.block(ZERO, isEnabled = forceTrailingBreak) {
+    val hasName = name != null
+    val hasReceiverTypeReference = receiverTypeReference != null
+    builder.block(ZERO, isEnabled = hasName) {
       if (contextReceiverList != null) {
         formatContextReceiverList(contextReceiverList)
         builder.forcedBreak()
@@ -557,16 +533,16 @@ interface DeclarationFormatter : KotlinAstFormatter {
         builder.block { format(typeParameters) }
       }
 
-      if (name != null || receiverTypeReference != null) {
+      if (hasName || hasReceiverTypeReference) {
         builder.space()
       }
       builder.block {
-        if (receiverTypeReference != null) {
+        if (hasReceiverTypeReference) {
           format(receiverTypeReference)
           builder.breakOp(Doc.FillMode.INDEPENDENT, "", expressionBreakIndent)
           builder.token(".")
         }
-        if (name != null) {
+        if (hasName) {
           builder.token(name)
         }
       }
@@ -613,7 +589,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
       }
       builder.guessToken(";")
     }
-    if (forceTrailingBreak) {
+    if (hasName) {
       builder.forcedBreak()
     }
   }

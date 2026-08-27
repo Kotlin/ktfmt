@@ -468,14 +468,6 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/DeclarationFo
 	public fun formatSuperTypeCallEntry (Lorg/jetbrains/kotlin/psi/KtSuperTypeCallEntry;)V
 }
 
-public final class org/jetbrains/ktfmt/format/visitor/DeclarationFormatter$DeclarationKind : java/lang/Enum {
-	public static final field FIELD Lorg/jetbrains/ktfmt/format/visitor/DeclarationFormatter$DeclarationKind;
-	public static final field PARAMETER Lorg/jetbrains/ktfmt/format/visitor/DeclarationFormatter$DeclarationKind;
-	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lorg/jetbrains/ktfmt/format/visitor/DeclarationFormatter$DeclarationKind;
-	public static fun values ()[Lorg/jetbrains/ktfmt/format/visitor/DeclarationFormatter$DeclarationKind;
-}
-
 public abstract interface class org/jetbrains/ktfmt/format/visitor/ExpressionFormatter : org/jetbrains/ktfmt/format/visitor/KotlinAstFormatter {
 	public fun formatBinaryExpression (Lorg/jetbrains/kotlin/psi/KtBinaryExpression;)V
 	public fun formatBinaryWithTypeRHSExpression (Lorg/jetbrains/kotlin/psi/KtBinaryExpressionWithTypeRHS;)V
