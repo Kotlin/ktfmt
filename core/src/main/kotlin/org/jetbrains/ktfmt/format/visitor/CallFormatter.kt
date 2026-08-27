@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtLambdaArgument
 import org.jetbrains.kotlin.psi.KtLambdaExpression
+import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtPostfixExpression
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.psi.KtReturnExpression
@@ -23,6 +24,7 @@ import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.kotlin.psi.psiUtil.startsWithComment
 import org.jetbrains.ktfmt.format.ParseError
 import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
+import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.makeCond
 
 interface CallFormatter : KotlinAstFormatter {
   override fun formatArgument(
@@ -96,6 +98,7 @@ interface CallFormatter : KotlinAstFormatter {
               brokeBeforeBrace = brokeBeforeBrace,
           )
         }
+
         else -> throw ParseError("Maximum one trailing lambda is allowed", lambdaArguments[1])
       }
     }
@@ -107,18 +110,14 @@ interface CallFormatter : KotlinAstFormatter {
   ) {
     builder.sync(lambdaExpression)
 
-    val valueParams = lambdaExpression.valueParameters
-    val hasParams = valueParams.isNotEmpty()
     val bodyExpression = lambdaExpression.bodyExpression ?: fail()
-    val expressionStatements = bodyExpression.children
-    val hasStatements = expressionStatements.isNotEmpty()
+    val hasStatements = bodyExpression.children.isNotEmpty()
     val hasComments = bodyExpression.children().any { it is PsiComment }
-    val hasArrow = lambdaExpression.functionLiteral.arrow != null
 
-    fun ifBrokeBeforeBrace(onTrue: Indentation, onFalse: Indentation): Indentation {
-      if (brokeBeforeBrace == null) return onFalse
-      return Indentation.Conditional(brokeBeforeBrace, onTrue, onFalse)
-    }
+    val hasDeclaration =
+        lambdaExpression.valueParameters.isNotEmpty() ||
+            lambdaExpression.functionLiteral.arrow != null
+    val hasBody = hasDeclaration || hasStatements || hasComments
 
     /**
      * Enable correct formatting of the `fun foo() = scope {` syntax.
@@ -131,34 +130,72 @@ interface CallFormatter : KotlinAstFormatter {
      * These conditional indents should not be used inside interior blocks, since that would apply
      * the condition twice.
      */
-    val bracePlusBlockIndent = ifBrokeBeforeBrace(blockIndent + expressionBreakIndent, blockIndent)
-    val bracePlusExpressionIndent =
-        ifBrokeBeforeBrace(expressionBreakIndent * 2, expressionBreakIndent)
-    val bracePlusZeroIndent = ifBrokeBeforeBrace(expressionBreakIndent, ZERO)
+    val bodyIndent = makeCond(brokeBeforeBrace, blockIndent + expressionBreakIndent, blockIndent)
+    val declarationIndent =
+        makeCond(brokeBeforeBrace, expressionBreakIndent * 2, expressionBreakIndent)
+    val closingBraceIndent = makeCond(brokeBeforeBrace, expressionBreakIndent, ZERO)
 
     builder.token("{")
 
-    if (hasParams || hasArrow) {
-      builder.space()
-      builder.block(bracePlusExpressionIndent) { formatCommaSeparatedList(valueParams) }
-      builder.block(bracePlusBlockIndent) {
-        if (lambdaExpression.functionLiteral.valueParameterList?.trailingComma != null) {
-          builder.token(",")
-          builder.forcedBreak()
-        } else if (hasParams) {
-          builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO)
-        }
-        builder.token("->")
+    if (hasDeclaration) {
+      formatLambdaArguments(
+          lambdaExpression.functionLiteral.valueParameterList!!,
+          declarationIndent,
+          bodyIndent,
+      )
+    }
+
+    if (hasBody) {
+      builder.breakOp(Doc.FillMode.UNIFIED, " ", closingBraceIndent)
+    }
+
+    formatLambdaBody(lambdaExpression, bodyIndent, closingBraceIndent)
+
+    if (hasBody) {
+      // If we had to break in the body, ensure there is a break before the closing brace
+      builder.breakOp(Doc.FillMode.UNIFIED, "", closingBraceIndent)
+    }
+    builder.block(closingBraceIndent) {
+      builder.fenceComments()
+      builder.token("}", blockIndent)
+    }
+  }
+
+  private fun formatLambdaArguments(
+      valueParameterList: KtParameterList,
+      valueParametersIndent: Indentation,
+      arrowIndent: Indentation,
+  ) {
+    builder.space()
+    builder.block(valueParametersIndent) { formatCommaSeparatedList(valueParameterList.parameters) }
+    builder.block(arrowIndent) {
+      if (valueParameterList.trailingComma != null) {
+        builder.token(",")
+        builder.forcedBreak()
+      } else if (valueParameterList.parameters.isNotEmpty()) {
+        builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO)
       }
+      builder.token("->")
     }
+  }
 
-    if (hasParams || hasArrow || hasStatements || hasComments) {
-      builder.breakOp(Doc.FillMode.UNIFIED, " ", bracePlusZeroIndent)
-    }
+  private fun formatLambdaBody(
+      lambdaExpression: KtLambdaExpression,
+      bodyIndent: Indentation,
+      braceIndent: Indentation,
+  ) {
+    val bodyExpression = lambdaExpression.bodyExpression ?: fail()
+    val expressionStatements = bodyExpression.children
+    val blockComments =
+        bodyExpression.children().filter { it is PsiComment && it.text.startsWith("/*") }.toList()
 
-    if (hasStatements) {
-      builder.breakOp(Doc.FillMode.UNIFIED, "", bracePlusBlockIndent)
-      builder.block(bracePlusBlockIndent) {
+    val hasBody = expressionStatements.isNotEmpty() || blockComments.isNotEmpty()
+
+    if (!hasBody) return
+
+    builder.breakOp(Doc.FillMode.UNIFIED, "", bodyIndent)
+    builder.block(bodyIndent) {
+      if (expressionStatements.isNotEmpty()) {
         builder.blankLineWanted(OpsBuilder.BlankLineWanted.NO)
 
         val shouldForceMultiline =
@@ -174,13 +211,7 @@ interface CallFormatter : KotlinAstFormatter {
         } else {
           formatStatements(expressionStatements)
         }
-        builder.breakOp(Doc.FillMode.UNIFIED, " ", bracePlusZeroIndent)
-      }
-    } else if (hasComments) {
-      val blockComments =
-          bodyExpression.children().filter { it is PsiComment && it.text.startsWith("/*") }.toList()
-      builder.breakOp(Doc.FillMode.UNIFIED, "", bracePlusBlockIndent)
-      builder.block(bracePlusBlockIndent) {
+      } else {
         builder.fenceComments()
         builder.blankLineWanted(OpsBuilder.BlankLineWanted.NO)
         for ((i, comment) in blockComments.withIndex()) {
@@ -189,17 +220,8 @@ interface CallFormatter : KotlinAstFormatter {
           }
           builder.token(comment.text)
         }
-        builder.breakOp(Doc.FillMode.UNIFIED, " ", bracePlusZeroIndent)
       }
-    }
-
-    if (hasParams || hasArrow || hasStatements || hasComments) {
-      // If we had to break in the body, ensure there is a break before the closing brace
-      builder.breakOp(Doc.FillMode.UNIFIED, "", bracePlusZeroIndent)
-    }
-    builder.block(bracePlusZeroIndent) {
-      builder.fenceComments()
-      builder.token("}", blockIndent)
+      builder.breakOp(Doc.FillMode.UNIFIED, " ", braceIndent)
     }
   }
 

@@ -499,6 +499,7 @@ public abstract class org/jetbrains/ktfmt/format/visitor/Indentation {
 
 public final class org/jetbrains/ktfmt/format/visitor/Indentation$Companion {
 	public final fun getZERO ()Lorg/jetbrains/ktfmt/format/visitor/Indentation$Const;
+	public final fun makeCond (Lcom/google/googlejavaformat/Output$BreakTag;Lorg/jetbrains/ktfmt/format/visitor/Indentation;Lorg/jetbrains/ktfmt/format/visitor/Indentation;)Lorg/jetbrains/ktfmt/format/visitor/Indentation;
 }
 
 public final class org/jetbrains/ktfmt/format/visitor/Indentation$Conditional : org/jetbrains/ktfmt/format/visitor/Indentation {
