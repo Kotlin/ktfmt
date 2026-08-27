@@ -260,9 +260,7 @@ interface KotlinAstFormatter {
 
   fun formatReferenceExpression(expression: KtReferenceExpression)
 
-  fun formatReturnExpression(expression: KtReturnExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatReturnExpression(expression: KtReturnExpression)
 
   fun formatBinaryExpression(expression: KtBinaryExpression)
 
@@ -276,29 +274,19 @@ interface KotlinAstFormatter {
 
   fun formatParenthesizedExpression(expression: KtParenthesizedExpression)
 
-  fun formatWhenExpression(expression: KtWhenExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatWhenExpression(expression: KtWhenExpression)
 
   fun formatBlockExpression(expression: KtBlockExpression) {
     TODO("Unreachable code path")
   }
 
-  fun formatWhenConditionWithExpression(condition: KtWhenConditionWithExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatWhenConditionWithExpression(condition: KtWhenConditionWithExpression)
 
-  fun formatWhenConditionIsPattern(condition: KtWhenConditionIsPattern) {
-    TODO("Unreachable code path")
-  }
+  fun formatWhenConditionIsPattern(condition: KtWhenConditionIsPattern)
 
-  fun formatWhenConditionInRange(condition: KtWhenConditionInRange) {
-    TODO("Unreachable code path")
-  }
+  fun formatWhenConditionInRange(condition: KtWhenConditionInRange)
 
-  fun formatIfExpression(expression: KtIfExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatIfExpression(expression: KtIfExpression)
 
   fun formatArrayAccessExpression(expression: KtArrayAccessExpression)
 
@@ -306,25 +294,15 @@ interface KotlinAstFormatter {
 
   fun formatSuperExpression(expression: KtSuperExpression)
 
-  fun formatForExpression(expression: KtForExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatForExpression(expression: KtForExpression)
 
-  fun formatWhileExpression(expression: KtWhileExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatWhileExpression(expression: KtWhileExpression)
 
-  fun formatDoWhileExpression(expression: KtDoWhileExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatDoWhileExpression(expression: KtDoWhileExpression)
 
-  fun formatBreakExpression(expression: KtBreakExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatBreakExpression(expression: KtBreakExpression)
 
-  fun formatContinueExpression(expression: KtContinueExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatContinueExpression(expression: KtContinueExpression)
 
   fun formatCallableReferenceExpression(expression: KtCallableReferenceExpression)
 
@@ -336,21 +314,13 @@ interface KotlinAstFormatter {
 
   fun formatCollectionLiteralExpression(expression: KtCollectionLiteralExpression)
 
-  fun formatTryExpression(expression: KtTryExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatTryExpression(expression: KtTryExpression)
 
-  fun formatCatchSection(catchClause: KtCatchClause) {
-    TODO("Unreachable code path")
-  }
+  fun formatCatchSection(catchClause: KtCatchClause)
 
-  fun formatFinallySection(finallySection: KtFinallySection) {
-    TODO("Unreachable code path")
-  }
+  fun formatFinallySection(finallySection: KtFinallySection)
 
-  fun formatThrowExpression(expression: KtThrowExpression) {
-    TODO("Unreachable code path")
-  }
+  fun formatThrowExpression(expression: KtThrowExpression)
 
   fun formatEnumEntry(enumEntry: KtEnumEntry) {
     TODO("Unreachable code path")

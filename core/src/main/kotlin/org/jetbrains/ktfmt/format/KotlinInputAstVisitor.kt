@@ -28,30 +28,21 @@ import java.util.ArrayDeque
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
-import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtBackingField
 import org.jetbrains.kotlin.psi.KtBlockExpression
-import org.jetbrains.kotlin.psi.KtBreakExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
-import org.jetbrains.kotlin.psi.KtCatchClause
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtClassInitializer
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtConstructorDelegationCall
 import org.jetbrains.kotlin.psi.KtContextReceiverList
-import org.jetbrains.kotlin.psi.KtContinueExpression
 import org.jetbrains.kotlin.psi.KtDelegatedSuperTypeEntry
 import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
 import org.jetbrains.kotlin.psi.KtDestructuringDeclarationEntry
-import org.jetbrains.kotlin.psi.KtDoWhileExpression
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtEnumEntry
 import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.kotlin.psi.KtFinallySection
-import org.jetbrains.kotlin.psi.KtForExpression
-import org.jetbrains.kotlin.psi.KtIfExpression
-import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtModifierList
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
@@ -60,24 +51,18 @@ import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.jetbrains.kotlin.psi.KtPropertyDelegate
-import org.jetbrains.kotlin.psi.KtReturnExpression
 import org.jetbrains.kotlin.psi.KtSecondaryConstructor
 import org.jetbrains.kotlin.psi.KtSuperTypeCallEntry
-import org.jetbrains.kotlin.psi.KtThrowExpression
-import org.jetbrains.kotlin.psi.KtTryExpression
 import org.jetbrains.kotlin.psi.KtTypeAlias
 import org.jetbrains.kotlin.psi.KtTypeConstraintList
 import org.jetbrains.kotlin.psi.KtTypeParameterList
 import org.jetbrains.kotlin.psi.KtTypeReference
-import org.jetbrains.kotlin.psi.KtWhenConditionInRange
-import org.jetbrains.kotlin.psi.KtWhenConditionIsPattern
-import org.jetbrains.kotlin.psi.KtWhenConditionWithExpression
 import org.jetbrains.kotlin.psi.KtWhenExpression
-import org.jetbrains.kotlin.psi.KtWhileExpression
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.ktfmt.format.visitor.AbstractFormatterVisitor
 import org.jetbrains.ktfmt.format.visitor.AnnotationFormatter
 import org.jetbrains.ktfmt.format.visitor.CallFormatter
+import org.jetbrains.ktfmt.format.visitor.ControlFlowExpressionFormatter
 import org.jetbrains.ktfmt.format.visitor.ExpressionFormatter
 import org.jetbrains.ktfmt.format.visitor.FileFormatter
 import org.jetbrains.ktfmt.format.visitor.Indentation
@@ -107,6 +92,7 @@ open class KotlinInputAstVisitor(
     AbstractFormatterVisitor(),
     AnnotationFormatter,
     CallFormatter,
+    ControlFlowExpressionFormatter,
     ExpressionFormatter,
     FileFormatter,
     ListFormatter,
@@ -316,18 +302,6 @@ open class KotlinInputAstVisitor(
           trailingLambda,
       )
     }
-  }
-
-  override fun visitReturnExpression(expression: KtReturnExpression) {
-    builder.sync(expression)
-    builder.token("return")
-    visit(expression.getTargetLabel())
-    val returnedExpression = expression.returnedExpression
-    if (returnedExpression != null) {
-      builder.space()
-      visit(returnedExpression)
-    }
-    builder.guessToken(";")
   }
 
   internal enum class DeclarationKind {
@@ -635,72 +609,6 @@ open class KotlinInputAstVisitor(
     visit(specifier.delegateExpression)
   }
 
-  override fun visitWhenExpression(expression: KtWhenExpression) {
-    builder.sync(expression)
-    builder.block(ZERO) {
-      emitKeywordWithCondition("when", expression.subjectExpression)
-
-      builder.space()
-      builder.token(
-          "{",
-          Doc.Token.RealOrImaginary.REAL,
-          blockIndent.indent,
-          Optional.of(blockIndent.indent),
-      )
-
-      expression.entries.forEachIndexed { index, whenEntry ->
-        builder.block(blockIndent) {
-          if (index != 0) {
-            // preserve new line if there's one
-            builder.blankLineWanted(OpsBuilder.BlankLineWanted.PRESERVE)
-          }
-          builder.forcedBreak()
-          builder.block(ZERO) {
-            if (whenEntry.elseKeyword != null) {
-              builder.token("else")
-            } else {
-              val conditions = whenEntry.conditions
-              for ((index, condition) in conditions.withIndex()) {
-                visit(condition)
-                builder.guessToken(",")
-                if (index != conditions.lastIndex) {
-                  builder.forcedBreak()
-                }
-              }
-            }
-            whenEntry.guard?.let { guard ->
-              builder.space()
-              emitKeywordWithCondition(
-                  "if",
-                  guard.getExpression(),
-                  surroundConditionWithParens = false,
-              )
-            }
-          }
-          val whenExpression = whenEntry.expression
-          if (whenEntry.trailingComma != null) {
-            builder.forcedBreak()
-          } else {
-            builder.space()
-          }
-          builder.token("->")
-          if (whenExpression is KtBlockExpression || whenExpression is KtLambdaExpression) {
-            builder.space()
-            visit(whenExpression)
-          } else {
-            builder.block(expressionBreakIndent) {
-              builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO)
-              visit(whenExpression)
-            }
-          }
-          builder.guessToken(";")
-        }
-        builder.forcedBreak()
-      }
-      builder.token("}")
-    }
-  }
-
   override fun visitClassBody(body: KtClassBody) {
     builder.sync(body)
     emitBracedBlock(body) { children ->
@@ -760,66 +668,6 @@ open class KotlinInputAstVisitor(
     emitBracedBlock(expression) { children -> formatStatements(children) }
   }
 
-  override fun visitWhenConditionWithExpression(condition: KtWhenConditionWithExpression) {
-    builder.sync(condition)
-    visit(condition.expression)
-  }
-
-  override fun visitWhenConditionIsPattern(condition: KtWhenConditionIsPattern) {
-    builder.sync(condition)
-    builder.token(if (condition.isNegated) "!is" else "is")
-    builder.space()
-    visit(condition.typeReference)
-  }
-
-  /** Example `in 1..2` as part of a when expression */
-  override fun visitWhenConditionInRange(condition: KtWhenConditionInRange) {
-    builder.sync(condition)
-    // TODO: replace with 'condition.isNegated' once https://youtrack.jetbrains.com/issue/KT-34395
-    // is fixed.
-    val isNegated = condition.firstChild?.node?.findChildByType(KtTokens.NOT_IN) != null
-    builder.token(if (isNegated) "!in" else "in")
-    builder.space()
-    visit(condition.rangeExpression)
-  }
-
-  override fun visitIfExpression(expression: KtIfExpression) {
-    builder.sync(expression)
-    builder.block(ZERO) {
-      emitKeywordWithCondition("if", expression.condition)
-
-      if (expression.then is KtBlockExpression) {
-        builder.space()
-        builder.block(ZERO) { visit(expression.then) }
-      } else {
-        builder.breakOp(Doc.FillMode.INDEPENDENT, " ", expressionBreakIndent)
-        builder.block(expressionBreakIndent) {
-          builder.fenceComments()
-          visit(expression.then)
-        }
-      }
-
-      if (expression.elseKeyword != null) {
-        if (expression.then is KtBlockExpression) {
-          builder.space()
-        } else {
-          builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
-        }
-
-        builder.block(ZERO) {
-          builder.token("else")
-          if (expression.`else` is KtBlockExpression || expression.`else` is KtIfExpression) {
-            builder.space()
-            builder.block(ZERO) { visit(expression.`else`) }
-          } else {
-            builder.breakOp(Doc.FillMode.INDEPENDENT, " ", expressionBreakIndent)
-            builder.block(expressionBreakIndent) { visit(expression.`else`) }
-          }
-        }
-      }
-    }
-  }
-
   /** Example `val (a, b: Int) = Pair(1, 2)` or `val [a, b] = Pair(1, 2)` */
   override fun visitDestructuringDeclaration(destructuringDeclaration: KtDestructuringDeclaration) {
     builder.sync(destructuringDeclaration)
@@ -868,60 +716,6 @@ open class KotlinInputAstVisitor(
     )
   }
 
-  /** Example `for (i in items) { ... }` */
-  override fun visitForExpression(expression: KtForExpression) {
-    builder.sync(expression)
-    builder.block(ZERO) {
-      builder.token("for")
-      builder.space()
-      builder.token("(")
-      visit(expression.loopParameter)
-      builder.space()
-      builder.token("in")
-      builder.block(ZERO) {
-        builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
-        builder.block(expressionBreakIndent) { visit(expression.loopRange) }
-      }
-      builder.token(")")
-      builder.space()
-      visit(expression.body)
-    }
-  }
-
-  /** Example `while (a < b) { ... }` */
-  override fun visitWhileExpression(expression: KtWhileExpression) {
-    builder.sync(expression)
-    emitKeywordWithCondition("while", expression.condition)
-    builder.space()
-    visit(expression.body)
-  }
-
-  /** Example `do { ... } while (a < b)` */
-  override fun visitDoWhileExpression(expression: KtDoWhileExpression) {
-    builder.sync(expression)
-    builder.token("do")
-    builder.space()
-    if (expression.body != null) {
-      visit(expression.body)
-      builder.space()
-    }
-    emitKeywordWithCondition("while", expression.condition)
-  }
-
-  /** Example `break` or `break@foo` in a loop */
-  override fun visitBreakExpression(expression: KtBreakExpression) {
-    builder.sync(expression)
-    builder.token("break")
-    visit(expression.labelQualifier)
-  }
-
-  /** Example `continue` or `continue@foo` in a loop */
-  override fun visitContinueExpression(expression: KtContinueExpression) {
-    builder.sync(expression)
-    builder.token("continue")
-    visit(expression.labelQualifier)
-  }
-
   /** Example `f: String`, or `private val n: Int` or `(a: Int, b: String)` (in for-loops) */
   override fun visitParameter(parameter: KtParameter) {
     builder.sync(parameter)
@@ -948,50 +742,6 @@ open class KotlinInputAstVisitor(
         )
       }
     }
-  }
-
-  override fun visitTryExpression(expression: KtTryExpression) {
-    builder.sync(expression)
-    builder.token("try")
-    builder.space()
-    visit(expression.tryBlock)
-    for (catchClause in expression.catchClauses) {
-      visit(catchClause)
-    }
-    visit(expression.finallyBlock)
-  }
-
-  override fun visitCatchSection(catchClause: KtCatchClause) {
-    builder.sync(catchClause)
-    builder.space()
-    builder.token("catch")
-    builder.space()
-    builder.block(ZERO) {
-      builder.token("(")
-      builder.block(expressionBreakIndent) {
-        builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
-        visit(catchClause.catchParameter)
-        builder.guessToken(",")
-      }
-    }
-    builder.token(")")
-    builder.space()
-    visit(catchClause.catchBody)
-  }
-
-  override fun visitFinallySection(finallySection: KtFinallySection) {
-    builder.sync(finallySection)
-    builder.space()
-    builder.token("finally")
-    builder.space()
-    visit(finallySection.finalExpression)
-  }
-
-  override fun visitThrowExpression(expression: KtThrowExpression) {
-    builder.sync(expression)
-    builder.token("throw")
-    builder.space()
-    visit(expression.thrownExpression)
   }
 
   /** Example `RED(0xFF0000)` in an enum class */
@@ -1054,42 +804,5 @@ open class KotlinInputAstVisitor(
   /** Helper function to improve readability */
   private fun visit(element: PsiElement?) {
     element?.accept(this)
-  }
-
-  /**
-   * Emits a key word followed by a condition, e.g. `if (b)` or `while (c < d )`
-   *
-   * @param surroundConditionWithParens a flag to control whether parens surrounds the condition.
-   *   For example, guard conditions do not use parens.
-   */
-  private fun emitKeywordWithCondition(
-      keyword: String,
-      condition: KtExpression?,
-      surroundConditionWithParens: Boolean = true,
-  ) {
-    if (condition == null) {
-      builder.token(keyword)
-      return
-    }
-
-    builder.block(ZERO) {
-      builder.token(keyword)
-      builder.space()
-      if (surroundConditionWithParens) {
-        builder.token("(")
-      }
-      if (options.manageTrailingCommas) {
-        builder.block(expressionBreakIndent) {
-          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
-          visit(condition)
-          builder.breakOp(Doc.FillMode.UNIFIED, "", -expressionBreakIndent)
-        }
-      } else {
-        builder.block(ZERO) { visit(condition) }
-      }
-    }
-    if (surroundConditionWithParens) {
-      builder.token(")")
-    }
   }
 }
