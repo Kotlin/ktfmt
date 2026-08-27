@@ -39,6 +39,13 @@ import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 import org.jetbrains.ktfmt.util.CONTEXT_PARAMETER_LIST
 import org.jetbrains.ktfmt.util.ownValOrVarKeywordText
 
+/**
+ * Formatter that handles all declarations:
+ * - Classes
+ * - Functions
+ * - Properties (class properties, top-level properties and local properties)
+ * - Destructuring declarations
+ */
 interface DeclarationFormatter : KotlinAstFormatter {
   override fun formatNamedFunction(function: KtNamedFunction) {
     builder.sync(function)
