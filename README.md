@@ -70,10 +70,12 @@ $ brew install ktfmt
 $ java -jar /path/to/ktfmt-<VERSION>-with-dependencies.jar [--kotlinlang-style | --google-style] [files...]
 ```
 
-The formatter can act on whole files, on limited lines (`--lines` or `--line`), or on specific
-offsets (`--offset` and `--length`). Line ranges look like `5` or `1:12,14`, may be used multiple
-times, and are 1-based. Offset ranges must provide matching `--offset` and `--length` pairs;
-`--length=0` formats the whole line containing the given `--offset`.
+The formatter can act on whole files, on limited lines (`--lines` or `--line`), on specific
+offsets (`--offset` and `--length`), or on character ranges (`--range-start` and `--range-end`).
+Line ranges look like `5` or `1:12,14`, may be used multiple times, and are 1-based. Offset ranges
+must provide matching `--offset` and `--length` pairs; `--length=0` formats the whole line containing
+the given `--offset`. Character ranges allow formatting between `--range-start` (0-based offset,
+inclusive, defaults to 0) and `--range-end` (0-based offset, exclusive, defaults to end of file).
 
 Partial formatting limits the core pretty-print replacements to the selected ranges. Whole-file
 cleanup passes, such as import cleanup and multiline string formatting, still run afterward to match

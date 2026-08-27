@@ -47,6 +47,7 @@ data class ParsedArgs(
   internal val lineRanges: RangeSet<Int> = TreeRangeSet.create()
   /** Zero-indexed character ranges to format, using closed-open bounds. */
   internal val characterRanges: RangeSet<Int> = TreeRangeSet.create()
+  internal var isPartialFormatting: Boolean = false
 
   companion object {
 
@@ -97,6 +98,10 @@ data class ParsedArgs(
         |  --length=<length>                 Character length to format, paired with --offset.
         |                                        May be used multiple times. 0 formats the whole
         |                                        line containing the given --offset.
+        |  --range-start=<offset>            Format code starting at a given character offset
+        |                                        (inclusive). Defaults to 0.
+        |  --range-end=<offset>              Format code ending at a given character offset
+        |                                        (exclusive). Defaults to end of file.
         |  --set-exit-if-changed             Sets exit code to 1 if any input file was not
         |                                        formatted/touched
         |  --do-not-remove-unused-imports    Leaves all imports in place, even if not used
@@ -134,6 +139,8 @@ data class ParsedArgs(
       val lineRanges = TreeRangeSet.create<Int>()
       val offsets = mutableListOf<Int>()
       val lengths = mutableListOf<Int>()
+      var rangeStart: Int? = null
+      var rangeEnd: Int? = null
 
       if ("--help" in args || "-h" in args) return ParseResult.ShowMessage(HELP_TEXT)
       if ("--version" in args || "-v" in args) {
@@ -227,6 +234,48 @@ data class ParsedArgs(
                         ?: return ParseResult.Error("invalid integer value for $key: $value"),
                 )
               }
+          arg.startsWith("--range-start") ->
+              arg.split('=', limit = 2).let { argSplit ->
+                val key = argSplit.first()
+                if (key != "--range-start") {
+                  return ParseResult.Error("Unexpected option: $key")
+                }
+                val value =
+                    if (argSplit.size > 1) {
+                      argSplit.last()
+                    } else {
+                      nextValue()
+                          ?: return ParseResult.Error("required value was not provided for: $key")
+                    }
+                val parsedInt =
+                    value.toIntOrNull()
+                        ?: return ParseResult.Error("invalid integer value for $key: $value")
+                if (parsedInt < 0) {
+                  return ParseResult.Error("invalid integer value for $key: $value")
+                }
+                rangeStart = parsedInt
+              }
+          arg.startsWith("--range-end") ->
+              arg.split('=', limit = 2).let { argSplit ->
+                val key = argSplit.first()
+                if (key != "--range-end") {
+                  return ParseResult.Error("Unexpected option: $key")
+                }
+                val value =
+                    if (argSplit.size > 1) {
+                      argSplit.last()
+                    } else {
+                      nextValue()
+                          ?: return ParseResult.Error("required value was not provided for: $key")
+                    }
+                val parsedInt =
+                    value.toIntOrNull()
+                        ?: return ParseResult.Error("invalid integer value for $key: $value")
+                if (parsedInt < 0) {
+                  return ParseResult.Error("invalid integer value for $key: $value")
+                }
+                rangeEnd = parsedInt
+              }
           arg.startsWith("--") -> return ParseResult.Error("Unexpected option: $arg")
           arg.startsWith("@") -> return ParseResult.Error("Unexpected option: $arg")
           else -> fileNames.add(arg)
@@ -257,7 +306,27 @@ data class ParsedArgs(
         characterRanges.add(Range.closedOpen(offsets[index], offsets[index] + length))
       }
 
-      if ((!lineRanges.isEmpty || !characterRanges.isEmpty) && fileNames.size != 1) {
+      if (rangeStart != null || rangeEnd != null) {
+        val start = rangeStart ?: 0
+        val end = rangeEnd ?: Int.MAX_VALUE
+        if (start > end) {
+          return ParseResult.Error(
+              "--range-start ($start) cannot be greater than --range-end ($end)",
+          )
+        }
+        if (start < end) {
+          characterRanges.add(Range.closedOpen(start, end))
+        }
+      }
+
+      val hasPartialFormattingFlags =
+          !lineRanges.isEmpty ||
+              !characterRanges.isEmpty ||
+              rangeStart != null ||
+              rangeEnd != null ||
+              offsets.isNotEmpty()
+
+      if (hasPartialFormattingFlags && fileNames.size != 1) {
         return ParseResult.Error("partial formatting is only supported for a single file")
       }
 
@@ -273,6 +342,7 @@ data class ParsedArgs(
           editorConfig,
           quiet,
       )
+      parsedArgs.isPartialFormatting = hasPartialFormattingFlags
       parsedArgs.lineRanges.addAll(lineRanges)
       parsedArgs.characterRanges.addAll(characterRanges)
       return ParseResult.Ok(parsedArgs)

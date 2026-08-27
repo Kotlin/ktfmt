@@ -78,12 +78,16 @@ class KotlinInput(private val text: String, file: KtFile) : Input() {
     val tokenRangeSet = TreeRangeSet.create<Int>()
     for (characterRange0 in characterRanges) {
       val characterRange = characterRange0.canonical(DiscreteDomain.integers())
-      tokenRangeSet.add(
-          characterRangeToTokenRange(
-              characterRange.lowerEndpoint(),
-              characterRange.upperEndpoint() - characterRange.lowerEndpoint(),
-          ),
-      )
+      if (characterRange.isEmpty) {
+        continue
+      }
+      val offset = characterRange.lowerEndpoint()
+      val length = characterRange.upperEndpoint() - offset
+      if (offset >= text.length || length <= 0) {
+        continue
+      }
+      val clampedLength = minOf(length, text.length - offset)
+      tokenRangeSet.add(characterRangeToTokenRange(offset, clampedLength))
     }
     return tokenRangeSet
   }

@@ -209,5 +209,5 @@ class Main(
   }
 
   private fun ParsedArgs.isPartialFormat(): Boolean =
-      !lineRanges.isEmpty || !characterRanges.isEmpty
+      isPartialFormatting || !lineRanges.isEmpty || !characterRanges.isEmpty
 }
