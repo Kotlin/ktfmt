@@ -18,12 +18,12 @@ package org.jetbrains.ktfmt.format
 
 import org.jetbrains.kotlin.psi.KtFile
 
-internal class FormatterContext(@JvmField val code: String) {
+internal class FormatterContext(@JvmField val code: KotlinCode) {
 
   private val ktFile: KtFile by lazy { Parser.parse(code) }
 
   inline fun transform(block: (KtFile) -> String): FormatterContext {
     val newCode = block(ktFile)
-    return if (newCode == code) this else FormatterContext(newCode)
+    return if (newCode == code.code) this else FormatterContext(code.copy(code = newCode))
   }
 }

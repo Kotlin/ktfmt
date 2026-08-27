@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - Trailing comma is now added when a single parameter is formatted onto its own line (https://github.com/facebook/ktfmt/issues/461) 
 - Migrated from `com.facebook.ktfmt` package to `org.jetbrains.ktfmt`
+- Use the file's extension to differentiate between scripts and regular files in the parser
 
 ### Fixed
 

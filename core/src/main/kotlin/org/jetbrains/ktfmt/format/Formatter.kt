@@ -22,12 +22,10 @@ import com.google.common.collect.RangeSet
 import com.google.common.collect.TreeRangeSet
 import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.DocBuilder
-import com.google.googlejavaformat.Newlines
 import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.java.FormatterException
 import com.google.googlejavaformat.java.JavaOutput
 import org.jetbrains.kotlin.com.intellij.openapi.util.text.StringUtil
-import org.jetbrains.kotlin.com.intellij.openapi.util.text.StringUtilRt.convertLineSeparators
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiElementVisitor
@@ -39,8 +37,6 @@ import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.ktfmt.debughelpers.printOps
 import org.jetbrains.ktfmt.format.RedundantElementManager.addRedundantElements
 import org.jetbrains.ktfmt.format.RedundantElementManager.dropRedundantElements
-import org.jetbrains.ktfmt.format.WhitespaceTombstones.indexOfWhitespaceTombstone
-import org.jetbrains.ktfmt.kdoc.Escaping
 import org.jetbrains.ktfmt.kdoc.KDocCommentsHelper
 
 object Formatter {
@@ -73,16 +69,8 @@ object Formatter {
    */
   @JvmStatic
   @Throws(FormatterException::class, ParseError::class)
-  fun format(code: String): String = format(META_FORMAT, code)
-
-  /**
-   * format formats the Kotlin code given in 'code' with 'removeUnusedImports' and returns it as a
-   * string. This method is accessed through Reflection.
-   */
-  @JvmStatic
-  @Throws(FormatterException::class, ParseError::class)
-  fun format(code: String, removeUnusedImports: Boolean): String =
-      format(META_FORMAT.copy(removeUnusedImports = removeUnusedImports), code)
+  fun format(code: String, fileType: FileType): String =
+      format(META_FORMAT, KotlinCode(code, fileType))
 
   /**
    * Formats the Kotlin code given in [code] and returns it as a string.
@@ -102,15 +90,13 @@ object Formatter {
   @Throws(FormatterException::class, ParseError::class)
   fun format(
       options: FormattingOptions,
-      code: String,
+      code: KotlinCode,
       lineRanges: RangeSet<Int>? = null,
       characterRanges: RangeSet<Int>? = null,
   ): String {
-    checkEscapeSequences(code)
-    val normalizedCode = convertLineSeparators(code)
     val formattedCode =
         if (lineRanges == null && characterRanges == null) {
-          FormatterContext(normalizedCode)
+          FormatterContext(code)
               .transform { sortedAndDistinctImports(it) }
               .transform { dropRedundantElements(it, options) }
               .transform { addRedundantElements(it, options) }
@@ -119,15 +105,15 @@ object Formatter {
               .code
         } else {
           val selectedCharacterRanges = characterRangesForPartialFormatting(
-              normalizedCode,
+              code,
               lineRanges,
               characterRanges,
           )
           val partiallyFormattedCode =
               if (selectedCharacterRanges.isEmpty) {
-                normalizedCode
+                code
               } else {
-                FormatterContext(normalizedCode)
+                FormatterContext(code)
                     .transform {
                       prettyPrint(
                           it,
@@ -146,7 +132,7 @@ object Formatter {
               .code
         }
 
-    return convertLineSeparators(formattedCode, checkNotNull(Newlines.guessLineSeparator(code)))
+    return formattedCode.toString()
   }
 
   /**
@@ -195,36 +181,14 @@ object Formatter {
     )
   }
 
-  /** Converts zero-indexed, closed-open line ranges to character ranges in [input]. */
-  private fun lineRangesToCharRanges(input: String, lineRanges: RangeSet<Int>): RangeSet<Int> {
-    val lineOffsets = mutableListOf<Int>()
-    val lineOffsetIterator = Newlines.lineOffsetIterator(input)
-    while (lineOffsetIterator.hasNext()) {
-      lineOffsets.add(lineOffsetIterator.next())
-    }
-    lineOffsets.add(input.length + 1)
-
-    val characterRanges = TreeRangeSet.create<Int>()
-    for (lineRange in
-        lineRanges.subRangeSet(Range.closedOpen(0, lineOffsets.size - 1)).asRanges()) {
-      val lineStart = lineOffsets[lineRange.lowerEndpoint()]
-      val lineEnd = lineOffsets[lineRange.upperEndpoint()] - 1
-      val characterRange = Range.closedOpen(lineStart, lineEnd)
-      if (!characterRange.isEmpty) {
-        characterRanges.add(characterRange)
-      }
-    }
-    return characterRanges
-  }
-
   private fun characterRangesForPartialFormatting(
-      code: String,
+      code: KotlinCode,
       lineRanges: RangeSet<Int>?,
       characterRanges: RangeSet<Int>?,
   ): RangeSet<Int> {
     val selectedCharacterRanges = TreeRangeSet.create<Int>()
     if (lineRanges != null) {
-      selectedCharacterRanges.addAll(lineRangesToCharRanges(code, lineRanges))
+      selectedCharacterRanges.addAll(code.lineRangesToCharRanges(lineRanges))
     }
     if (characterRanges != null) {
       selectedCharacterRanges.addAll(characterRanges)
@@ -240,20 +204,6 @@ object Formatter {
       KotlinLangInputAstVisitor(options, builder)
     } else {
       KotlinInputAstVisitor(options, builder)
-    }
-  }
-
-  private fun checkEscapeSequences(code: String) {
-    var index = code.indexOfWhitespaceTombstone()
-    if (index == -1) {
-      index = Escaping.indexOfCommentEscapeSequences(code)
-    }
-    if (index != -1) {
-      throw ParseError(
-          "ktfmt does not support code which contains one of {\\u0003, \\u0004, \\u0005} character" +
-              "; escape it",
-          StringUtil.offsetToLineColumn(code, index),
-      )
     }
   }
 

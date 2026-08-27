@@ -12,7 +12,7 @@ class FormatTest : FormatterTestFactory() {
     for (ending in listOf("\n", "\r\n", "\r")) {
       val code = lines.joinToString(ending, postfix = ending)
 
-      val reformatted = Formatter.format(DEFAULT_CASE_FORMAT, code)
+      val reformatted = Formatter.format(DEFAULT_CASE_FORMAT, KotlinCode(code, FileType.REGULAR))
       assertEquals(code, reformatted)
     }
   }

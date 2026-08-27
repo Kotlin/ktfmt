@@ -742,7 +742,7 @@ class TokenizerTest {
   }
 
   private fun assertParseError(code: String, message: String?) {
-    val file = Parser.parse(code)
+    val file = Parser.parse(KotlinCode(code, FileType.SCRIPT))
     val tokenizer = Tokenizer(code, file)
     if (message == null) {
       file.accept(tokenizer)

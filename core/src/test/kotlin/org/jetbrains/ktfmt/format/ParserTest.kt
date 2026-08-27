@@ -31,7 +31,7 @@ class ParserTest {
    */
   @Test
   fun `parsing sets idea_use_native_fs_for_win to false`() {
-    Parser.parse("val a = 1")
+    Parser.parse(KotlinCode("val a = 1", fileType = FileType.REGULAR))
     assertEquals("false", System.getProperty("idea.use.native.fs.for.win"))
   }
 
@@ -48,12 +48,12 @@ class ParserTest {
         |"""
             .trimMargin()
     try {
-      Formatter.format(code)
+      Formatter.format(code, FileType.REGULAR)
       fail()
     } catch (e: ParseError) {
-      assertEquals(6, e.lineColumn.line)
+      assertEquals(5, e.lineColumn.line)
       assertEquals(0, e.lineColumn.column)
-      assertContainsMatch(e.errorDescription, "Expecting an (expression|argument)")
+      assertContainsMatch(e.errorDescription, "Expecting a top level declaration")
     }
   }
 
@@ -67,7 +67,7 @@ class ParserTest {
         |"""
             .trimMargin()
     try {
-      Formatter.format(code)
+      Formatter.format(code, FileType.REGULAR)
       fail()
     } catch (e: ParseError) {
       assertContains(e.errorDescription, "\\u0003")
@@ -87,7 +87,7 @@ class ParserTest {
         |"""
             .trimMargin()
     try {
-      Formatter.format(code)
+      Formatter.format(code, FileType.REGULAR)
       fail()
     } catch (e: ParseError) {
       assertEquals(2, e.lineColumn.line)

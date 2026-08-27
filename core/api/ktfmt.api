@@ -110,17 +110,25 @@ public final class org/jetbrains/ktfmt/format/FenceCommentsOp : com/google/googl
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class org/jetbrains/ktfmt/format/FileType : java/lang/Enum {
+	public static final field REGULAR Lorg/jetbrains/ktfmt/format/FileType;
+	public static final field SCRIPT Lorg/jetbrains/ktfmt/format/FileType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getExtension ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lorg/jetbrains/ktfmt/format/FileType;
+	public static fun values ()[Lorg/jetbrains/ktfmt/format/FileType;
+}
+
 public final class org/jetbrains/ktfmt/format/Formatter {
 	public static final field GOOGLE_FORMAT Lorg/jetbrains/ktfmt/format/FormattingOptions;
 	public static final field INSTANCE Lorg/jetbrains/ktfmt/format/Formatter;
 	public static final field KOTLINLANG_FORMAT Lorg/jetbrains/ktfmt/format/FormattingOptions;
 	public static final field META_FORMAT Lorg/jetbrains/ktfmt/format/FormattingOptions;
-	public static final fun format (Ljava/lang/String;)Ljava/lang/String;
-	public static final fun format (Ljava/lang/String;Z)Ljava/lang/String;
-	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Ljava/lang/String;)Ljava/lang/String;
-	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Ljava/lang/String;Lcom/google/common/collect/RangeSet;)Ljava/lang/String;
-	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Ljava/lang/String;Lcom/google/common/collect/RangeSet;Lcom/google/common/collect/RangeSet;)Ljava/lang/String;
-	public static synthetic fun format$default (Lorg/jetbrains/ktfmt/format/FormattingOptions;Ljava/lang/String;Lcom/google/common/collect/RangeSet;Lcom/google/common/collect/RangeSet;ILjava/lang/Object;)Ljava/lang/String;
+	public static final fun format (Ljava/lang/String;Lorg/jetbrains/ktfmt/format/FileType;)Ljava/lang/String;
+	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lorg/jetbrains/ktfmt/format/KotlinCode;)Ljava/lang/String;
+	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lorg/jetbrains/ktfmt/format/KotlinCode;Lcom/google/common/collect/RangeSet;)Ljava/lang/String;
+	public static final fun format (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lorg/jetbrains/ktfmt/format/KotlinCode;Lcom/google/common/collect/RangeSet;Lcom/google/common/collect/RangeSet;)Ljava/lang/String;
+	public static synthetic fun format$default (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lorg/jetbrains/ktfmt/format/KotlinCode;Lcom/google/common/collect/RangeSet;Lcom/google/common/collect/RangeSet;ILjava/lang/Object;)Ljava/lang/String;
 }
 
 public final class org/jetbrains/ktfmt/format/FormattingOptions {
@@ -168,6 +176,28 @@ public final class org/jetbrains/ktfmt/format/FormattingOptions$Builder {
 }
 
 public final class org/jetbrains/ktfmt/format/FormattingOptions$Companion {
+}
+
+public final class org/jetbrains/ktfmt/format/KotlinCode {
+	public static final field Companion Lorg/jetbrains/ktfmt/format/KotlinCode$Companion;
+	public synthetic fun <init> (Ljava/lang/String;Lorg/jetbrains/ktfmt/format/FileType;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun copy (Ljava/lang/String;)Lorg/jetbrains/ktfmt/format/KotlinCode;
+	public final fun getCode ()Ljava/lang/String;
+	public final fun getFileType ()Lorg/jetbrains/ktfmt/format/FileType;
+	public final fun getLineSeparator ()Ljava/lang/String;
+	public final fun lineRangesToCharRanges (Lcom/google/common/collect/RangeSet;)Lcom/google/common/collect/RangeSet;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class org/jetbrains/ktfmt/format/KotlinCode$Companion {
+	public final fun from (Ljava/lang/String;Lorg/jetbrains/ktfmt/format/FileType;)Lorg/jetbrains/ktfmt/format/KotlinCode;
+}
+
+public final class org/jetbrains/ktfmt/format/KotlinCodeKt {
+	public static final fun KotlinCode (Ljava/io/File;)Lorg/jetbrains/ktfmt/format/KotlinCode;
+	public static final fun KotlinCode (Ljava/io/InputStream;Lorg/jetbrains/ktfmt/format/FileType;)Lorg/jetbrains/ktfmt/format/KotlinCode;
+	public static final fun KotlinCode (Ljava/lang/String;Lorg/jetbrains/ktfmt/format/FileType;)Lorg/jetbrains/ktfmt/format/KotlinCode;
+	public static final fun getKotlinFileType (Ljava/io/File;)Lorg/jetbrains/ktfmt/format/FileType;
 }
 
 public final class org/jetbrains/ktfmt/format/KotlinInput : com/google/googlejavaformat/Input {
@@ -261,6 +291,7 @@ public final class org/jetbrains/ktfmt/format/KotlinTok : com/google/googlejavaf
 	public fun isComment ()Z
 	public fun isJavadocComment ()Z
 	public fun isNewline ()Z
+	public final fun isShebang ()Z
 	public fun isSlashSlashComment ()Z
 	public fun isSlashStarComment ()Z
 	public final fun isToken ()Z
@@ -297,7 +328,7 @@ public final class org/jetbrains/ktfmt/format/ParseError$Companion {
 public final class org/jetbrains/ktfmt/format/Parser {
 	public static final field INSTANCE Lorg/jetbrains/ktfmt/format/Parser;
 	public final fun getEnv ()Lorg/jetbrains/kotlin/cli/jvm/compiler/KotlinCoreEnvironment;
-	public final fun parse (Ljava/lang/String;)Lorg/jetbrains/kotlin/psi/KtFile;
+	public final fun parse (Lorg/jetbrains/ktfmt/format/KotlinCode;)Lorg/jetbrains/kotlin/psi/KtFile;
 }
 
 public final class org/jetbrains/ktfmt/format/RedundantElementManager {

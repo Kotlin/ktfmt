@@ -17,24 +17,23 @@
 package org.jetbrains.ktfmt.cli
 
 import com.google.googlejavaformat.FormattingError
-import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
-import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.io.PrintStream
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.exitProcess
+import org.jetbrains.ktfmt.format.FileType
 import org.jetbrains.ktfmt.format.Formatter
+import org.jetbrains.ktfmt.format.KotlinCode
 import org.jetbrains.ktfmt.format.ParseError
 
 private const val EXIT_CODE_FAILURE = 1
+
 private const val EXIT_CODE_SUCCESS = 0
-private const val UTF8_BOM = "\uFEFF"
 
 private val USAGE =
     """
@@ -156,15 +155,14 @@ class Main(
                 args.formattingOptions,
             )
           }
-      val bytes = if (file == null) input else FileInputStream(file)
-      val code = BufferedReader(InputStreamReader(bytes, UTF_8)).readText().removePrefix(UTF8_BOM)
+      val code = if (file == null) KotlinCode(input, FileType.SCRIPT) else KotlinCode(file)
       val formattedCode =
           if (!args.isPartialFormat()) {
             Formatter.format(formattingOptions, code)
           } else {
             Formatter.format(formattingOptions, code, args.lineRanges, args.characterRanges)
           }
-      val alreadyFormatted = code == formattedCode
+      val alreadyFormatted = code.toString() == formattedCode
 
       // stdin
       if (file == null) {

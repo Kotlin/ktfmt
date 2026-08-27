@@ -296,7 +296,7 @@ class MultilineStringFormatterTest {
   ): MultilineTrimmedString {
     val strings =
         MultilineStringFormatter(continuationIndent)
-            .getMultilineTrimmedStringList(Parser.parse(code))
+            .getMultilineTrimmedStringList(Parser.parse(KotlinCode(code, FileType.SCRIPT)))
     assertEquals(1, strings.size)
     return strings.first()
   }

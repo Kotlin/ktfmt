@@ -26,10 +26,14 @@ import com.intellij.formatting.service.FormattingService.Feature
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.idea.KotlinFileType
+import org.jetbrains.ktfmt.format.FileType
 import org.jetbrains.ktfmt.format.Formatter.format
 import org.jetbrains.ktfmt.format.FormattingOptions
+import org.jetbrains.ktfmt.format.KotlinCode
+import org.jetbrains.ktfmt.format.kotlinFileType
 
 private const val PARSING_ERROR_NOTIFICATION_GROUP: String = "ktfmt parsing error"
+
 private const val PARSING_ERROR_TITLE: String = PARSING_ERROR_NOTIFICATION_GROUP
 
 /** Uses `ktfmt` to reformat code. */
@@ -63,11 +67,16 @@ class KtfmtFormattingService : AsyncDocumentFormattingService() {
   ) : FormattingTask {
     override fun run() {
       try {
+        val fileType = request.ioFile?.kotlinFileType ?: FileType.SCRIPT
         val formattedText =
             if (request.isWholeFileFormatting()) {
-              format(formattingOptions, request.documentText)
+              format(formattingOptions, KotlinCode(request.documentText, fileType))
             } else {
-              format(formattingOptions, request.documentText, characterRanges = request.toRanges())
+              format(
+                  formattingOptions,
+                  KotlinCode(request.documentText, fileType),
+                  characterRanges = request.toRanges(),
+              )
             }
         request.onTextReady(formattedText)
       } catch (e: FormatterException) {
