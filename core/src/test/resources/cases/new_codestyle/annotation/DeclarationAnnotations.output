@@ -8,11 +8,11 @@
 
 @A private val beforeModifier = 1
 
-private @Deprecated("some reason") val afterModifier = 1
+@Deprecated("some reason") private val afterModifier = 1
 
-public @Magic final class Interleaved
+@Magic public final class Interleaved
 
-public @Magic(1, "argument") final class InterleavedWithArgs
+@Magic(1, "argument") public final class InterleavedWithArgs
 
 class PrimaryCtor @Inject constructor(val a: Int)
 

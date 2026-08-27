@@ -119,6 +119,7 @@ object Formatter {
         if (lineRanges == null && characterRanges == null) {
           FormatterContext(normalizedKotlinCode)
               .transform { sortedAndDistinctImports(it) }
+              .transform { ModifierSorter.sort(it) }
               .transform { dropRedundantElements(it, options) }
               .transform { addRedundantElements(it, options) }
               .let { prettyPrintAndManageTrailingCommas(it, options, lineSeparator = "\n") }
@@ -147,6 +148,7 @@ object Formatter {
                     .code
               }
           FormatterContext(partiallyFormattedCode)
+              .transform { ModifierSorter.sort(it) }
               .transform { dropRedundantElements(it, options) }
               .transform { sortedAndDistinctImports(it, trimLeadingWhitespace = true) }
               .transform { addRedundantElements(it, options) }
