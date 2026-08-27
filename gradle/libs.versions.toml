@@ -1,6 +1,6 @@
 [versions]
 java = "17"
-kotlin = "2.3.20"
+kotlin = "2.4.10"
 com-google-googlejavaformat-google-java-format = "1.23.0"
 com-google-guava-guava = "33.5.0-jre"
 org-ec4j-core = "1.2.0"

@@ -90,7 +90,7 @@ tasks {
 }
 
 kotlin {
-  @OptIn(ExperimentalAbiValidation::class) abiValidation { enabled = true }
+  @OptIn(org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation::class) abiValidation()
 
   compilerOptions { jvmDefault = JvmDefaultMode.NO_COMPATIBILITY }
 

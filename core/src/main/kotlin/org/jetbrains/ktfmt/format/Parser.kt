@@ -16,8 +16,10 @@
 
 package org.jetbrains.ktfmt.format
 
+import org.jetbrains.kotlin.K1Deprecation
 import org.jetbrains.kotlin.cli.common.messages.MessageRenderer.PLAIN_RELATIVE_PATHS
 import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
+import org.jetbrains.kotlin.cli.create
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.com.intellij.openapi.util.Disposer
@@ -42,17 +44,22 @@ object Parser {
    * causing a worse memory leak before when we created new ones and disposed them. This leak comes
    * from [KotlinCoreEnvironment.createForProduction]:
    * https://github.com/JetBrains/kotlin/blob/master/compiler/cli/src/org/jetbrains/kotlin/cli/jvm/compiler/KotlinCoreEnvironment.kt#L544
+   *
+   * In the future release the [K1Deprecation] annotation is replaced by a new
+   * `CoreEnvironmentDeprecation` annotation that is not part of the K1 deprecation process.
+   * Therefore, we can rely on it until we migrate to the KMP parser or come up with a better
+   * solution. https://github.com/JetBrains/kotlin/commit/3d92fa98294055ba43e294d6e320630e18697c6e
    */
   val env: KotlinCoreEnvironment by lazy {
     // To hide annoying warning on Windows
     System.setProperty("idea.use.native.fs.for.win", "false")
     val disposable = Disposer.newDisposable()
-    val configuration = CompilerConfiguration()
+    val configuration = CompilerConfiguration.create()
     configuration.put(
         CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY,
         PrintingMessageCollector(System.err, PLAIN_RELATIVE_PATHS, false),
     )
-    @Suppress("OPT_IN_USAGE_ERROR") // KotlinCoreEnvironment.createForProduction
+    @OptIn(K1Deprecation::class)
     KotlinCoreEnvironment.createForProduction(
         disposable,
         configuration,

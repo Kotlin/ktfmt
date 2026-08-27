@@ -663,6 +663,20 @@
       "type": "org.jetbrains.kotlin.psi.KtCollectionLiteralExpression[]"
     },
     {
+      "type": "org.jetbrains.kotlin.psi.KtCompanionBlock",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "org.jetbrains.kotlin.com.intellij.lang.ASTNode"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "org.jetbrains.kotlin.psi.KtCompanionBlock[]"
+    },
+    {
       "type": "org.jetbrains.kotlin.psi.KtConstantExpression",
       "methods": [
         {

@@ -92,7 +92,6 @@ public final class org/jetbrains/ktfmt/debughelpers/PrintAstVisitor : org/jetbra
 
 public final class org/jetbrains/ktfmt/format/EnumEntryList {
 	public static final field Companion Lorg/jetbrains/ktfmt/format/EnumEntryList$Companion;
-	public synthetic fun <init> (Ljava/util/List;Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getEnumEntries ()Ljava/util/List;
 	public final fun getTerminatingSemicolon ()Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;
 	public final fun getTrailingComma ()Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;
