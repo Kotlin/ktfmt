@@ -24,8 +24,15 @@ import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.kotlin.psi.psiUtil.startsWithComment
 import org.jetbrains.ktfmt.format.ParseError
 import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
-import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.makeCond
 
+/**
+ * Formatter that handles the formatting of anything related to call expressions:
+ * - Function calls
+ * - Function arguments
+ * - Lambda expressions
+ * - Qualified expressions
+ * - Array access expressions
+ */
 interface CallFormatter : KotlinAstFormatter {
   override fun formatArgument(
       argument: KtValueArgument,
@@ -62,6 +69,18 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
+  /**
+   * Format a single function call expression.
+   *
+   * @param callee the function call expression
+   * @param typeArgumentList the type arguments of the function call expression
+   * @param argumentList the value arguments of the function call expression
+   * @param lambdaArguments trailing lambda arguments of the call expression; in correspondence with
+   *   Kotlin syntax a function call can't have more than one trailing lambda, but
+   *   [KtCallExpression] represents them as a list (see [KtCallExpression.getLambdaArguments])
+   * @param argumentsIndent how to indent [argumentList], if present
+   * @param lambdaIndent how to indent [lambdaArguments], if present
+   */
   override fun formatFunctionCall(
       callee: KtExpression?,
       typeArgumentList: KtTypeArgumentList?,
@@ -130,10 +149,11 @@ interface CallFormatter : KotlinAstFormatter {
      * These conditional indents should not be used inside interior blocks, since that would apply
      * the condition twice.
      */
-    val bodyIndent = makeCond(brokeBeforeBrace, blockIndent + expressionBreakIndent, blockIndent)
+    val bodyIndent =
+        Indentation.If(brokeBeforeBrace, blockIndent + expressionBreakIndent, blockIndent)
     val declarationIndent =
-        makeCond(brokeBeforeBrace, expressionBreakIndent * 2, expressionBreakIndent)
-    val closingBraceIndent = makeCond(brokeBeforeBrace, expressionBreakIndent, ZERO)
+        Indentation.If(brokeBeforeBrace, expressionBreakIndent * 2, expressionBreakIndent)
+    val closingBraceIndent = Indentation.If(brokeBeforeBrace, expressionBreakIndent, ZERO)
 
     builder.token("{")
 
@@ -359,6 +379,18 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
+  /**
+   * Handles a chain of qualified expressions, i.e. `a[5].b!!.c()[4].f()`
+   *
+   * This is by far the most complicated part of this formatter. We start by breaking the expression
+   * into a list of [GroupInfo]'s, each representing a step in the execution of the expression.
+   * [GroupInfo]'s are ordered in the opposite order of how the syntax tree is built.
+   *
+   * Each group is then emitted one by one to the [builder] while opening and closing groups. Each
+   * group is opened **before** a corresponding expression is emitted and closed **after**. However,
+   * if an expression represents a function call, e.g. `doIt(1, 2) { it }`, the group is closed
+   * after `doIt`, and the `(1, 2) { it }` part is emitted after.
+   */
   private fun emitQualifiedExpression(expression: KtExpression) {
     val groupingInfos = expression.computeGroups(expressionBreakIndent)
     builder.block(expressionBreakIndent) {
@@ -370,7 +402,7 @@ interface CallFormatter : KotlinAstFormatter {
           builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, Optional.of(nameTag))
         }
 
-        var postfix: Triple<KtCallExpression, Indentation, Indentation>? = null
+        var deferredCallArguments: DeferredCallArguments? = null
         repeat(openingGroups) { builder.open(ZERO) }
         when (ktExpression) {
           is KtQualifiedExpression if ktExpression.selectorExpression is KtCallExpression -> {
@@ -386,11 +418,11 @@ interface CallFormatter : KotlinAstFormatter {
             val lambdaIndentElse = if (isTrailingLambda) -expressionBreakIndent else ZERO
 
             // remember to emit `(1, 2) { it }` from `doIt(1, 2) { it }`
-            postfix =
-                Triple(
+            deferredCallArguments =
+                DeferredCallArguments(
                     selectorExpression,
-                    Indentation.Cond(nameTag, expressionBreakIndent, argsIndentElse),
-                    Indentation.Cond(nameTag, ZERO, lambdaIndentElse),
+                    Indentation.If(nameTag, expressionBreakIndent, argsIndentElse),
+                    Indentation.If(nameTag, ZERO, lambdaIndentElse),
                 )
           }
           is KtQualifiedExpression -> {
@@ -403,12 +435,12 @@ interface CallFormatter : KotlinAstFormatter {
         }
         repeat(closingGroups) { builder.close() }
 
-        postfix?.let { (selectorExpression, argumentsIndent, lambdaIndent) ->
+        deferredCallArguments?.let { (callee, argumentsIndent, lambdaIndent) ->
           formatFunctionCall(
               null,
-              selectorExpression.typeArgumentList,
-              selectorExpression.valueArgumentList,
-              selectorExpression.lambdaArguments,
+              callee.typeArgumentList,
+              callee.valueArgumentList,
+              callee.lambdaArguments,
               argumentsIndent = argumentsIndent,
               lambdaIndent = lambdaIndent,
           )
@@ -416,6 +448,12 @@ interface CallFormatter : KotlinAstFormatter {
       }
     }
   }
+
+  private data class DeferredCallArguments(
+      val call: KtCallExpression,
+      val argumentsIndent: Indentation,
+      val lambdaIndent: Indentation,
+  )
 
   override fun formatArrayAccessExpression(expression: KtArrayAccessExpression) {
     builder.sync(expression)
