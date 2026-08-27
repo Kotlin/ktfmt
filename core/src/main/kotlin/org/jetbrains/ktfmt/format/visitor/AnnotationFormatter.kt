@@ -90,7 +90,7 @@ interface AnnotationFormatter : KotlinAstFormatter {
       format(useSiteTarget)
       builder.token(":")
     }
-    formatCallElement(
+    formatFunctionCall(
         annotationEntry.calleeExpression,
         null, // Type-arguments are included in the annotation's callee expression.
         annotationEntry.valueArgumentList,
