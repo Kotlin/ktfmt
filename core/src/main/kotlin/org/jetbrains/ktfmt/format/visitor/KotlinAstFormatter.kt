@@ -523,7 +523,7 @@ interface KotlinAstFormatter {
       callee: KtExpression?,
       typeArgumentList: KtTypeArgumentList?,
       argumentList: KtValueArgumentList?,
-      lambdaArguments: List<KtLambdaArgument>,
+      trailingLambda: KtLambdaArgument?,
       argumentsIndent: Indentation = expressionBreakIndent,
       lambdaIndent: Indentation = Indentation.ZERO,
   )

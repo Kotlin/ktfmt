@@ -94,7 +94,7 @@ interface AnnotationFormatter : KotlinAstFormatter {
         annotationEntry.calleeExpression,
         null, // Type-arguments are included in the annotation's callee expression.
         annotationEntry.valueArgumentList,
-        listOf(),
+        null,
     )
   }
 }
