@@ -122,7 +122,6 @@ interface TypeFormatter : KotlinAstFormatter {
     builder.block(expressionBreakIndent) { format(type.returnTypeReference) }
   }
 
-  /** Example `private typealias TextChangedListener = (string: String) -> Unit` */
   override fun formatTypeAlias(typeAlias: KtTypeAlias) {
     builder.sync(typeAlias)
     builder.block(ZERO) {

@@ -41,7 +41,6 @@ import org.jetbrains.ktfmt.util.CONTEXT_PARAMETER_LIST
 import org.jetbrains.ktfmt.util.ownValOrVarKeywordText
 
 interface DeclarationFormatter : KotlinAstFormatter {
-  /** Example: `fun foo(n: Int) { println(n) }` */
   override fun formatNamedFunction(function: KtNamedFunction) {
     builder.sync(function)
     builder.block(ZERO) {
@@ -133,7 +132,6 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
-  /** Example `val a: String` or `x = a` which is part of `(val a: String, x = a)` */
   override fun formatProperty(property: KtProperty) {
     builder.sync(property)
     builder.block(ZERO) {
@@ -158,7 +156,6 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
-  /** Example `private constructor(n: Int) : this(4, 5) { ... }` inside a class's body */
   override fun formatSecondaryConstructor(constructor: KtSecondaryConstructor) {
     builder.sync(constructor)
     builder.block(ZERO) {
@@ -268,7 +265,6 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
-  /** Example `RED(0xFF0000)` in an enum class */
   override fun formatEnumEntry(enumEntry: KtEnumEntry) {
     builder.sync(enumEntry)
     builder.block(ZERO) {
@@ -282,7 +278,6 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
-  /** Example `f: String`, or `private val n: Int` or `(a: Int, b: String)` (in for-loops) */
   override fun formatParameter(parameter: KtParameter) {
     builder.sync(parameter)
     builder.block(ZERO) {
@@ -315,7 +310,6 @@ interface DeclarationFormatter : KotlinAstFormatter {
     emitBracedBlock(expression) { children -> formatStatements(children) }
   }
 
-  /** Example `val (a, b: Int) = Pair(1, 2)` or `val [a, b] = Pair(1, 2)` */
   override fun formatDestructuringDeclaration(
       destructuringDeclaration: KtDestructuringDeclaration,
   ) {
@@ -408,7 +402,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
         }
 
         if (typeParameters != null) {
-          format(typeParameters)
+          formatTypeParameterList(typeParameters)
           builder.space()
         }
 
@@ -436,7 +430,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
 
       // For example `where T : Int` in a generic method
       if (typeConstraintList != null) {
-        format(typeConstraintList)
+        formatTypeConstraintList(typeConstraintList)
         builder.space()
       }
 

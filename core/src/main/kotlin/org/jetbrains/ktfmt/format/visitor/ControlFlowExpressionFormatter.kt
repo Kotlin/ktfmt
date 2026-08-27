@@ -45,7 +45,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
 
   override fun formatWhenExpression(expression: KtWhenExpression) {
     builder.sync(expression)
-    builder.block(ZERO) {
+    builder.block {
       emitKeywordWithCondition("when", expression.subjectExpression)
 
       builder.space()
@@ -121,7 +121,6 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     format(condition.typeReference)
   }
 
-  /** Example `in 1..2` as part of a when expression */
   override fun formatWhenConditionInRange(condition: KtWhenConditionInRange) {
     builder.sync(condition)
     // TODO: replace with 'condition.isNegated' once https://youtrack.jetbrains.com/issue/KT-34395
@@ -169,7 +168,6 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     }
   }
 
-  /** Example `for (i in items) { ... }` */
   override fun formatForExpression(expression: KtForExpression) {
     builder.sync(expression)
     builder.block(ZERO) {
@@ -189,7 +187,6 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     }
   }
 
-  /** Example `while (a < b) { ... }` */
   override fun formatWhileExpression(expression: KtWhileExpression) {
     builder.sync(expression)
     emitKeywordWithCondition("while", expression.condition)
@@ -197,7 +194,6 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     format(expression.body)
   }
 
-  /** Example `do { ... } while (a < b)` */
   override fun formatDoWhileExpression(expression: KtDoWhileExpression) {
     builder.sync(expression)
     builder.token("do")
@@ -209,14 +205,12 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     emitKeywordWithCondition("while", expression.condition)
   }
 
-  /** Example `break` or `break@foo` in a loop */
   override fun formatBreakExpression(expression: KtBreakExpression) {
     builder.sync(expression)
     builder.token("break")
     format(expression.labelQualifier)
   }
 
-  /** Example `continue` or `continue@foo` in a loop */
   override fun formatContinueExpression(expression: KtContinueExpression) {
     builder.sync(expression)
     builder.token("continue")
