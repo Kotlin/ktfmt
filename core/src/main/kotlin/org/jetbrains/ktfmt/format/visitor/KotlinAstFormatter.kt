@@ -475,8 +475,14 @@ interface KotlinAstFormatter {
   /**
    * Format the right-hand side of an initializer expression, i.e. the expression after `=`
    * (inclusively)
+   *
+   * @param assignmentOp The symbol that separates the initializer from the expression, see
+   *   [org.jetbrains.kotlin.lexer.KtTokens.ALL_ASSIGNMENTS]
    */
-  fun formatInitializerExpression(initializer: KtExpression)
+  fun formatInitializerExpression(
+      initializer: KtExpression,
+      assignmentOp: String = "=",
+  )
 
   /** See [isLambdaOrScopingFunction] for examples. */
   fun formatLambdaOrScopingFunction(expr: PsiElement?, emitLeadingBreak: Boolean = true)

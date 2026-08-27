@@ -470,7 +470,7 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/ExpressionFor
 	public fun formatClassLiteralExpression (Lorg/jetbrains/kotlin/psi/KtClassLiteralExpression;)V
 	public fun formatCollectionLiteralExpression (Lorg/jetbrains/kotlin/psi/KtCollectionLiteralExpression;)V
 	public fun formatConstantExpression (Lorg/jetbrains/kotlin/psi/KtConstantExpression;)V
-	public fun formatInitializerExpression (Lorg/jetbrains/kotlin/psi/KtExpression;)V
+	public fun formatInitializerExpression (Lorg/jetbrains/kotlin/psi/KtExpression;Ljava/lang/String;)V
 	public fun formatIsExpression (Lorg/jetbrains/kotlin/psi/KtIsExpression;)V
 	public fun formatLabeledExpression (Lorg/jetbrains/kotlin/psi/KtLabeledExpression;)V
 	public fun formatParenthesizedExpression (Lorg/jetbrains/kotlin/psi/KtParenthesizedExpression;)V
@@ -569,7 +569,8 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/KotlinAstForm
 	public fun formatIfExpression (Lorg/jetbrains/kotlin/psi/KtIfExpression;)V
 	public abstract fun formatImportDirective (Lorg/jetbrains/kotlin/psi/KtImportDirective;)V
 	public abstract fun formatImportList (Lorg/jetbrains/kotlin/psi/KtImportList;)V
-	public abstract fun formatInitializerExpression (Lorg/jetbrains/kotlin/psi/KtExpression;)V
+	public abstract fun formatInitializerExpression (Lorg/jetbrains/kotlin/psi/KtExpression;Ljava/lang/String;)V
+	public static synthetic fun formatInitializerExpression$default (Lorg/jetbrains/ktfmt/format/visitor/KotlinAstFormatter;Lorg/jetbrains/kotlin/psi/KtExpression;Ljava/lang/String;ILjava/lang/Object;)V
 	public abstract fun formatIntersectionType (Lorg/jetbrains/kotlin/psi/KtIntersectionType;)V
 	public abstract fun formatIsExpression (Lorg/jetbrains/kotlin/psi/KtIsExpression;)V
 	public abstract fun formatKtFile (Lorg/jetbrains/kotlin/psi/KtFile;)V

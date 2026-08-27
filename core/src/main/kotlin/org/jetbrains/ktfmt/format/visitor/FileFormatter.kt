@@ -94,7 +94,6 @@ interface FileFormatter : KotlinAstFormatter {
     builder.forcedBreak()
   }
 
-  /** Example `import com.foo.A` */
   override fun formatImportDirective(directive: KtImportDirective) {
     builder.sync(directive)
     builder.token("import")

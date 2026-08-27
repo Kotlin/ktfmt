@@ -316,3 +316,25 @@ internal val KtCallElement.trailingLambda: KtLambdaArgument?
     if (lambdas.size == 1) return lambdas.first()
     else throw ParseError("Maximum one trailing lambda is allowed", lambdaArguments[1])
   }
+
+/**
+ * Returns all parts of a binary expression chain. AST parses multi-operand expressions from right
+ * to left: `a + b + c + d == a + (b + (c + d))`, while formatter is interested in the order from
+ * left to right: `a + b + c + d == ((a + b) + c) + d`. So for given example this will return a list
+ * of three elements:
+ * ```
+ * 0. a + b
+ * 1. (a + b) + c
+ * 2. ((a + b) + c) + d
+ * ```
+ */
+internal val KtBinaryExpression.fullChain: List<KtBinaryExpression>
+  get() = buildList {
+    val op = operationToken
+    var current: KtExpression? = this@fullChain
+    while (current is KtBinaryExpression && current.operationToken == op) {
+      add(current)
+      current = current.left
+    }
+  }
+      .asReversed()

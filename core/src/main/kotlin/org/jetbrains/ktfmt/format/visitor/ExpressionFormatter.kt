@@ -33,8 +33,8 @@ import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
  * - Any function call-related expressions are handled in [CallFormatter]
  */
 interface ExpressionFormatter : KotlinAstFormatter {
-  override fun formatInitializerExpression(initializer: KtExpression) {
-    builder.token("=")
+  override fun formatInitializerExpression(initializer: KtExpression, assignmentOp: String) {
+    builder.token(assignmentOp)
     if (initializer.isLambdaOrScopingFunction) {
       formatLambdaOrScopingFunction(initializer)
     } else if (initializer.isChainedScopingFunction) {
@@ -53,23 +53,22 @@ interface ExpressionFormatter : KotlinAstFormatter {
     }
   }
 
-  /** Example `this` or `this@Foo` */
   override fun formatThisExpression(expression: KtThisExpression) {
     builder.sync(expression)
     builder.token("this")
     format(expression.getTargetLabel())
   }
 
-  /** Example `Foo` or `@Foo` */
   override fun formatSimpleNameExpression(expression: KtSimpleNameExpression) {
     builder.sync(expression)
     when (expression) {
       is KtLabelReferenceExpression -> {
+        val identifier = expression.getIdentifier()?.text ?: fail()
         if (expression.text[0] == '@') {
           builder.token("@")
-          builder.token(expression.getIdentifier()?.text ?: fail())
+          builder.token(identifier)
         } else {
-          builder.token(expression.getIdentifier()?.text ?: fail())
+          builder.token(identifier)
           builder.token("@")
         }
       }
@@ -87,11 +86,11 @@ interface ExpressionFormatter : KotlinAstFormatter {
   }
 
   /**
-   * For example `a + b`, `a + b + c` or `a..b`
+   * We unwrap the left most expression from a chain of binary expressions and format the
+   * expressions left to right. For example `a + b + c + d` is parsed as `a + (b + (c + d))`, but we
+   * format is as `((a + b) + c) + d`.
    *
-   * The extra handling here drills to the left most expression and handles it for long chains of
-   * binary expressions that are formatted not accordingly to the associative values That is, we
-   * want to think of `a + b + c` as `(a + b) + c`, whereas the AST parses it as `a + (b + c)`
+   * @see [KtBinaryExpression.fullChain].
    */
   override fun formatBinaryExpression(expression: KtBinaryExpression) {
     builder.sync(expression)
@@ -101,57 +100,48 @@ interface ExpressionFormatter : KotlinAstFormatter {
       // Assignments are statements in Kotlin; we don't have to worry about compound assignment.
       format(expression.left)
       builder.space()
-      builder.token(expression.operationReference.text)
-      formatLambdaOrScopingFunction(expression.right)
+      formatInitializerExpression(expression.right!!, expression.operationReference.text)
       return
     }
 
-    val parts =
-        ArrayDeque<KtBinaryExpression>().apply {
-          var current: KtExpression? = expression
-          while (current is KtBinaryExpression && current.operationToken == op) {
-            addFirst(current)
-            current = current.left
-          }
-        }
-
-    val leftMostExpression = parts.first()
-    format(leftMostExpression.left)
-    for (leftExpression in parts) {
-      val isFirst = leftExpression === leftMostExpression
-
-      when (leftExpression.operationToken) {
-        KtTokens.RANGE,
-        KtTokens.RANGE_UNTIL -> {
-          if (isFirst) {
-            builder.open(expressionBreakIndent)
-          }
-          builder.token(leftExpression.operationReference.text)
-        }
-        KtTokens.ELVIS -> {
-          if (isFirst) {
-            builder.open(expressionBreakIndent)
-          }
-          builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
-          builder.token(leftExpression.operationReference.text)
-          builder.space()
-        }
-        else -> {
-          builder.space()
-          if (isFirst) {
-            builder.open(expressionBreakIndent)
-          }
-          builder.token(leftExpression.operationReference.text)
-          val fillMode =
-              if (leftExpression.operationReference.hasLineBreakingCommentBefore)
-                  Doc.FillMode.INDEPENDENT
-              else Doc.FillMode.UNIFIED
-          builder.breakOp(fillMode, " ", ZERO)
-        }
-      }
-      format(leftExpression.right)
+    val allExpressions = expression.fullChain
+    format(allExpressions.first().left)
+    for ((index, currentExpression) in allExpressions.withIndex()) {
+      formatBinaryOperationToken(currentExpression, index == 0)
+      format(currentExpression.right)
     }
     builder.close()
+  }
+
+  private fun formatBinaryOperationToken(expression: KtBinaryExpression, isFirst: Boolean = false) {
+    when (expression.operationToken) {
+      KtTokens.RANGE,
+      KtTokens.RANGE_UNTIL -> {
+        if (isFirst) {
+          builder.open(expressionBreakIndent)
+        }
+        builder.token(expression.operationReference.text)
+      }
+      KtTokens.ELVIS -> {
+        if (isFirst) {
+          builder.open(expressionBreakIndent)
+        }
+        builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
+        builder.token(expression.operationReference.text)
+        builder.space()
+      }
+      else -> {
+        builder.space()
+        if (isFirst) {
+          builder.open(expressionBreakIndent)
+        }
+        builder.token(expression.operationReference.text)
+        val fillMode =
+            if (expression.operationReference.hasLineBreakingCommentBefore) Doc.FillMode.INDEPENDENT
+            else Doc.FillMode.UNIFIED
+        builder.breakOp(fillMode, " ", ZERO)
+      }
+    }
   }
 
   override fun formatPostfixExpression(expression: KtPostfixExpression) {
@@ -191,9 +181,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
   override fun formatLabeledExpression(expression: KtLabeledExpression) {
     builder.sync(expression)
     format(expression.labelQualifier)
-    if (expression.baseExpression !is KtLambdaExpression) {
-      builder.space()
-    }
+    if (expression.baseExpression !is KtLambdaExpression) builder.space()
     format(expression.baseExpression)
   }
 
@@ -202,7 +190,6 @@ interface ExpressionFormatter : KotlinAstFormatter {
     builder.token(expression.text)
   }
 
-  /** Example `(1 + 1)` */
   override fun formatParenthesizedExpression(expression: KtParenthesizedExpression) {
     builder.sync(expression)
     builder.token("(")
@@ -210,13 +197,11 @@ interface ExpressionFormatter : KotlinAstFormatter {
     builder.token(")")
   }
 
-  /** Example `"Hello $world!"` or `"""Hello world!"""` */
   override fun formatStringTemplateExpression(expression: KtStringTemplateExpression) {
     builder.sync(expression)
     builder.token(WhitespaceTombstones.replaceTrailingWhitespaceWithTombstone(expression.text))
   }
 
-  /** Example `super` in `super.doIt(5)` or `super<Foo>` in `super<Foo>.doIt(5)` */
   override fun formatSuperExpression(expression: KtSuperExpression) {
     builder.sync(expression)
     builder.token("super")
@@ -266,7 +251,6 @@ interface ExpressionFormatter : KotlinAstFormatter {
     builder.token("class")
   }
 
-  /** Example `a is Int` or `b !is Int` */
   override fun formatIsExpression(expression: KtIsExpression) {
     builder.sync(expression)
     val openGroupBeforeLeft = expression.leftHandSide !is KtQualifiedExpression
@@ -289,7 +273,6 @@ interface ExpressionFormatter : KotlinAstFormatter {
     builder.close()
   }
 
-  /** Example `a as Int` or `a as? Int` */
   override fun formatBinaryWithTypeRHSExpression(expression: KtBinaryExpressionWithTypeRHS) {
     builder.sync(expression)
     val openGroupBeforeLeft = expression.left !is KtQualifiedExpression
@@ -303,14 +286,6 @@ interface ExpressionFormatter : KotlinAstFormatter {
     builder.close()
   }
 
-  /**
-   * Example:
-   * ```
-   * fun f() {
-   *   val a: Array<Int> = [1, 2, 3]
-   * }
-   * ```
-   */
   override fun formatCollectionLiteralExpression(expression: KtCollectionLiteralExpression) {
     builder.sync(expression)
     builder.block(expressionBreakIndent) {
