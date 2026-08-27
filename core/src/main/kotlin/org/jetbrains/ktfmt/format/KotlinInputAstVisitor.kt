@@ -28,7 +28,6 @@ import java.util.ArrayDeque
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
-import org.jetbrains.kotlin.com.intellij.psi.stubs.PsiFileStubImpl
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtBackingField
 import org.jetbrains.kotlin.psi.KtBlockExpression
@@ -76,8 +75,6 @@ import org.jetbrains.kotlin.psi.KtWhenConditionWithExpression
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.KtWhileExpression
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
-import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes
-import org.jetbrains.kotlin.psi.stubs.impl.KotlinPlaceHolderStubImpl
 import org.jetbrains.ktfmt.format.visitor.AbstractFormatterVisitor
 import org.jetbrains.ktfmt.format.visitor.AnnotationFormatter
 import org.jetbrains.ktfmt.format.visitor.CallFormatter
@@ -463,7 +460,7 @@ open class KotlinInputAstVisitor(
                     typeParameters = null,
                     receiverTypeReference = null,
                     name = null,
-                    parameterList = getParameterListWithBugFixes(component),
+                    parameterList = component.parameterList,
                     typeConstraintList = null,
                     bodyExpression = component.bodyBlockExpression ?: component.bodyExpression,
                     typeOrDelegationCall = component.returnTypeReference,
@@ -504,35 +501,6 @@ open class KotlinInputAstVisitor(
       if (initializer != null) {
         builder.space()
         formatInitializerExpression(initializer)
-      }
-    }
-  }
-
-  // Bug in Kotlin 1.9.10: KtPropertyAccessor is the direct parent of the left and right paren
-  // elements. Also parameterList is always null for getters. As a workaround, we create our own
-  // fake KtParameterList.
-  // TODO: won't need this after https://youtrack.jetbrains.com/issue/KT-70922
-  private fun getParameterListWithBugFixes(accessor: KtPropertyAccessor): KtParameterList? {
-    if (accessor.bodyExpression == null && accessor.bodyBlockExpression == null) return null
-
-    val stub = accessor.stub ?: PsiFileStubImpl(accessor.containingFile)
-
-    return object :
-        KtParameterList(KotlinPlaceHolderStubImpl(stub, KtStubElementTypes.VALUE_PARAMETER_LIST)) {
-      override fun getParameters(): List<KtParameter> {
-        return accessor.valueParameters
-      }
-
-      override fun getTrailingComma(): PsiElement? {
-        return accessor.parameterList?.trailingComma
-      }
-
-      override fun getLeftParenthesis(): PsiElement? {
-        return accessor.parameterList?.leftParenthesis
-      }
-
-      override fun getRightParenthesis(): PsiElement? {
-        return accessor.parameterList?.rightParenthesis
       }
     }
   }
