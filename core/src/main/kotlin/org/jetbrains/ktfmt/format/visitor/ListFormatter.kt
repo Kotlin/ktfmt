@@ -20,7 +20,133 @@ import org.jetbrains.kotlin.psi.psiUtil.children
 import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 import org.jetbrains.ktfmt.util.listToVisit
 
-interface ListFormatter : KotlinAstFormatter {
+/**
+ * Handles formatting of all list-like elements. Even though these elements are not semantically
+ * related, they are all formatted in a similar way via [formatCommaSeparatedList].
+ */
+interface ListFormatter {
+  context(_: FormatterStateHolder)
+  fun formatTypeArgumentList(list: KtTypeArgumentList)
+
+  context(_: FormatterStateHolder)
+  fun formatTypeParameterList(list: KtTypeParameterList)
+
+  context(_: FormatterStateHolder)
+  fun formatTypeConstraintList(list: KtTypeConstraintList)
+
+  context(_: FormatterStateHolder)
+  fun formatSuperTypeList(list: KtSuperTypeList)
+
+  context(_: FormatterStateHolder)
+  fun formatValueArgumentList(list: KtValueArgumentList): BreakTag?
+
+  context(_: FormatterStateHolder)
+  fun formatModifierList(list: KtModifierList)
+
+  context(_: FormatterStateHolder)
+  fun formatContextReceiverList(contextReceiverList: KtContextReceiverList)
+
+  context(_: FormatterStateHolder)
+  fun formatParameterList(list: KtParameterList)
+
+  context(_: FormatterStateHolder)
+  fun formatImportList(importList: KtImportList)
+
+  context(_: FormatterStateHolder)
+  fun formatFileAnnotationList(fileAnnotationList: KtFileAnnotationList)
+
+  /**
+   * format each element in [list], with comma (,) {} tokens in-between.
+   *
+   * Example:
+   * ```
+   * a, b, c, 3, 4, 5
+   * ```
+   *
+   * Either the entire list fits in one line, or each element is put on its own line:
+   * ```
+   * a,
+   * b,
+   * c,
+   * 3,
+   * 4,
+   * 5
+   * ```
+   *
+   * Optionally include a prefix and postfix:
+   * ```
+   *   (
+   *     a,
+   *     b,
+   *     c,
+   * ) {}
+   * ```
+   *
+   * @param forceMultiline if true, each element is placed on its own line (even if they could've
+   *   fit in a single line) {}, and a trailing comma is emitted.
+   *
+   * Example:
+   * ```
+   * a,
+   * b,
+   * ```
+   *
+   * @param wrapInBlock if true, place all the elements in a block. When there's no
+   *   [emitLeadingBreak], this will be negatively indented. Note that the [prefix] and [postfix]
+   *   aren't included in the block.
+   * @param emitLeadingBreak if true, break before the first element.
+   * @param prefix if provided, emit this before the first element.
+   * @param postfix if provided, emit this after the last element (or trailing comma) {}.
+   * @param breakAfterPrefix if true, emit a break after [prefix], but before the start of the
+   *   block.
+   * @param breakBeforePostfix if true, place a break after the last element. Redundant when
+   *   [forceMultiline] is true.
+   * @return a [BreakTag] which can tell you if a break was taken, but only when the list doesn't
+   *   terminate in a negative closing indent.
+   *
+   * Example 1, this returns a BreakTag which tells you a break wasn't taken:
+   * ```
+   * (arg1, arg2) {}
+   * ```
+   *
+   * Example 2, this returns a BreakTag which tells you a break WAS taken:
+   * ```
+   * (
+   *     arg1,
+   *     arg2) {}
+   * ```
+   *
+   * Example 3, this returns null:
+   * ```
+   * (
+   *     arg1,
+   *     arg2,
+   * ) {}
+   * ```
+   *
+   * Example 4, this also returns null (similar to example 2, but Google style) {}:
+   * ```
+   * (
+   *     arg1,
+   *     arg2
+   * ) {}
+   * ```
+   */
+  context(_: FormatterStateHolder)
+  fun formatCommaSeparatedList(
+      list: Iterable<PsiElement>,
+      forceMultiline: Boolean,
+      wrapInBlock: Boolean,
+      emitLeadingBreak: Boolean,
+      prefix: String?,
+      postfix: String?,
+      breakAfterPrefix: Boolean,
+      breakBeforePostfix: Boolean,
+  ): BreakTag?
+}
+
+internal open class ListFormatterImpl : ListFormatter {
+  context(_: FormatterStateHolder)
   override fun formatTypeArgumentList(list: KtTypeArgumentList) {
     builder.sync(list)
     formatCommaSeparatedList(
@@ -32,6 +158,7 @@ interface ListFormatter : KotlinAstFormatter {
     )
   }
 
+  context(_: FormatterStateHolder)
   override fun formatTypeParameterList(list: KtTypeParameterList) {
     builder.sync(list)
     builder.block(expressionBreakIndent) {
@@ -45,6 +172,7 @@ interface ListFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatTypeConstraintList(list: KtTypeConstraintList) {
     builder.block(expressionBreakIndent) {
       builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO)
@@ -57,6 +185,7 @@ interface ListFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatSuperTypeList(list: KtSuperTypeList) {
     builder.sync(list)
     builder.block(expressionBreakIndent) { formatCommaSeparatedList(list.entries) }
@@ -66,6 +195,7 @@ interface ListFormatter : KotlinAstFormatter {
    * @return a [BreakTag] which can tell you if a break was taken, but only when the list doesn't
    *   terminate in a negative closing indent. See [formatCommaSeparatedList] for examples.
    */
+  context(_: FormatterStateHolder)
   override fun formatValueArgumentList(list: KtValueArgumentList): BreakTag? {
     builder.sync(list)
 
@@ -107,6 +237,7 @@ interface ListFormatter : KotlinAstFormatter {
     )
   }
 
+  context(_: FormatterStateHolder)
   override fun formatModifierList(list: KtModifierList) {
     builder.sync(list)
     var onlyAnnotationsSoFar = true
@@ -144,6 +275,7 @@ interface ListFormatter : KotlinAstFormatter {
    * Note this also supports the legacy receiver format of `context(Logger, Raise<Error>)` for
    * backward compatibility and for function types
    */
+  context(_: FormatterStateHolder)
   override fun formatContextReceiverList(contextReceiverList: KtContextReceiverList) {
     builder.sync(contextReceiverList)
     builder.token("context")
@@ -156,6 +288,7 @@ interface ListFormatter : KotlinAstFormatter {
     )
   }
 
+  context(_: FormatterStateHolder)
   override fun formatParameterList(list: KtParameterList) {
     formatCommaSeparatedList(
         list.parameters,
@@ -165,11 +298,13 @@ interface ListFormatter : KotlinAstFormatter {
     )
   }
 
+  context(_: FormatterStateHolder)
   override fun formatImportList(importList: KtImportList) {
     builder.sync(importList)
     importList.imports.forEach { format(it) }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatFileAnnotationList(fileAnnotationList: KtFileAnnotationList) {
     for (child in fileAnnotationList.node.children()) {
       if (child is PsiElement) {
@@ -180,6 +315,7 @@ interface ListFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatCommaSeparatedList(
       list: Iterable<PsiElement>,
       forceMultiline: Boolean,

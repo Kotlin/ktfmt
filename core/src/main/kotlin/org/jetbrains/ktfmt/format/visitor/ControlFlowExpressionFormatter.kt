@@ -28,8 +28,55 @@ import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
  * `catch`, `finally`, `return`, `throw`, `continue`, `break`. Formatting of all other expressions
  * is handled by [ExpressionFormatter].
  */
-interface ControlFlowExpressionFormatter : KotlinAstFormatter {
+interface ControlFlowExpressionFormatter {
+  context(_: FormatterStateHolder)
+  fun formatReturnExpression(expression: KtReturnExpression)
 
+  context(_: FormatterStateHolder)
+  fun formatWhenExpression(expression: KtWhenExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatWhenConditionWithExpression(condition: KtWhenConditionWithExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatWhenConditionIsPattern(condition: KtWhenConditionIsPattern)
+
+  context(_: FormatterStateHolder)
+  fun formatWhenConditionInRange(condition: KtWhenConditionInRange)
+
+  context(_: FormatterStateHolder)
+  fun formatIfExpression(expression: KtIfExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatForExpression(expression: KtForExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatWhileExpression(expression: KtWhileExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatDoWhileExpression(expression: KtDoWhileExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatBreakExpression(expression: KtBreakExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatContinueExpression(expression: KtContinueExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatTryExpression(expression: KtTryExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatCatchSection(catchClause: KtCatchClause)
+
+  context(_: FormatterStateHolder)
+  fun formatFinallySection(finallySection: KtFinallySection)
+
+  context(_: FormatterStateHolder)
+  fun formatThrowExpression(expression: KtThrowExpression)
+}
+
+internal class ControlFlowExpressionFormatterImpl : ControlFlowExpressionFormatter {
+  context(_: FormatterStateHolder)
   override fun formatReturnExpression(expression: KtReturnExpression) {
     builder.sync(expression)
     builder.token("return")
@@ -42,6 +89,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     builder.guessToken(";")
   }
 
+  context(_: FormatterStateHolder)
   override fun formatWhenExpression(expression: KtWhenExpression) {
     builder.sync(expression)
     builder.block {
@@ -108,11 +156,13 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatWhenConditionWithExpression(condition: KtWhenConditionWithExpression) {
     builder.sync(condition)
     format(condition.expression)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatWhenConditionIsPattern(condition: KtWhenConditionIsPattern) {
     builder.sync(condition)
     builder.token(if (condition.isNegated) "!is" else "is")
@@ -120,6 +170,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     format(condition.typeReference)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatWhenConditionInRange(condition: KtWhenConditionInRange) {
     builder.sync(condition)
     builder.token(if (condition.isNegated) "!in" else "in")
@@ -127,6 +178,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     format(condition.rangeExpression)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatIfExpression(expression: KtIfExpression) {
     builder.sync(expression)
     builder.block {
@@ -164,6 +216,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatForExpression(expression: KtForExpression) {
     builder.sync(expression)
     builder.block {
@@ -183,6 +236,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatWhileExpression(expression: KtWhileExpression) {
     builder.sync(expression)
     emitKeywordWithCondition("while", expression.condition)
@@ -190,6 +244,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     format(expression.body)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatDoWhileExpression(expression: KtDoWhileExpression) {
     builder.sync(expression)
     builder.token("do")
@@ -201,18 +256,21 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     emitKeywordWithCondition("while", expression.condition)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatBreakExpression(expression: KtBreakExpression) {
     builder.sync(expression)
     builder.token("break")
     format(expression.labelQualifier)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatContinueExpression(expression: KtContinueExpression) {
     builder.sync(expression)
     builder.token("continue")
     format(expression.labelQualifier)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatTryExpression(expression: KtTryExpression) {
     builder.sync(expression)
     builder.token("try")
@@ -224,6 +282,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     format(expression.finallyBlock)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatCatchSection(catchClause: KtCatchClause) {
     builder.sync(catchClause)
     builder.space()
@@ -242,6 +301,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     format(catchClause.catchBody)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatFinallySection(finallySection: KtFinallySection) {
     builder.sync(finallySection)
     builder.space()
@@ -250,6 +310,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
     format(finallySection.finalExpression)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatThrowExpression(expression: KtThrowExpression) {
     builder.sync(expression)
     builder.token("throw")
@@ -263,6 +324,7 @@ interface ControlFlowExpressionFormatter : KotlinAstFormatter {
    * @param surroundConditionWithParens a flag to control whether parens surrounds the condition.
    *   For example, guard conditions do not use parens.
    */
+  context(_: FormatterStateHolder)
   private fun emitKeywordWithCondition(
       keyword: String,
       condition: KtExpression?,

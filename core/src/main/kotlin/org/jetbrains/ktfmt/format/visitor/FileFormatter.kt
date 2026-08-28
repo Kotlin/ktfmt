@@ -12,15 +12,38 @@ import org.jetbrains.kotlin.psi.KtScript
 import org.jetbrains.kotlin.psi.KtScriptInitializer
 
 /** Handles formatting of file-level PSI nodes */
-interface FileFormatter : KotlinAstFormatter {
+interface FileFormatter {
+  context(_: FormatterStateHolder)
+  fun formatKtFile(file: KtFile)
+
+  context(_: FormatterStateHolder)
+  fun formatKtScript(script: KtScript)
+
+  context(_: FormatterStateHolder)
+  fun formatStatement(statement: PsiElement)
+
+  context(_: FormatterStateHolder)
+  fun formatStatements(statements: Array<PsiElement>)
+
+  context(_: FormatterStateHolder)
+  fun formatPackageDirective(directive: KtPackageDirective)
+
+  context(_: FormatterStateHolder)
+  fun formatImportDirective(directive: KtImportDirective)
+}
+
+internal class FileFormatterImpl : FileFormatter {
+  context(_: FormatterStateHolder)
   override fun formatKtFile(file: KtFile) {
     formatFile(file)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatKtScript(script: KtScript) {
     formatFile(script.blockExpression)
   }
 
+  context(_: FormatterStateHolder)
   private fun formatFile(file: KtElement) {
     markForPartialFormat()
     var prev: PsiElement? = null
@@ -38,11 +61,13 @@ interface FileFormatter : KotlinAstFormatter {
     markForPartialFormat()
   }
 
+  context(_: FormatterStateHolder)
   override fun formatStatement(statement: PsiElement) {
     builder.block { format(statement) }
     builder.guessToken(";")
   }
 
+  context(_: FormatterStateHolder)
   override fun formatStatements(statements: Array<PsiElement>) {
     var first = true
     builder.guessToken(";")
@@ -58,6 +83,7 @@ interface FileFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatPackageDirective(directive: KtPackageDirective) {
     builder.sync(directive)
     if (directive.packageKeyword == null) {
@@ -79,6 +105,7 @@ interface FileFormatter : KotlinAstFormatter {
     builder.forcedBreak()
   }
 
+  context(_: FormatterStateHolder)
   override fun formatImportDirective(directive: KtImportDirective) {
     builder.sync(directive)
     builder.token("import")

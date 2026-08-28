@@ -10,7 +10,22 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtReturnExpression
 import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 
-interface AnnotationFormatter : KotlinAstFormatter {
+interface AnnotationFormatter {
+  context(_: FormatterStateHolder)
+  fun formatAnnotatedExpression(expression: KtAnnotatedExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatAnnotation(annotation: KtAnnotation)
+
+  context(_: FormatterStateHolder)
+  fun formatAnnotationUseSiteTarget(annotationTarget: KtAnnotationUseSiteTarget)
+
+  context(_: FormatterStateHolder)
+  fun formatAnnotationEntry(annotationEntry: KtAnnotationEntry)
+}
+
+internal open class AnnotationFormatterImpl : AnnotationFormatter {
+  context(_: FormatterStateHolder)
   override fun formatAnnotatedExpression(expression: KtAnnotatedExpression) {
     builder.sync(expression)
     builder.block {
@@ -46,6 +61,7 @@ interface AnnotationFormatter : KotlinAstFormatter {
    * A KtAnnotation is used only to group multiple annotations with the same use-site-target. It
    * only appears in a modifier list since annotated expressions do not have use-site-targets.
    */
+  context(_: FormatterStateHolder)
   override fun formatAnnotation(annotation: KtAnnotation) {
     builder.sync(annotation)
     builder.block {
@@ -76,10 +92,12 @@ interface AnnotationFormatter : KotlinAstFormatter {
     builder.forcedBreak()
   }
 
+  context(_: FormatterStateHolder)
   override fun formatAnnotationUseSiteTarget(annotationTarget: KtAnnotationUseSiteTarget) {
     builder.token(annotationTarget.getAnnotationUseSiteTarget().renderName)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatAnnotationEntry(annotationEntry: KtAnnotationEntry) {
     builder.sync(annotationEntry)
     if (annotationEntry.atSymbol != null) {

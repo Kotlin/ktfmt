@@ -12,14 +12,17 @@ import org.jetbrains.kotlin.psi.KtPrimaryConstructor
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
 import org.jetbrains.kotlin.psi.psiUtil.children
-import org.jetbrains.ktfmt.format.visitor.ListFormatter
+import org.jetbrains.ktfmt.format.visitor.FormatterStateHolder
+import org.jetbrains.ktfmt.format.visitor.ListFormatterImpl
+import org.jetbrains.ktfmt.format.visitor.builder
+import org.jetbrains.ktfmt.format.visitor.format
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
 
 /**
  * Custom formatter for KotlinLang style. Handles annotation formatting for declarations and types
  * by overriding [formatModifierList]. For annotations on expressions see
- * [KotlinLangAnnotationFormatter].
+ * [KotlinLangAnnotationFormatterImpl].
  *
  * General rules for annotations in modifier lists:
  * - One annotation per line (forced breaks) for class-like declarations
@@ -30,7 +33,8 @@ import org.jetbrains.ktfmt.format.visitor.token
  * - One annotation per line for properties
  * - No forced breaks for everything else
  */
-interface KotlinLangListFormatter : ListFormatter {
+internal class KotlinLangListFormatterImpl : ListFormatterImpl() {
+  context(_: FormatterStateHolder)
   override fun formatModifierList(list: KtModifierList) {
     builder.sync(list)
     var onlyAnnotationsSoFar = true

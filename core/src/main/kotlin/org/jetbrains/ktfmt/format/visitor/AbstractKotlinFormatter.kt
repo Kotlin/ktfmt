@@ -1,9 +1,8 @@
 package org.jetbrains.ktfmt.format.visitor
 
 import com.google.common.base.Throwables
-import com.google.common.collect.ImmutableList
 import com.google.googlejavaformat.FormattingError
-import java.util.ArrayDeque
+import com.google.googlejavaformat.OpsBuilder
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtAnnotation
@@ -32,7 +31,6 @@ import org.jetbrains.kotlin.psi.KtDestructuringDeclarationEntry
 import org.jetbrains.kotlin.psi.KtDoWhileExpression
 import org.jetbrains.kotlin.psi.KtDynamicType
 import org.jetbrains.kotlin.psi.KtEnumEntry
-import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtFileAnnotationList
 import org.jetbrains.kotlin.psi.KtFinallySection
@@ -86,17 +84,24 @@ import org.jetbrains.kotlin.psi.KtWhenConditionIsPattern
 import org.jetbrains.kotlin.psi.KtWhenConditionWithExpression
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlin.psi.KtWhileExpression
+import org.jetbrains.ktfmt.format.FormattingOptions
 
-abstract class AbstractFormatterVisitor : KtTreeVisitorVoid(), KotlinAstFormatter {
+abstract class AbstractKotlinFormatter(
+    val options: FormattingOptions,
+    val builder: OpsBuilder,
+    val annotationFormatter: AnnotationFormatter = AnnotationFormatterImpl(),
+    val callFormatter: CallFormatter = CallFormatterImpl(),
+    val controlFlowExpressionFormatter: ControlFlowExpressionFormatter =
+        ControlFlowExpressionFormatterImpl(),
+    val declarationFormatter: DeclarationFormatter = DeclarationFormatterImpl(),
+    val expressionFormatter: ExpressionFormatter = ExpressionFormatterImpl(),
+    val fileFormatter: FileFormatter = FileFormatterImpl(),
+    val listFormatter: ListFormatter = ListFormatterImpl(),
+    val typeFormatter: TypeFormatter = TypeFormatterImpl(),
+) : KtTreeVisitorVoid(), FormatterStateHolder {
+  override val state = FormatterState(options, builder, this)
 
-  private val inExpressionTracker = ArrayDeque(ImmutableList.of(false))
-
-  override val inExpression: Boolean
-    get() = inExpressionTracker.last()
-
-  override var inImport: Boolean = false
-
-  override fun format(element: PsiElement?) {
+  fun format(element: PsiElement?) {
     element?.accept(this)
   }
 
@@ -395,9 +400,11 @@ abstract class AbstractFormatterVisitor : KtTreeVisitorVoid(), KotlinAstFormatte
   }
 
   override fun visitImportDirective(directive: KtImportDirective) {
-    inImport = true
-    formatImportDirective(directive)
-    inImport = false
+    state.inImport {
+      context(state) {
+        formatImportDirective(directive)
+      }
+    }
   }
 
   override fun visitAnnotatedExpression(expression: KtAnnotatedExpression) {
@@ -435,17 +442,16 @@ abstract class AbstractFormatterVisitor : KtTreeVisitorVoid(), KotlinAstFormatte
    * @throws FormattingError
    */
   override fun visitElement(element: PsiElement) {
-    inExpressionTracker.addLast(element is KtExpression || inExpressionTracker.last())
-    val previous = builder.depth()
-    try {
-      super.visitElement(element)
-    } catch (e: FormattingError) {
-      throw e
-    } catch (t: Throwable) {
-      throw FormattingError(builder.diagnostic(Throwables.getStackTraceAsString(t)))
-    } finally {
-      inExpressionTracker.removeLast()
+    state.inElement(element) {
+      val previous = builder.depth()
+      try {
+        super.visitElement(element)
+      } catch (e: FormattingError) {
+        throw e
+      } catch (t: Throwable) {
+        throw FormattingError(builder.diagnostic(Throwables.getStackTraceAsString(t)))
+      }
+      builder.checkClosed(previous)
     }
-    builder.checkClosed(previous)
   }
 }

@@ -32,7 +32,71 @@ import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
  * Formatter that handles formatting of all basic **non-control flow** expressions. Exceptions:
  * - Any function call-related expressions are handled in [CallFormatter]
  */
-interface ExpressionFormatter : KotlinAstFormatter {
+interface ExpressionFormatter {
+  /**
+   * Format the right-hand side of an initializer expression, i.e. the expression after `=`
+   * (inclusively)
+   *
+   * @param assignmentOp The symbol that separates the initializer from the expression, see
+   *   [org.jetbrains.kotlin.lexer.KtTokens.ALL_ASSIGNMENTS]
+   */
+  context(_: FormatterStateHolder)
+  fun formatInitializerExpression(
+      initializer: KtExpression,
+      assignmentOp: String,
+  )
+
+  context(_: FormatterStateHolder)
+  fun formatThisExpression(expression: KtThisExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatSimpleNameExpression(expression: KtSimpleNameExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatReferenceExpression(expression: KtReferenceExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatBinaryExpression(expression: KtBinaryExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatPostfixExpression(expression: KtPostfixExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatPrefixExpression(expression: KtPrefixExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatLabeledExpression(expression: KtLabeledExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatConstantExpression(expression: KtConstantExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatParenthesizedExpression(expression: KtParenthesizedExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatStringTemplateExpression(expression: KtStringTemplateExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatSuperExpression(expression: KtSuperExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatCallableReferenceExpression(expression: KtCallableReferenceExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatClassLiteralExpression(expression: KtClassLiteralExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatIsExpression(expression: KtIsExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatBinaryWithTypeRHSExpression(expression: KtBinaryExpressionWithTypeRHS)
+
+  context(_: FormatterStateHolder)
+  fun formatCollectionLiteralExpression(expression: KtCollectionLiteralExpression)
+}
+
+internal class ExpressionFormatterImpl : ExpressionFormatter {
+  context(_: FormatterStateHolder)
   override fun formatInitializerExpression(initializer: KtExpression, assignmentOp: String) {
     builder.token(assignmentOp)
     if (initializer.isLambdaOrScopingFunction) {
@@ -53,12 +117,14 @@ interface ExpressionFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatThisExpression(expression: KtThisExpression) {
     builder.sync(expression)
     builder.token("this")
     format(expression.getTargetLabel())
   }
 
+  context(_: FormatterStateHolder)
   override fun formatSimpleNameExpression(expression: KtSimpleNameExpression) {
     builder.sync(expression)
     when (expression) {
@@ -80,6 +146,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatReferenceExpression(expression: KtReferenceExpression) {
     builder.sync(expression)
     builder.token(expression.text)
@@ -92,6 +159,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
    *
    * @see [KtBinaryExpression.fullChain].
    */
+  context(_: FormatterStateHolder)
   override fun formatBinaryExpression(expression: KtBinaryExpression) {
     builder.sync(expression)
     val op = expression.operationToken
@@ -113,6 +181,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
     builder.close()
   }
 
+  context(_: FormatterStateHolder)
   private fun formatBinaryOperationToken(expression: KtBinaryExpression, isFirst: Boolean = false) {
     when (expression.operationToken) {
       KtTokens.RANGE,
@@ -144,6 +213,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatPostfixExpression(expression: KtPostfixExpression) {
     builder.sync(expression)
     builder.block {
@@ -161,6 +231,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatPrefixExpression(expression: KtPrefixExpression) {
     builder.sync(expression)
     builder.block {
@@ -178,6 +249,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatLabeledExpression(expression: KtLabeledExpression) {
     builder.sync(expression)
     format(expression.labelQualifier)
@@ -185,11 +257,13 @@ interface ExpressionFormatter : KotlinAstFormatter {
     format(expression.baseExpression)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatConstantExpression(expression: KtConstantExpression) {
     builder.sync(expression)
     builder.token(expression.text)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatParenthesizedExpression(expression: KtParenthesizedExpression) {
     builder.sync(expression)
     builder.token("(")
@@ -197,11 +271,13 @@ interface ExpressionFormatter : KotlinAstFormatter {
     builder.token(")")
   }
 
+  context(_: FormatterStateHolder)
   override fun formatStringTemplateExpression(expression: KtStringTemplateExpression) {
     builder.sync(expression)
     builder.token(WhitespaceTombstones.replaceTrailingWhitespaceWithTombstone(expression.text))
   }
 
+  context(_: FormatterStateHolder)
   override fun formatSuperExpression(expression: KtSuperExpression) {
     builder.sync(expression)
     builder.token("super")
@@ -215,6 +291,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
   }
 
   /** Example `String::isNullOrEmpty` */
+  context(_: FormatterStateHolder)
   override fun formatCallableReferenceExpression(expression: KtCallableReferenceExpression) {
     builder.sync(expression)
     format(expression.receiverExpression)
@@ -234,6 +311,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatClassLiteralExpression(expression: KtClassLiteralExpression) {
     builder.sync(expression)
     val receiverExpression = expression.receiverExpression
@@ -251,6 +329,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
     builder.token("class")
   }
 
+  context(_: FormatterStateHolder)
   override fun formatIsExpression(expression: KtIsExpression) {
     builder.sync(expression)
     val openGroupBeforeLeft = expression.leftHandSide !is KtQualifiedExpression
@@ -273,6 +352,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
     builder.close()
   }
 
+  context(_: FormatterStateHolder)
   override fun formatBinaryWithTypeRHSExpression(expression: KtBinaryExpressionWithTypeRHS) {
     builder.sync(expression)
     val openGroupBeforeLeft = expression.left !is KtQualifiedExpression
@@ -286,6 +366,7 @@ interface ExpressionFormatter : KotlinAstFormatter {
     builder.close()
   }
 
+  context(_: FormatterStateHolder)
   override fun formatCollectionLiteralExpression(expression: KtCollectionLiteralExpression) {
     builder.sync(expression)
     builder.block(expressionBreakIndent) {

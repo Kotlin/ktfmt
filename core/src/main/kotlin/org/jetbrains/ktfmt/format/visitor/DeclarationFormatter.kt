@@ -46,7 +46,59 @@ import org.jetbrains.ktfmt.util.ownValOrVarKeywordText
  * - Properties (class properties, top-level properties and local properties)
  * - Destructuring declarations
  */
-interface DeclarationFormatter : KotlinAstFormatter {
+interface DeclarationFormatter {
+  context(_: FormatterStateHolder)
+  fun formatNamedFunction(function: KtNamedFunction)
+
+  context(_: FormatterStateHolder)
+  fun formatClassOrObject(classOrObject: KtClassOrObject)
+
+  context(_: FormatterStateHolder)
+  fun formatPrimaryConstructor(constructor: KtPrimaryConstructor)
+
+  context(_: FormatterStateHolder)
+  fun formatProperty(property: KtProperty)
+
+  context(_: FormatterStateHolder)
+  fun formatSecondaryConstructor(constructor: KtSecondaryConstructor)
+
+  context(_: FormatterStateHolder)
+  fun formatConstructorDelegationCall(call: KtConstructorDelegationCall)
+
+  context(_: FormatterStateHolder)
+  fun formatClassInitializer(initializer: KtClassInitializer)
+
+  context(_: FormatterStateHolder)
+  fun formatSuperTypeCallEntry(call: KtSuperTypeCallEntry)
+
+  context(_: FormatterStateHolder)
+  fun formatDelegatedSuperTypeEntry(specifier: KtDelegatedSuperTypeEntry)
+
+  context(_: FormatterStateHolder)
+  fun formatClassBody(body: KtClassBody)
+
+  context(_: FormatterStateHolder)
+  fun formatEnumEntry(enumEntry: KtEnumEntry)
+
+  context(_: FormatterStateHolder)
+  fun formatParameter(parameter: KtParameter)
+
+  context(_: FormatterStateHolder)
+  fun formatBlockExpression(expression: KtBlockExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatDestructuringDeclaration(
+      destructuringDeclaration: KtDestructuringDeclaration,
+  )
+
+  context(_: FormatterStateHolder)
+  fun formatDestructuringDeclarationEntry(
+      multiDeclarationEntry: KtDestructuringDeclarationEntry,
+  )
+}
+
+internal class DeclarationFormatterImpl : DeclarationFormatter {
+  context(_: FormatterStateHolder)
   override fun formatNamedFunction(function: KtNamedFunction) {
     builder.sync(function)
     builder.block {
@@ -66,6 +118,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatClassOrObject(classOrObject: KtClassOrObject) {
     builder.sync(classOrObject)
     val contextReceiverList =
@@ -116,6 +169,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatPrimaryConstructor(constructor: KtPrimaryConstructor) {
     builder.sync(constructor)
     builder.block {
@@ -137,6 +191,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatProperty(property: KtProperty) {
     builder.sync(property)
     builder.block {
@@ -160,6 +215,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatSecondaryConstructor(constructor: KtSecondaryConstructor) {
     builder.sync(constructor)
     builder.block {
@@ -180,6 +236,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatConstructorDelegationCall(call: KtConstructorDelegationCall) {
     // Work around a misfeature in kotlin-compiler: call.calleeExpression.accept doesn't call
     // visitReferenceExpression, but calls visitElement instead.
@@ -194,6 +251,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatClassInitializer(initializer: KtClassInitializer) {
     builder.sync(initializer)
     builder.token("init")
@@ -201,11 +259,13 @@ interface DeclarationFormatter : KotlinAstFormatter {
     format(initializer.body)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatSuperTypeCallEntry(call: KtSuperTypeCallEntry) {
     builder.sync(call)
     formatFunctionCall(call.calleeExpression, null, call.valueArgumentList, call.trailingLambda)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatDelegatedSuperTypeEntry(specifier: KtDelegatedSuperTypeEntry) {
     builder.sync(specifier)
     format(specifier.typeReference)
@@ -215,6 +275,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     format(specifier.delegateExpression)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatClassBody(body: KtClassBody) {
     builder.sync(body)
     emitBracedBlock(body) { children ->
@@ -269,6 +330,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatEnumEntry(enumEntry: KtEnumEntry) {
     builder.sync(enumEntry)
     builder.block {
@@ -282,6 +344,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatParameter(parameter: KtParameter) {
     builder.sync(parameter)
     builder.block {
@@ -308,11 +371,13 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatBlockExpression(expression: KtBlockExpression) {
     builder.sync(expression)
     emitBracedBlock(expression) { children -> formatStatements(children) }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatDestructuringDeclaration(
       destructuringDeclaration: KtDestructuringDeclaration,
   ) {
@@ -347,6 +412,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatDestructuringDeclarationEntry(
       multiDeclarationEntry: KtDestructuringDeclarationEntry,
   ) {
@@ -368,6 +434,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
    * - `a: Int`
    * - `private val b:
    */
+  context(_: FormatterStateHolder)
   private fun emitPropertyDeclaration(
       modifiers: KtModifierList?,
       valOrVarKeyword: String?,
@@ -498,6 +565,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
    * @param typeOrDelegationCall for functions, the return typeOrDelegationCall; for classes, the
    *   list of supertypes.
    */
+  context(_: FormatterStateHolder)
   private fun emitFunctionDeclaration(
       contextReceiverList: KtContextReceiverList?,
       modifierList: KtModifierList?,
@@ -601,6 +669,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   private fun emitBracedBlock(
       bodyBlockExpression: PsiElement,
       emitChildren: (Array<PsiElement>) -> Unit,
@@ -624,6 +693,7 @@ interface DeclarationFormatter : KotlinAstFormatter {
     builder.token("}", blockIndent)
   }
 
+  context(_: FormatterStateHolder)
   private fun emitBackingField(backingField: KtBackingField) {
     builder.sync(backingField)
     builder.block {

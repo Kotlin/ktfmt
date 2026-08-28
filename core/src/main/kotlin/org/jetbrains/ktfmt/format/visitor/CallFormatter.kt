@@ -32,7 +32,87 @@ import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
  * - Qualified expressions
  * - Array access expressions
  */
-interface CallFormatter : KotlinAstFormatter {
+interface CallFormatter {
+  /**
+   * @param wrapInBlock if true, the argument is emitted inside its own [OpsBuilder] block, so it
+   *   can break independently of its siblings.
+   * @param brokeBeforeBrace see [formatLambdaExpression]; `null` when no break tag is being tracked
+   *   for this argument.
+   */
+  context(_: FormatterStateHolder)
+  fun formatArgument(
+      argument: KtValueArgument,
+      wrapInBlock: Boolean,
+      brokeBeforeBrace: BreakTag?,
+  )
+
+  context(_: FormatterStateHolder)
+  fun formatCallExpression(callExpression: KtCallExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatFunctionCall(
+      callee: KtExpression?,
+      typeArgumentList: KtTypeArgumentList?,
+      argumentList: KtValueArgumentList?,
+      trailingLambda: KtLambdaArgument?,
+      argumentsIndent: Indentation,
+      lambdaIndent: Indentation,
+  )
+
+  /**
+   * @param brokeBeforeBrace used for tracking if a break was taken right before the lambda
+   *   expression. Useful for scoping functions where we want good looking indentation. For example,
+   *   here we have correct indentation before `bar()` and `car()` because we can detect the break
+   *   after the equals:
+   * ```
+   * fun foo() =
+   *     coroutineScope { x ->
+   *       bar()
+   *       car()
+   *     }
+   * ```
+   */
+  context(_: FormatterStateHolder)
+  fun formatLambdaExpression(
+      lambdaExpression: KtLambdaExpression,
+      brokeBeforeBrace: BreakTag?,
+  )
+
+  context(_: FormatterStateHolder)
+  fun formatLambdaBody(
+      lambdaExpression: KtLambdaExpression,
+      bodyIndent: Indentation,
+      braceIndent: Indentation,
+  )
+
+  context(_: FormatterStateHolder)
+  fun formatChainedBlockLikeCall(
+      expression: KtQualifiedExpression,
+      emitLeadingBreak: Boolean,
+  )
+
+  context(_: FormatterStateHolder)
+  fun formatChainedScopingFunction(
+      expression: KtQualifiedExpression,
+      emitLeadingBreak: Boolean,
+  )
+
+  /** See [isLambdaOrScopingFunction] for which expressions this applies to, with examples. */
+  context(_: FormatterStateHolder)
+  fun formatLambdaOrScopingFunction(
+      expr: PsiElement?,
+      emitLeadingBreak: Boolean,
+  )
+
+  context(_: FormatterStateHolder)
+  fun formatQualifiedExpression(expression: KtQualifiedExpression)
+
+  context(_: FormatterStateHolder)
+  fun formatArrayAccessExpression(expression: KtArrayAccessExpression)
+}
+
+internal class CallFormatterImpl : CallFormatter {
+  context(_: FormatterStateHolder)
   override fun formatArgument(
       argument: KtValueArgument,
       wrapInBlock: Boolean,
@@ -68,6 +148,7 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatCallExpression(callExpression: KtCallExpression) {
     builder.sync(callExpression)
     with(callExpression) {
@@ -90,6 +171,7 @@ interface CallFormatter : KotlinAstFormatter {
    * @param argumentsIndent how to indent [argumentList], if present
    * @param lambdaIndent how to indent [trailingLambda], if present
    */
+  context(_: FormatterStateHolder)
   override fun formatFunctionCall(
       callee: KtExpression?,
       typeArgumentList: KtTypeArgumentList?,
@@ -127,6 +209,7 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatLambdaExpression(
       lambdaExpression: KtLambdaExpression,
       brokeBeforeBrace: BreakTag?,
@@ -185,6 +268,7 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   private fun formatLambdaArguments(
       valueParameterList: KtParameterList,
       valueParametersIndent: Indentation,
@@ -203,7 +287,8 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
-  private fun formatLambdaBody(
+  context(_: FormatterStateHolder)
+  override fun formatLambdaBody(
       lambdaExpression: KtLambdaExpression,
       bodyIndent: Indentation,
       braceIndent: Indentation,
@@ -249,6 +334,7 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatChainedBlockLikeCall(
       expression: KtQualifiedExpression,
       emitLeadingBreak: Boolean,
@@ -280,6 +366,7 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatChainedScopingFunction(
       expression: KtQualifiedExpression,
       emitLeadingBreak: Boolean,
@@ -317,6 +404,7 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatLambdaOrScopingFunction(expr: PsiElement?, emitLeadingBreak: Boolean) {
     val breakToExpr = BreakTag()
     val breakSpace = if (emitLeadingBreak) " " else ""
@@ -342,6 +430,7 @@ interface CallFormatter : KotlinAstFormatter {
     formatLambdaExpression(scopingLambda.lambdaExpression, breakToExpr)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatQualifiedExpression(expression: KtQualifiedExpression) {
     builder.sync(expression)
     val receiver = expression.receiverExpression
@@ -395,6 +484,7 @@ interface CallFormatter : KotlinAstFormatter {
    * if an expression represents a function call, e.g. `doIt(1, 2) { it }`, the group is closed
    * after `doIt`, and the `(1, 2) { it }` part is emitted after.
    */
+  context(_: FormatterStateHolder)
   private fun emitQualifiedExpression(expression: KtExpression) {
     val groupingInfos = expression.computeGroups(expressionBreakIndent)
     builder.block(expressionBreakIndent) {
@@ -459,6 +549,7 @@ interface CallFormatter : KotlinAstFormatter {
       val lambdaIndent: Indentation,
   )
 
+  context(_: FormatterStateHolder)
   override fun formatArrayAccessExpression(expression: KtArrayAccessExpression) {
     builder.sync(expression)
     if (expression.arrayExpression is KtQualifiedExpression) {
@@ -469,6 +560,7 @@ interface CallFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   private fun formatArrayAccessBrackets(expression: KtArrayAccessExpression) {
     builder.block(expressionBreakIndent) {
       formatCommaSeparatedList(

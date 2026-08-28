@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package org.jetbrains.ktfmt.format.visitor
 
 import com.google.googlejavaformat.Doc
@@ -20,20 +18,64 @@ import org.jetbrains.kotlin.psi.KtTypeReference
 import org.jetbrains.kotlin.psi.KtUserType
 import org.jetbrains.kotlin.psi.psiUtil.children
 
-interface TypeFormatter : KotlinAstFormatter {
+/** Formatter that handles formatting of all type-related elements. */
+interface TypeFormatter {
+  context(_: FormatterStateHolder)
+  fun formatTypeReference(type: KtTypeReference)
+
+  context(_: FormatterStateHolder)
+  fun formatDynamicType(type: KtDynamicType)
+
+  context(_: FormatterStateHolder)
+  fun formatNullableType(type: KtNullableType)
+
+  context(_: FormatterStateHolder)
+  fun formatUserType(type: KtUserType)
+
+  context(_: FormatterStateHolder)
+  fun formatIntersectionType(type: KtIntersectionType)
+
+  context(_: FormatterStateHolder)
+  fun formatTypeProjection(type: KtTypeProjection)
+
+  context(_: FormatterStateHolder)
+  fun formatTypeParameter(parameter: KtTypeParameter)
+
+  context(_: FormatterStateHolder)
+  fun formatTypeConstraint(constraint: KtTypeConstraint)
+
+  context(_: FormatterStateHolder)
+  fun formatFunctionType(type: KtFunctionType)
+
+  context(_: FormatterStateHolder)
+  fun formatTypeAlias(typeAlias: KtTypeAlias)
+
+  context(_: FormatterStateHolder)
+  fun formatType(
+      type: KtElement,
+      modifierList: KtModifierList?,
+      typeElement: KtTypeElement?,
+  )
+}
+
+internal class TypeFormatterImpl : TypeFormatter {
+  context(_: FormatterStateHolder)
   override fun formatTypeReference(type: KtTypeReference) {
     formatType(type, type.modifierList, type.typeElement)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatDynamicType(type: KtDynamicType) {
     builder.token("dynamic")
   }
 
+  context(_: FormatterStateHolder)
   override fun formatNullableType(type: KtNullableType) {
     formatType(type, type.modifierList, type.innerType)
     builder.token("?")
   }
 
+  context(_: FormatterStateHolder)
   override fun formatUserType(type: KtUserType) {
     builder.sync(type)
 
@@ -48,6 +90,7 @@ interface TypeFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatIntersectionType(type: KtIntersectionType) {
     builder.sync(type)
 
@@ -59,6 +102,7 @@ interface TypeFormatter : KotlinAstFormatter {
     format(type.getRightTypeRef())
   }
 
+  context(_: FormatterStateHolder)
   override fun formatTypeProjection(type: KtTypeProjection) {
     builder.sync(type)
     val typeReference = type.typeReference
@@ -78,6 +122,7 @@ interface TypeFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatTypeParameter(parameter: KtTypeParameter) {
     builder.sync(parameter)
     format(parameter.modifierList)
@@ -91,6 +136,7 @@ interface TypeFormatter : KotlinAstFormatter {
     }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatTypeConstraint(constraint: KtTypeConstraint) {
     builder.sync(constraint)
     // TODO(nreid260): What about annotations on the type reference? `where @A T : Int`
@@ -101,6 +147,7 @@ interface TypeFormatter : KotlinAstFormatter {
     format(constraint.boundTypeReference)
   }
 
+  context(_: FormatterStateHolder)
   override fun formatFunctionType(type: KtFunctionType) {
     builder.sync(type)
 
@@ -121,6 +168,7 @@ interface TypeFormatter : KotlinAstFormatter {
     builder.block(expressionBreakIndent) { format(type.returnTypeReference) }
   }
 
+  context(_: FormatterStateHolder)
   override fun formatTypeAlias(typeAlias: KtTypeAlias) {
     builder.sync(typeAlias)
     builder.block {
@@ -142,7 +190,12 @@ interface TypeFormatter : KotlinAstFormatter {
     }
   }
 
-  fun formatType(type: KtElement, modifierList: KtModifierList?, typeElement: KtTypeElement?) {
+  context(_: FormatterStateHolder)
+  override fun formatType(
+      type: KtElement,
+      modifierList: KtModifierList?,
+      typeElement: KtTypeElement?,
+  ) {
     builder.sync(type)
     // Normally we'd visit the children nodes through accessors on 'typeReference', and  we wouldn't
     // loop over children.
