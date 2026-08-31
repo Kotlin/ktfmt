@@ -1,0 +1,33 @@
+// MAX_WIDTH 80
+
+fun f(x: Int): Any {
+    when (x) {
+        1 ->
+            throw IllegalStateException(
+                "a message that does not fit on a single line",
+            )
+        2 -> return someFunction(argumentNumberOne, argumentNumberTwo, argument)
+        3 -> if (cond) doSomething() else doSomethingElse()
+        4 ->
+            try {
+                risky()
+            } catch (e: Exception) {
+                recover()
+            }
+        5 ->
+            object : Runnable {
+                override fun run() {}
+            }
+        6 ->
+            """
+            multiline
+            string
+            """
+                .trimIndent()
+        7 -> x ?: error("nope")
+        8 ->
+            listOf(1, 2, 3).map { it * 2 }.filter { it > 2 }.sum() +
+                otherThing(x)
+        else -> 0
+    }
+}
