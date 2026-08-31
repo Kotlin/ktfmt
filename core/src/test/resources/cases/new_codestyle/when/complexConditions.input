@@ -1,0 +1,26 @@
+fun f(x: Any?) {
+  when {
+    x == 1 || x == 2 -> print(1)
+    x == 3 && x != 4 -> print(2)
+    else -> {
+      print(3)
+    }
+  }
+  when (x) {
+      null -> print("null")
+      !in 1..10 -> print("out")
+      in a..<b -> print("range")
+      !is String -> print("not a string")
+      in setOf(firstConstant, secondConstant, thirdConstant, fourth) -> print(1)
+      is (Int) -> Unit -> print(2)
+      is Map<VeryLongTypeNameHere, AnotherVeryLongTypeName<Nested>> -> print(3)
+      else -> print(x)
+  }
+  when {
+      x.any {
+          it > 0
+      } -> print(1)
+      x.all { it > 0 } && x.none { it < 0 } && x.count() > someThreshold -> print(2)
+      else -> print(0)
+  }
+}
