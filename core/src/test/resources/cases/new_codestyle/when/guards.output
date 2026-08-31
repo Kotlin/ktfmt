@@ -1,0 +1,23 @@
+// MAX_WIDTH 80
+
+fun feedAnimal(animal: Animal) {
+  when (animal) {
+    is Animal.Dog -> animal.feedDog()
+    is Animal.Cat if !animal.mouseHunter -> animal.feedCat()
+    is Animal.Cat if (!animal.birdHunter) -> animal.feedCat()
+    else if animal.eatsPlants -> animal.giveLettuce()
+    else -> println("Unknown animal")
+  }
+
+  when (animal) {
+    is Animal.Cat if animal.isHungry && animal.hasFood && animal.ownerIsHome ->
+        animal.feedCat()
+    is Animal.Dog if
+        someVeryLongCondition(animal) || anotherVeryLongCondition(animal)
+     -> {
+      animal.feedDog()
+    }
+    else if animal.eatsPlantsAndVegetablesAndFruitsAndOtherGreenStuff ->
+        animal.giveLettuce()
+  }
+}
