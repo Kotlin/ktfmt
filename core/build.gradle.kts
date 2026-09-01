@@ -61,7 +61,18 @@ val compatibilitySources = run {
 }
 
 tasks {
-  test {
+  register<Test>("updateTestData") {
+    group = "verification"
+    description = "Rewrites test data '.output' files with the actual formatter output"
+
+    val testSourceSet = sourceSets.test
+    testClassesDirs = testSourceSet.get().output.classesDirs
+    classpath = testSourceSet.get().runtimeClasspath
+
+    systemProperty("ktfmt.test.updateTestData", "true")
+  }
+
+  withType<Test>().configureEach {
     useJUnitPlatform()
     jvmArgs("-Dfile.encoding=UTF-16")
   }
