@@ -78,6 +78,10 @@ abstract class FormatterTestFactory(
       val root = URI(location.toURI().toString().substringBefore("build/classes/kotlin/test"))
       Path.of(root).resolve("src/test/resources/cases")
     }
+
+    const val UPDATE_TEST_DATA_PROPERTY = "ktfmt.test.updateTestData"
+    val UPDATE_TEST_DATA =
+        System.getProperty(UPDATE_TEST_DATA_PROPERTY)?.toBooleanStrictOrNull() ?: false
   }
 
   @TestFactory
@@ -140,7 +144,7 @@ abstract class FormatterTestFactory(
     return checks
   }
 
-  private fun formatsAsExpected(expectation: TestCase, overwrite: Boolean = false) {
+  private fun formatsAsExpected(expectation: TestCase, overwrite: Boolean = UPDATE_TEST_DATA) {
     val actual =
         Formatter.format(
             expectation.config.options,
@@ -187,7 +191,8 @@ abstract class FormatterTestFactory(
         " is not formatted as expected.\n",
     )
     append(
-        "\nHint: re-run with 'overwrite' property set to 'true' to write the actual output to the expectation file",
+        "\nHint: run './gradlew :ktfmt:updateTestData' to write the actual output to the expectation",
+        " file, or re-run with '-D$UPDATE_TEST_DATA_PROPERTY=true'",
     )
   }
 
