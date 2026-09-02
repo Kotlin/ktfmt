@@ -3,7 +3,7 @@
 // FILE_TYPE SCRIPT
 
 z12.shine(
-    infrared,
-    ultraviolet,
-)
+        infrared,
+        ultraviolet,
+    )
     .bright()

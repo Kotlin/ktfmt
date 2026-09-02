@@ -31,55 +31,56 @@ import org.jetbrains.kotlin.psi.psiUtil.getChildrenOfType
 
 internal class RedundantImportDetector(val enabled: Boolean) {
   companion object {
-    private val OPERATORS = setOf(
-        // Unary prefix operators
-        "unaryPlus",
-        "unaryMinus",
-        "not",
-        // Increments and decrements
-        "inc",
-        "dec",
-        // Arithmetic operators
-        "plus",
-        "minus",
-        "times",
-        "div",
-        "rem",
-        "mod", // deprecated
-        "rangeTo",
-        // 'In' operator
-        "contains",
-        // Indexed access operator
-        "get",
-        "set",
-        // Invoke operator
-        "invoke",
-        // Augmented assignments
-        "plusAssign",
-        "minusAssign",
-        "timesAssign",
-        "divAssign",
-        "remAssign",
-        "modAssign", // deprecated
-        // Equality and inequality operators
-        "equals",
-        // Comparison operators
-        "compareTo",
-        // Iterator operators
-        "iterator",
-        "next",
-        "hasNext",
-        // Bitwise operators
-        "and",
-        "or",
-        // Property delegation operators
-        "getValue",
-        "setValue",
-        "provideDelegate",
-        // assign operator - Gradle compiler plugin
-        // https://blog.gradle.org/simpler-kotlin-dsl-property-assignment
-        "assign",
-    )
+    private val OPERATORS =
+        setOf(
+            // Unary prefix operators
+            "unaryPlus",
+            "unaryMinus",
+            "not",
+            // Increments and decrements
+            "inc",
+            "dec",
+            // Arithmetic operators
+            "plus",
+            "minus",
+            "times",
+            "div",
+            "rem",
+            "mod", // deprecated
+            "rangeTo",
+            // 'In' operator
+            "contains",
+            // Indexed access operator
+            "get",
+            "set",
+            // Invoke operator
+            "invoke",
+            // Augmented assignments
+            "plusAssign",
+            "minusAssign",
+            "timesAssign",
+            "divAssign",
+            "remAssign",
+            "modAssign", // deprecated
+            // Equality and inequality operators
+            "equals",
+            // Comparison operators
+            "compareTo",
+            // Iterator operators
+            "iterator",
+            "next",
+            "hasNext",
+            // Bitwise operators
+            "and",
+            "or",
+            // Property delegation operators
+            "getValue",
+            "setValue",
+            "provideDelegate",
+            // assign operator - Gradle compiler plugin
+            // https://blog.gradle.org/simpler-kotlin-dsl-property-assignment
+            "assign",
+        )
 
     private val COMPONENT_OPERATOR_REGEX = Regex("component\\d+")
 

@@ -95,7 +95,7 @@ interface ExpressionFormatter {
   fun formatCollectionLiteralExpression(expression: KtCollectionLiteralExpression)
 }
 
-internal class ExpressionFormatterImpl : ExpressionFormatter {
+internal open class ExpressionFormatterImpl : ExpressionFormatter {
   context(_: FormatterStateHolder)
   override fun formatInitializerExpression(initializer: KtExpression, assignmentOp: String) {
     builder.token(assignmentOp)
@@ -103,11 +103,6 @@ internal class ExpressionFormatterImpl : ExpressionFormatter {
       formatLambdaOrScopingFunction(initializer)
     } else if (initializer.isChainedScopingFunction) {
       formatChainedScopingFunction(initializer, emitLeadingBreak = true)
-    } else if (initializer.isBlockLikeCall) {
-      builder.space()
-      format(initializer)
-    } else if (initializer.isChainedBlockLikeCall) {
-      formatChainedBlockLikeCall(initializer, emitLeadingBreak = true)
     } else {
       builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
       builder.block(expressionBreakIndent) {

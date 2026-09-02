@@ -111,7 +111,7 @@ interface CallFormatter {
   fun formatArrayAccessExpression(expression: KtArrayAccessExpression)
 }
 
-internal class CallFormatterImpl : CallFormatter {
+internal open class CallFormatterImpl : CallFormatter {
   context(_: FormatterStateHolder)
   override fun formatArgument(
       argument: KtValueArgument,
@@ -463,9 +463,6 @@ internal class CallFormatterImpl : CallFormatter {
           !chainedSelectorsHaveValueArguments(expression) -> {
         formatChainedScopingFunction(expression, emitLeadingBreak = false)
       }
-      expression.isChainedBlockLikeCall -> {
-        formatChainedBlockLikeCall(expression, emitLeadingBreak = false)
-      }
       else -> {
         emitQualifiedExpression(expression)
       }
@@ -485,7 +482,7 @@ internal class CallFormatterImpl : CallFormatter {
    * after `doIt`, and the `(1, 2) { it }` part is emitted after.
    */
   context(_: FormatterStateHolder)
-  private fun emitQualifiedExpression(expression: KtExpression) {
+  open fun emitQualifiedExpression(expression: KtExpression) {
     val groupingInfos = expression.computeGroups(expressionBreakIndent)
     builder.block(expressionBreakIndent) {
       // allows adjusting arguments indentation if a break will be made
@@ -506,9 +503,7 @@ internal class CallFormatterImpl : CallFormatter {
             // emit `doIt` from `doIt(1, 2) { it }`
             format(selectorExpression.calleeExpression)
 
-            val isLastPartOrBlockLikeCall =
-                isLast || !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
-            val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
+            val argsIndentElse = if (isLast) ZERO else expressionBreakIndent
             val lambdaIndentElse = if (isTrailingLambda) -expressionBreakIndent else ZERO
 
             // remember to emit `(1, 2) { it }` from `doIt(1, 2) { it }`
@@ -543,7 +538,7 @@ internal class CallFormatterImpl : CallFormatter {
     }
   }
 
-  private data class DeferredCallArguments(
+  data class DeferredCallArguments(
       val call: KtCallExpression,
       val argumentsIndent: Indentation,
       val lambdaIndent: Indentation,
@@ -561,7 +556,7 @@ internal class CallFormatterImpl : CallFormatter {
   }
 
   context(_: FormatterStateHolder)
-  private fun formatArrayAccessBrackets(expression: KtArrayAccessExpression) {
+  fun formatArrayAccessBrackets(expression: KtArrayAccessExpression) {
     builder.block(expressionBreakIndent) {
       formatCommaSeparatedList(
           expression.indexExpressions,

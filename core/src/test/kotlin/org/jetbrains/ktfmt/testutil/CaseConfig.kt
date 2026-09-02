@@ -22,35 +22,36 @@ class CaseConfig(
   }
 
   companion object {
-    private val DIRECTIVES: Map<String, Directive> = listOf(
-        Directive("FILE_TYPE") {
-          fileType =
-              when (it) {
-                "REGULAR" -> FileType.REGULAR
-                "SCRIPT" -> FileType.SCRIPT
-                else -> throw IllegalArgumentException("Unsupported file type: $it")
-              }
-        },
-        Directive("MAX_WIDTH") { options.maxWidth(it.toInt()) },
-        Directive("BLOCK_INDENT") { options.blockIndent(it.toInt()) },
-        Directive("CONTINUATION_INDENT") { options.continuationIndent(it.toInt()) },
-        Directive("TRAILING_COMMA_STRATEGY") {
-          options.trailingCommaManagementStrategy(
-              TrailingCommaManagementStrategy.valueOf(it),
-          )
-        },
-        Directive("REMOVE_UNUSED_IMPORTS") {
-          options.removeUnusedImports(it.toBooleanStrict())
-        },
-        Directive("PRESERVE_LAMBDA_BREAKS") {
-          options.preserveLambdaBreaks(it.toBooleanStrict())
-        },
-        Directive("PRINT_OPTS_AFTER_FORMATTING") {
-          options.debuggingPrintOpsAfterFormatting(it.toBooleanStrict())
-        },
-        Directive("CHECK_IDEMPOTENCY") { checkIdempotency = it.toBooleanStrict() },
-    )
-        .associateBy { it.name }
+    private val DIRECTIVES: Map<String, Directive> =
+        listOf(
+                Directive("FILE_TYPE") {
+                  fileType =
+                      when (it) {
+                        "REGULAR" -> FileType.REGULAR
+                        "SCRIPT" -> FileType.SCRIPT
+                        else -> throw IllegalArgumentException("Unsupported file type: $it")
+                      }
+                },
+                Directive("MAX_WIDTH") { options.maxWidth(it.toInt()) },
+                Directive("BLOCK_INDENT") { options.blockIndent(it.toInt()) },
+                Directive("CONTINUATION_INDENT") { options.continuationIndent(it.toInt()) },
+                Directive("TRAILING_COMMA_STRATEGY") {
+                  options.trailingCommaManagementStrategy(
+                      TrailingCommaManagementStrategy.valueOf(it),
+                  )
+                },
+                Directive("REMOVE_UNUSED_IMPORTS") {
+                  options.removeUnusedImports(it.toBooleanStrict())
+                },
+                Directive("PRESERVE_LAMBDA_BREAKS") {
+                  options.preserveLambdaBreaks(it.toBooleanStrict())
+                },
+                Directive("PRINT_OPTS_AFTER_FORMATTING") {
+                  options.debuggingPrintOpsAfterFormatting(it.toBooleanStrict())
+                },
+                Directive("CHECK_IDEMPOTENCY") { checkIdempotency = it.toBooleanStrict() },
+            )
+            .associateBy { it.name }
 
     private val DIRECTIVE_REGEX = Regex("""^// ([A-Z][A-Z0-9_]+)(?: +(.*))?$""")
     private val SHEBANG_REGEX = Regex("""^#!.*$""")

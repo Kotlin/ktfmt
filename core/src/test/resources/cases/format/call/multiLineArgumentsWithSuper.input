@@ -3,7 +3,7 @@
 // FILE_TYPE SCRIPT
 
 super.shine(
-    infrared,
-    ultraviolet,
-)
+        infrared,
+        ultraviolet,
+    )
     .bright()

@@ -47,14 +47,15 @@ import java.util.regex.Pattern
 class KDocCommentsHelper(private val lineSeparator: String, private val maxLineLength: Int) :
     CommentsHelper {
 
-  private val kdocFormatter = KDocFormatter(
-      KDocFormattingOptions(maxLineLength, maxLineLength).apply {
-        allowParamBrackets = true // TODO Do we want this?
-        convertMarkup = false
-        nestedListIndent = 4
-        optimal = false // Use greedy line breaking for predictability.
-      },
-  )
+  private val kdocFormatter =
+      KDocFormatter(
+          KDocFormattingOptions(maxLineLength, maxLineLength).apply {
+            allowParamBrackets = true // TODO Do we want this?
+            convertMarkup = false
+            nestedListIndent = 4
+            optimal = false // Use greedy line breaking for predictability.
+          },
+      )
 
   override fun rewrite(tok: Tok, maxWidth: Int, column0: Int): String {
     if (!tok.isComment) {

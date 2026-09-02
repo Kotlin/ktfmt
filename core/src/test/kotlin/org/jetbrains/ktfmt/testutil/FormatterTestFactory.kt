@@ -122,14 +122,15 @@ abstract class FormatterTestFactory(
   private fun tests(expectation: TestCase): List<DynamicTest> {
     val uri = (expectation.output ?: expectation.description.inputPath).toUri()
     // format(expected) == actual
-    val checks = mutableListOf(
-        DynamicTest.dynamicTest(
-            "${expectation.label} Formats as expected",
-            uri,
-        ) {
-          formatsAsExpected(expectation)
-        },
-    )
+    val checks =
+        mutableListOf(
+            DynamicTest.dynamicTest(
+                "${expectation.label} Formats as expected",
+                uri,
+            ) {
+              formatsAsExpected(expectation)
+            },
+        )
     // format(format(expected)) == format(expected)
     if (expectation.output != null && expectation.config.checkIdempotency) {
       checks +=
@@ -244,13 +245,14 @@ abstract class FormatterTestFactory(
         variant: String?,
         output: Path?,
         config: CaseConfig,
-    ): TestCase = TestCase(
-        description = this,
-        variant = variant,
-        output = output,
-        expected = output?.readText(Charsets.UTF_8) ?: input, // No .output, idempotency
-        config = config,
-    )
+    ): TestCase =
+        TestCase(
+            description = this,
+            variant = variant,
+            output = output,
+            expected = output?.readText(Charsets.UTF_8) ?: input, // No .output, idempotency
+            config = config,
+        )
 
     fun expectation(variant: String?): Path {
       val suffix = if (variant == null) "" else ".$variant"
