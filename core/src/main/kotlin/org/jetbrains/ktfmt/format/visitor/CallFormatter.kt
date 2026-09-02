@@ -269,7 +269,7 @@ internal open class CallFormatterImpl : CallFormatter {
   }
 
   context(_: FormatterStateHolder)
-  private fun formatLambdaArguments(
+  open fun formatLambdaArguments(
       valueParameterList: KtParameterList,
       valueParametersIndent: Indentation,
       arrowIndent: Indentation,
