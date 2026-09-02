@@ -1,0 +1,26 @@
+// MAX_WIDTH 45
+
+class Holder {
+  val sameLine: List<Int>
+    field = mutableListOf(alpha, beta)
+
+  val ownLine: List<Int>
+    field = mutableListOf(alpha, beta)
+
+  val typedSameLine: List<Int>
+    field: MutableList<Int> = builder()
+
+  val scoping: List<Int>
+    field =
+        mutableListOf<Int>().apply {
+          add(alpha)
+          add(beta)
+        }
+
+  val scopingOwnLine: List<Int>
+    field =
+        mutableListOf<Int>().apply {
+          add(alpha)
+          add(beta)
+        }
+}

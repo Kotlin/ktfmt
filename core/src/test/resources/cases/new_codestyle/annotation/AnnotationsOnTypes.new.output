@@ -4,19 +4,18 @@ val propertyTypeFits: @Ann String? = ""
 
 val propertyTypeOverflows:
     @Ann("arg")
-    Map<String, List<Int>> =
-    mapOf()
+    Map<String, List<Int>> = mapOf()
 
 val typeArgumentFits: List<@Ann Int> = listOf()
 
 val typeArgumentOverflows:
-    Map<@Ann String, List<@Ann Int>> =
-    mapOf()
+    Map<@Ann String, List<@Ann Int>> = mapOf()
 
 fun returnTypeFits(): @Ann String = ""
 
-fun returnTypeOverflows(a: String): @Ann("arg") List<Int> =
-    listOf()
+fun returnTypeOverflows(
+    a: String,
+): @Ann("arg") List<Int> = listOf()
 
 fun paramTypeFits(a: @Ann List<Int>) {}
 
@@ -33,8 +32,8 @@ fun @receiver:NotNull("arg") String.receiverOverflows(
 
 fun asExpression(x: Any) = x as @Ann String
 
-fun isExpression(x: Any) =
-    x is @Ann("arg") Map<String, List<Int>>
+fun isExpression(x: Any) = x is
+    @Ann("arg") Map<String, List<Int>>
 
 class SupertypeFits : @Ann Base()
 
@@ -57,8 +56,7 @@ fun targetOnFunctionType(
 ) {}
 
 val nestedTypeArgument:
-    (@Anno List<@JvmSuppressWildcards Int>) -> Unit =
-    f
+    (@Anno List<@JvmSuppressWildcards Int>) -> Unit = f
 
 class Variance<@Anno out @Anno T, @Anno in @Anno U>
 

@@ -12,7 +12,13 @@ fun callFits(): Int = @Suppress("A") compute()
 fun callOverflows(): Int =
     @Suppress("UNCHECKED_CAST") compute(a)
 
+fun callWithNewLine(): Int =
+    @Suppress("UNCHECKED_CAST") compute(a)
+
 fun multipleAnnotations(): Int =
+    @Suppress("A") @Suppress("B") compute()
+
+fun multipleAnnotationsWithNewLine(): Int =
     @Suppress("A") @Suppress("B") compute()
 
 fun annotatedFirstOperandOnly() {
