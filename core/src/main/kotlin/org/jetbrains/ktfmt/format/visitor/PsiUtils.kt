@@ -62,7 +62,7 @@ private fun onlyEmptyParenthesis(left: PsiElement?, right: PsiElement?): Boolean
     left != null && right != null && left.getNextSiblingIgnoringWhitespace() == right
 
 /**
- * [CallFormatter.emitQualifiedExpression] formats call expressions that are either part of a
+ * [CallFormatterImpl.emitQualifiedExpression] formats call expressions that are either part of a
  * qualified expression, or standing alone. This method makes it easier to handle both cases
  * uniformly.
  */
@@ -362,3 +362,24 @@ internal val KtBinaryExpression.fullChain: List<KtBinaryExpression>
  */
 internal val KtAnnotatedExpression.topLevelAnnotations: List<PsiElement>
   get() = children.filter { it is KtAnnotation || it is KtAnnotationEntry }
+
+/**
+ * Checks if there is a new line before the [PsiElement] in the source code. Leading comments are
+ * skipped.
+ *
+ * ```
+ * val a = /* comment */ value // false
+ *
+ * val b =
+ *     /* comment */ value // true
+ * ```
+ */
+internal val PsiElement.isPrefixedByLineBreak: Boolean
+  get() {
+    var prev: PsiElement? = prevSibling
+    while (prev is PsiWhiteSpace || prev is PsiComment) {
+      if (prev is PsiWhiteSpace && prev.text.contains("\n")) return true
+      prev = prev.prevSibling
+    }
+    return false
+  }

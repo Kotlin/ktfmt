@@ -1,0 +1,46 @@
+// TRAILING_COMMA_STRATEGY NONE
+
+val namedArgs = foo(
+    first = 1,
+    second = 2,
+)
+
+val constructor = Foo(
+    1,
+    2,
+)
+
+val typeArgs = foo<Int, String>(
+    1,
+    2,
+)
+
+val trailingLambda = foo(
+    1,
+    2,
+) {
+    bar()
+}
+
+val safeChain = foo(
+    1,
+    2,
+)
+    ?.bar()
+
+val indexed = foo(
+    1,
+    2,
+)[0]
+
+fun body() = foo(
+    1,
+    2,
+)
+
+class Holder {
+    val member = foo(
+        1,
+        2,
+    )
+}
