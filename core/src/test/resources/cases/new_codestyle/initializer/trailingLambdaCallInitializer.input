@@ -1,0 +1,22 @@
+// MAX_WIDTH 45
+
+val mapped = items.map { it.value }
+
+val mappedOwnLine =
+    items.map { it.value }
+
+val withArgs = register(name, other) { event ->
+  handle(event)
+}
+
+val withArgsOwnLine =
+    register(name, other) { event ->
+      handle(event)
+    }
+
+val chained = items.filter { it.ok }.map { it.value }
+
+val chainedOwnLine =
+    items.filter { it.ok }.map { it.value }
+
+val multipleLambdas = fold({ a -> a }, { b -> b })

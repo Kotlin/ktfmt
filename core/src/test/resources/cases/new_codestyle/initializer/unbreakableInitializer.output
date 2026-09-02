@@ -1,0 +1,21 @@
+// MAX_WIDTH 30
+
+val short = anIdentifier
+
+val sameLine =
+    aVeryLongUnbreakableName
+
+val ownLine =
+    aVeryLongUnbreakableName
+
+val qualifiedSameLine =
+    some.deeply.nested.value
+
+val qualifiedOwnLine =
+    some.deeply.nested.value
+
+fun bodySameLine() =
+    aVeryLongUnbreakableName
+
+fun bodyOwnLine() =
+    aVeryLongUnbreakableName
