@@ -1,49 +1,57 @@
 package org.jetbrains.kotlinx.ktfmt.format.visitor.kotlinlang
 
 import com.google.googlejavaformat.Doc
+import com.google.googlejavaformat.Output
+import java.util.Optional
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlinx.ktfmt.format.visitor.ExpressionFormatterImpl
 import org.jetbrains.kotlinx.ktfmt.format.visitor.FormatterStateHolder
+import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation
+import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation.Companion.ZERO
 import org.jetbrains.kotlinx.ktfmt.format.visitor.block
 import org.jetbrains.kotlinx.ktfmt.format.visitor.breakOp
 import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
 import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.kotlinx.ktfmt.format.visitor.fenceComments
 import org.jetbrains.kotlinx.ktfmt.format.visitor.format
-import org.jetbrains.kotlinx.ktfmt.format.visitor.formatChainedBlockLikeCall
-import org.jetbrains.kotlinx.ktfmt.format.visitor.formatChainedScopingFunction
-import org.jetbrains.kotlinx.ktfmt.format.visitor.formatLambdaOrScopingFunction
-import org.jetbrains.kotlinx.ktfmt.format.visitor.isBlockLikeCall
-import org.jetbrains.kotlinx.ktfmt.format.visitor.isChainedBlockLikeCall
-import org.jetbrains.kotlinx.ktfmt.format.visitor.isChainedScopingFunction
-import org.jetbrains.kotlinx.ktfmt.format.visitor.isLambdaOrScopingFunction
+import org.jetbrains.kotlinx.ktfmt.format.visitor.isPrefixedByLineBreak
 import org.jetbrains.kotlinx.ktfmt.format.visitor.token
 
 /**
- * Custom expression formatter for KotlinLang style that handles formatting of block-like calls with
- * or without chained call (see #633). Currently, it extracts the behaviour introduced in #634 to an
- * experimental engine API. Motivation: we don't want to change the behaviour of the existing
- * formatter while we're also evolving the new Kotlin Lang style.
+ * Custom expression formatter for KotlinLang style.
+ *
+ * Implements a new unopinionated initializers formatting rule that preserves the user input:
+ * - If there is a line break after the assignment operator, the initializer is formatted on a new
+ *   line with an expression indent (same behaviour as
+ *   [ExpressionFormatterImpl.formatInitializerExpression])
+ * - If there is no line break after the assignment operator, the initializer is formatted on the
+ *   same line as the assignment operator
+ *
+ * ```
+ * fun exprBody1() = compute(alpha)
+ *     ?: fallbackValue
+ *
+ * fun exprBody2() =
+ *     compute(alpha) ?: fallbackValue
+ * ```
  */
 internal class KotlinLangExpressionFormatterImpl : ExpressionFormatterImpl() {
   context(_: FormatterStateHolder)
   override fun formatInitializerExpression(initializer: KtExpression, assignmentOp: String) {
     builder.token(assignmentOp)
-    if (initializer.isLambdaOrScopingFunction) {
-      formatLambdaOrScopingFunction(initializer)
-    } else if (initializer.isChainedScopingFunction) {
-      formatChainedScopingFunction(initializer, emitLeadingBreak = true)
-    } else if (initializer.isBlockLikeCall) {
-      builder.space()
-      format(initializer)
-    } else if (initializer.isChainedBlockLikeCall) {
-      formatChainedBlockLikeCall(initializer, emitLeadingBreak = true)
+
+    var movedToOwnLine: Output.BreakTag? = null
+    if (initializer.isPrefixedByLineBreak) {
+      movedToOwnLine = Output.BreakTag()
+      builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent, Optional.of(movedToOwnLine))
     } else {
-      builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
-      builder.block(expressionBreakIndent) {
-        builder.fenceComments()
-        format(initializer)
-      }
+      builder.space()
+    }
+
+    val indent = Indentation.If(movedToOwnLine, expressionBreakIndent, ZERO)
+    builder.block(indent) {
+      builder.fenceComments()
+      format(initializer)
     }
   }
 }
