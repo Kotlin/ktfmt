@@ -6,6 +6,7 @@ import java.util.Optional
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtPostfixExpression
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
@@ -23,6 +24,7 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.chainedSelectorsHaveValueArgum
 import org.jetbrains.kotlinx.ktfmt.format.visitor.computeGroups
 import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.kotlinx.ktfmt.format.visitor.format
+import org.jetbrains.kotlinx.ktfmt.format.visitor.formatCommaSeparatedList
 import org.jetbrains.kotlinx.ktfmt.format.visitor.hugPoint
 import org.jetbrains.kotlinx.ktfmt.format.visitor.inImport
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isBlockLikeCall
@@ -38,10 +40,14 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.trailingLambda
 import org.jetbrains.kotlinx.ktfmt.format.visitor.trailingLambdaExpression
 
 /**
- * Custom call formatter for KotlinLang style that handles indentation of block-like calls with or
- * without chained call (see #633). Currently, it extracts the behaviour introduced in #634 to an
- * experimental engine API. Motivation: we don't want to change the behaviour of the existing
- * formatter while we're also evolving the new Kotlin Lang style.
+ * Custom call formatter for KotlinLang style.
+ *
+ * - Handles indentation of block-like calls with or without chained call (see #633). Currently, it
+ *   extracts the behaviour introduced in #634 to an experimental engine API. Motivation: we don't
+ *   want to change the behaviour of the existing formatter while we're also evolving the new Kotlin
+ *   Lang style.
+ *
+ * - Does not allow breaks before `->` in lambda expressions
  */
 internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
   context(_: FormatterStateHolder)
@@ -154,5 +160,26 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
       }
     }
     builder.close()
+  }
+
+  context(_: FormatterStateHolder)
+  override fun formatLambdaArguments(
+      valueParameterList: KtParameterList,
+      valueParametersIndent: Indentation,
+      arrowIndent: Indentation,
+      beforeArrow: () -> Unit,
+  ) {
+    builder.space()
+    builder.block(valueParametersIndent) { formatCommaSeparatedList(valueParameterList.parameters) }
+    builder.block(arrowIndent) {
+      if (valueParameterList.trailingComma != null) {
+        builder.token(",")
+        builder.space()
+      } else if (valueParameterList.parameters.isNotEmpty()) {
+        builder.space()
+      }
+      beforeArrow()
+      builder.token("->")
+    }
   }
 }
