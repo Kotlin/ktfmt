@@ -1,0 +1,35 @@
+// MAX_WIDTH 40
+
+val plain = {
+    first()
+    second()
+}
+
+val plainOwnLine =
+    {
+        first()
+        second()
+    }
+
+val withParams = { a: Int, b: Int ->
+    a + b
+}
+
+val withParamsOwnLine =
+    { a: Int, b: Int -> a + b }
+
+val typed: (Int) -> Int = { it * 2 }
+
+val anonymous = fun(a: Int): Int {
+    return a
+}
+
+val anonymousOwnLine =
+    fun(a: Int): Int {
+        return a
+    }
+
+fun bodyIsLambda() = {
+    first()
+    second()
+}

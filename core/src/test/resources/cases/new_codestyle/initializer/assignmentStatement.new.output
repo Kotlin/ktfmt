@@ -1,0 +1,30 @@
+// MAX_WIDTH 40
+
+fun f() {
+    target = run {
+        first()
+        second()
+    }
+
+    target =
+        run {
+            first()
+            second()
+        }
+
+    target = compute(alpha, beta)
+
+    target = compute(alpha, beta)
+
+    target +=
+        compute(alphaValue, betaValue)
+
+    target +=
+        compute(alphaValue, betaValue)
+
+    some.nested.target =
+        compute(alphaValue, beta)
+
+    some.nested.target =
+        compute(alphaValue, beta)
+}

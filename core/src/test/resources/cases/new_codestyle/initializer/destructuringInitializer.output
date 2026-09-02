@@ -1,0 +1,19 @@
+// MAX_WIDTH 40
+
+fun f() {
+  val (first, second) =
+      computePair(alpha)
+
+  val (third, fourth) =
+      computePair(alpha, betaValue)
+
+  val (fifth, sixth) =
+      run {
+        alpha to beta
+      }
+
+  val (seventh, eighth) =
+      run {
+        alpha to beta
+      }
+}
