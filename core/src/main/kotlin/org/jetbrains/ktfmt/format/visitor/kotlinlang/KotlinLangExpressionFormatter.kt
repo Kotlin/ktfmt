@@ -3,6 +3,8 @@ package org.jetbrains.ktfmt.format.visitor.kotlinlang
 import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.Output
 import java.util.Optional
+import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.ktfmt.format.visitor.ExpressionFormatterImpl
 import org.jetbrains.ktfmt.format.visitor.FormatterStateHolder
@@ -14,7 +16,9 @@ import org.jetbrains.ktfmt.format.visitor.builder
 import org.jetbrains.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.ktfmt.format.visitor.fenceComments
 import org.jetbrains.ktfmt.format.visitor.format
+import org.jetbrains.ktfmt.format.visitor.fullChain
 import org.jetbrains.ktfmt.format.visitor.isPrefixedByLineBreak
+import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
 
 /**
@@ -34,6 +38,9 @@ import org.jetbrains.ktfmt.format.visitor.token
  * fun exprBody2() =
  *     compute(alpha) ?: fallbackValue
  * ```
+ *
+ * Overrides [formatBinaryExpression] to route **all** assignment-like binary expressions through
+ * [formatAssignmentLikeExpression].
  */
 internal class KotlinLangExpressionFormatterImpl : ExpressionFormatterImpl() {
   context(_: FormatterStateHolder)
@@ -53,5 +60,26 @@ internal class KotlinLangExpressionFormatterImpl : ExpressionFormatterImpl() {
       builder.fenceComments()
       format(assignment)
     }
+  }
+
+  context(_: FormatterStateHolder)
+  override fun formatBinaryExpression(expression: KtBinaryExpression) {
+    builder.sync(expression)
+    val op = expression.operationToken
+
+    if (KtTokens.ALL_ASSIGNMENTS.contains(op)) {
+      format(expression.left)
+      builder.space()
+      formatAssignmentLikeExpression(expression.right!!, expression.operationReference.text)
+      return
+    }
+
+    val allExpressions = expression.fullChain
+    format(allExpressions.first().left)
+    for ((index, currentExpression) in allExpressions.withIndex()) {
+      formatBinaryOperationToken(currentExpression, index == 0)
+      format(currentExpression.right)
+    }
+    builder.close()
   }
 }

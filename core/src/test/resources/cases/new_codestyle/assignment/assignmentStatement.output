@@ -26,4 +26,10 @@ fun f() {
 
   some.nested.target =
       compute(alphaValue, beta)
+
+  target =
+      compute(alphaValue, beta) ?: bar()
+
+  target =
+      compute(alphaValue, beta) ?: bar()
 }
