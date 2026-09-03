@@ -18,33 +18,17 @@ import org.jetbrains.ktfmt.format.visitor.blockIndent
 import org.jetbrains.ktfmt.format.visitor.breakOp
 import org.jetbrains.ktfmt.format.visitor.builder
 import org.jetbrains.ktfmt.format.visitor.expressionBreakIndent
-import org.jetbrains.ktfmt.format.visitor.fenceComments
 import org.jetbrains.ktfmt.format.visitor.format
 import org.jetbrains.ktfmt.format.visitor.formatAssignmentLikeExpression
-import org.jetbrains.ktfmt.format.visitor.formatChainedBlockLikeCall
-import org.jetbrains.ktfmt.format.visitor.formatChainedScopingFunction
 import org.jetbrains.ktfmt.format.visitor.formatTypeConstraintList
 import org.jetbrains.ktfmt.format.visitor.formatTypeParameterList
-import org.jetbrains.ktfmt.format.visitor.isBlockLikeCall
-import org.jetbrains.ktfmt.format.visitor.isChainedBlockLikeCall
-import org.jetbrains.ktfmt.format.visitor.isChainedScopingFunction
-import org.jetbrains.ktfmt.format.visitor.isLambdaOrScopingFunction
 import org.jetbrains.ktfmt.format.visitor.token
 
 /**
  * Custom declaration formatter for KotlinLang style.
  *
- * [emitPropertyDeclaration] implements the behaviour introduced in #634 that is reverted in the
- * default style: don't force new line for block-like calls in property initializers.
- *
- * ```
- * val x = foo(
- *     1,
- *     2,
- * )
- * ```
- *
- * See [KotlinLangCallFormatterImpl] for more details.
+ * Uses [KotlinLangExpressionFormatterImpl.formatAssignmentLikeExpression] to format **both**
+ * property initializers and property delegates.
  */
 internal class KotlinLangDeclarationFormatterImpl : DeclarationFormatterImpl() {
   context(_: FormatterStateHolder)
@@ -105,25 +89,7 @@ internal class KotlinLangDeclarationFormatterImpl : DeclarationFormatterImpl() {
       // for example `by lazy { compute() }`
       if (delegate != null) {
         builder.space()
-        builder.token("by")
-        val delegateExpr = delegate.expression
-        if (delegateExpr.isLambdaOrScopingFunction) {
-          builder.space()
-          format(delegate)
-        } else if (delegateExpr != null && delegateExpr.isChainedScopingFunction) {
-          formatChainedScopingFunction(delegateExpr, emitLeadingBreak = true)
-        } else if (delegateExpr.isBlockLikeCall) {
-          builder.space()
-          format(delegate)
-        } else if (delegateExpr != null && delegateExpr.isChainedBlockLikeCall) {
-          formatChainedBlockLikeCall(delegateExpr, emitLeadingBreak = true)
-        } else {
-          builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
-          builder.block(expressionBreakIndent) {
-            builder.fenceComments()
-            format(delegate)
-          }
-        }
+        formatAssignmentLikeExpression(delegate.expression!!, "by")
       } else if (initializer != null) {
         builder.space()
         formatAssignmentLikeExpression(initializer)
@@ -159,7 +125,7 @@ internal class KotlinLangDeclarationFormatterImpl : DeclarationFormatterImpl() {
                     parameterList = component.parameterList,
                     typeConstraintList = null,
                     bodyExpression = component.bodyBlockExpression ?: component.bodyExpression,
-                    typeOrDelegationCall = component.returnTypeReference,
+                    typeOrDelegationCall = component.typeReference,
                 )
               }
             }
