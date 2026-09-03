@@ -19,8 +19,6 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.block
 import org.jetbrains.kotlinx.ktfmt.format.visitor.breakOp
 import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
 import org.jetbrains.kotlinx.ktfmt.format.visitor.chainParts
-import org.jetbrains.kotlinx.ktfmt.format.visitor.chainRoot
-import org.jetbrains.kotlinx.ktfmt.format.visitor.chainedSelectorsHaveValueArguments
 import org.jetbrains.kotlinx.ktfmt.format.visitor.computeGroups
 import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.kotlinx.ktfmt.format.visitor.format
@@ -28,9 +26,6 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.formatCommaSeparatedList
 import org.jetbrains.kotlinx.ktfmt.format.visitor.hugPoint
 import org.jetbrains.kotlinx.ktfmt.format.visitor.inImport
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isBlockLikeCall
-import org.jetbrains.kotlinx.ktfmt.format.visitor.isChainedBlockLikeCall
-import org.jetbrains.kotlinx.ktfmt.format.visitor.isChainedScopingFunction
-import org.jetbrains.kotlinx.ktfmt.format.visitor.isMultilineScopingFunction
 import org.jetbrains.kotlinx.ktfmt.format.visitor.open
 import org.jetbrains.kotlinx.ktfmt.format.visitor.openHuggable
 import org.jetbrains.kotlinx.ktfmt.format.visitor.options
@@ -42,10 +37,10 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.trailingLambdaExpression
 /**
  * Custom call formatter for KotlinLang style.
  *
- * - Handles indentation of block-like calls with or without chained call (see #633). Currently, it
- *   extracts the behaviour introduced in #634 to an experimental engine API. Motivation: we don't
- *   want to change the behaviour of the existing formatter while we're also evolving the new Kotlin
- *   Lang style.
+ * - Overrides formatting of qualified expressions. Removes custom handling of chained
+ * calls and routes them all through [emitQualifiedExpression]. Together with the changes in
+ * [KotlinLangExpressionFormatterImpl.formatInitializerExpression] handles formatting of qualified
+ * expressions in assignment-like expressions allowing to preserve user-defined input.
  *
  * - Does not allow breaks before `->` in lambda expressions
  */
@@ -77,14 +72,6 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
           builder.token(expression.operationSign.value)
           format(expression.selectorExpression)
         }
-      }
-      expression.isChainedScopingFunction &&
-          expression.chainRoot.isMultilineScopingFunction &&
-          !chainedSelectorsHaveValueArguments(expression) -> {
-        formatChainedScopingFunction(expression, emitLeadingBreak = false)
-      }
-      expression.isChainedBlockLikeCall -> {
-        formatChainedBlockLikeCall(expression, emitLeadingBreak = false)
       }
       else -> {
         emitQualifiedExpression(expression)
