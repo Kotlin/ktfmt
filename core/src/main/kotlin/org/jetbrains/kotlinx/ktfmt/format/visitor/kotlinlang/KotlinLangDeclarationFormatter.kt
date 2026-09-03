@@ -20,9 +20,9 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
 import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.kotlinx.ktfmt.format.visitor.fenceComments
 import org.jetbrains.kotlinx.ktfmt.format.visitor.format
+import org.jetbrains.kotlinx.ktfmt.format.visitor.formatAssignmentLikeExpression
 import org.jetbrains.kotlinx.ktfmt.format.visitor.formatChainedBlockLikeCall
 import org.jetbrains.kotlinx.ktfmt.format.visitor.formatChainedScopingFunction
-import org.jetbrains.kotlinx.ktfmt.format.visitor.formatInitializerExpression
 import org.jetbrains.kotlinx.ktfmt.format.visitor.formatTypeConstraintList
 import org.jetbrains.kotlinx.ktfmt.format.visitor.formatTypeParameterList
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isBlockLikeCall
@@ -126,7 +126,7 @@ internal class KotlinLangDeclarationFormatterImpl : DeclarationFormatterImpl() {
         }
       } else if (initializer != null) {
         builder.space()
-        formatInitializerExpression(initializer)
+        formatAssignmentLikeExpression(initializer)
       }
     }
     // for example `field = value`, `private set`, or `get = 2 * field`
