@@ -80,8 +80,8 @@ fun statements() {
 
     val (@Anno a, @Anno b) = pair
 
-    val (@Anno("arg") first, @Anno("arg") second) =
-        pair
+    val (
+        @Anno("arg") first, @Anno("arg") second) = pair
 
     val whenExpr =
         @Suppress("WHEN")
