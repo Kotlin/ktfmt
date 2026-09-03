@@ -2,6 +2,7 @@ package org.jetbrains.ktfmt.format.visitor.kotlinlang
 
 import com.google.googlejavaformat.Doc
 import org.jetbrains.kotlin.psi.KtBackingField
+import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtModifierList
 import org.jetbrains.kotlin.psi.KtPropertyAccessor
@@ -20,15 +21,20 @@ import org.jetbrains.ktfmt.format.visitor.builder
 import org.jetbrains.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.ktfmt.format.visitor.format
 import org.jetbrains.ktfmt.format.visitor.formatAssignmentLikeExpression
+import org.jetbrains.ktfmt.format.visitor.formatCommaSeparatedList
 import org.jetbrains.ktfmt.format.visitor.formatTypeConstraintList
 import org.jetbrains.ktfmt.format.visitor.formatTypeParameterList
+import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
 
 /**
  * Custom declaration formatter for KotlinLang style.
  *
- * Uses [KotlinLangExpressionFormatterImpl.formatAssignmentLikeExpression] to format **both**
- * property initializers and property delegates.
+ * - Uses [KotlinLangExpressionFormatterImpl.formatAssignmentLikeExpression] to format **both**
+ *   property initializers and property delegates.
+ *
+ * - Uses [KotlinLangExpressionFormatterImpl.formatAssignmentLikeExpression] to format rhs of
+ *   destructuring declarations.
  */
 internal class KotlinLangDeclarationFormatterImpl : DeclarationFormatterImpl() {
   context(_: FormatterStateHolder)
@@ -137,5 +143,34 @@ internal class KotlinLangDeclarationFormatterImpl : DeclarationFormatterImpl() {
     }
 
     builder.guessToken(";")
+  }
+
+  context(_: FormatterStateHolder)
+  override fun formatDestructuringDeclaration(
+      destructuringDeclaration: KtDestructuringDeclaration,
+  ) {
+    builder.sync(destructuringDeclaration)
+    val valOrVarKeyword = destructuringDeclaration.valOrVarKeyword
+    if (valOrVarKeyword != null) {
+      builder.token(valOrVarKeyword.text)
+      builder.space()
+    }
+    val hasTrailingComma = destructuringDeclaration.trailingComma != null
+    val openingDelimiter = destructuringDeclaration.lPar?.text ?: "("
+    val closingDelimiter = destructuringDeclaration.rPar?.text ?: ")"
+    builder.block(expressionBreakIndent) {
+      formatCommaSeparatedList(
+          destructuringDeclaration.entries,
+          forceMultiline = hasTrailingComma,
+          prefix = openingDelimiter,
+          postfix = closingDelimiter,
+          breakBeforePostfix = false,
+      )
+    }
+    val initializer = destructuringDeclaration.initializer
+    if (initializer != null) {
+      builder.space()
+      formatAssignmentLikeExpression(initializer)
+    }
   }
 }
