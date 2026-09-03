@@ -97,7 +97,7 @@ interface DeclarationFormatter {
   )
 }
 
-internal class DeclarationFormatterImpl : DeclarationFormatter {
+internal open class DeclarationFormatterImpl : DeclarationFormatter {
   context(_: FormatterStateHolder)
   override fun formatNamedFunction(function: KtNamedFunction) {
     builder.sync(function)
@@ -435,7 +435,7 @@ internal class DeclarationFormatterImpl : DeclarationFormatter {
    * - `private val b:
    */
   context(_: FormatterStateHolder)
-  private fun emitPropertyDeclaration(
+  open fun emitPropertyDeclaration(
       modifiers: KtModifierList?,
       valOrVarKeyword: String?,
       typeParameters: KtTypeParameterList? = null,
@@ -499,11 +499,6 @@ internal class DeclarationFormatterImpl : DeclarationFormatter {
           format(delegate)
         } else if (delegateExpr != null && delegateExpr.isChainedScopingFunction) {
           formatChainedScopingFunction(delegateExpr, emitLeadingBreak = true)
-        } else if (delegateExpr.isBlockLikeCall) {
-          builder.space()
-          format(delegate)
-        } else if (delegateExpr != null && delegateExpr.isChainedBlockLikeCall) {
-          formatChainedBlockLikeCall(delegateExpr, emitLeadingBreak = true)
         } else {
           builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
           builder.block(expressionBreakIndent) {
@@ -566,7 +561,7 @@ internal class DeclarationFormatterImpl : DeclarationFormatter {
    *   list of supertypes.
    */
   context(_: FormatterStateHolder)
-  private fun emitFunctionDeclaration(
+  open fun emitFunctionDeclaration(
       contextReceiverList: KtContextReceiverList?,
       modifierList: KtModifierList?,
       keyword: String?,
@@ -694,7 +689,7 @@ internal class DeclarationFormatterImpl : DeclarationFormatter {
   }
 
   context(_: FormatterStateHolder)
-  private fun emitBackingField(backingField: KtBackingField) {
+  open fun emitBackingField(backingField: KtBackingField) {
     builder.sync(backingField)
     builder.block {
       builder.block { builder.token(backingField.namePlaceholder.text) }

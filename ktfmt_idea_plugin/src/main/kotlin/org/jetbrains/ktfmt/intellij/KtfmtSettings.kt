@@ -142,10 +142,11 @@ internal class KtfmtSettings(private val project: Project) :
         "Deprecated in V3. Use customTrailingCommaManagementStrategy instead.",
         replaceWith = ReplaceWith("customTrailingCommaManagementStrategy"),
     )
-    var customManageTrailingCommas: Boolean by property(
-        Formatter.META_FORMAT.trailingCommaManagementStrategy !=
-            TrailingCommaManagementStrategy.NONE,
-    )
+    var customManageTrailingCommas: Boolean by
+        property(
+            Formatter.META_FORMAT.trailingCommaManagementStrategy !=
+                TrailingCommaManagementStrategy.NONE,
+        )
 
     var enableKtfmt: EnabledState by enum(Unknown)
     var uiFormatterStyle: UiFormatterStyle by enum(Meta)
@@ -153,10 +154,11 @@ internal class KtfmtSettings(private val project: Project) :
     var customMaxLineLength: Int by property(Formatter.META_FORMAT.maxWidth)
     var customBlockIndent: Int by property(Formatter.META_FORMAT.blockIndent)
     var customContinuationIndent: Int by property(Formatter.META_FORMAT.continuationIndent)
-    var customTrailingCommaManagementStrategy: String by property(
-        Formatter.META_FORMAT.trailingCommaManagementStrategy.name,
-        isDefault = { it == Formatter.META_FORMAT.trailingCommaManagementStrategy.name },
-    )
+    var customTrailingCommaManagementStrategy: String by
+        property(
+            Formatter.META_FORMAT.trailingCommaManagementStrategy.name,
+            isDefault = { it == Formatter.META_FORMAT.trailingCommaManagementStrategy.name },
+        )
     var customRemoveUnusedImports: Boolean by property(Formatter.META_FORMAT.removeUnusedImports)
     var customPreserveLambdaBreaks: Boolean by property(Formatter.META_FORMAT.preserveLambdaBreaks)
 
