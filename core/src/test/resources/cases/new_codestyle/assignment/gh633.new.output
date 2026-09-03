@@ -40,9 +40,9 @@ val x by foo(
 )
 
 val x by foo(
-    1,
-    2,
-)
+        1,
+        2,
+    )
     .bar()
 
 var x: Int
