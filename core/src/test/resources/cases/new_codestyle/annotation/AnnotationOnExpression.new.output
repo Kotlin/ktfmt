@@ -68,8 +68,8 @@ fun statements() {
 
     add(@Suppress("MagicNumber") 10)
 
-    @Suppress("UNCHECKED_CAST") b =
-        compute(a, b, c) as Int
+    @Suppress("UNCHECKED_CAST") b = compute(a, b, c)
+        as Int
 
     try {} catch (@Anno e: Exception) {}
 
