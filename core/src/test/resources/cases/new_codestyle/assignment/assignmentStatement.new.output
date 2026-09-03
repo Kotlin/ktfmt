@@ -16,15 +16,26 @@ fun f() {
 
     target = compute(alpha, beta)
 
-    target +=
-        compute(alphaValue, betaValue)
+    target += compute(
+        alphaValue,
+        betaValue,
+    )
 
     target +=
         compute(alphaValue, betaValue)
 
-    some.nested.target =
-        compute(alphaValue, beta)
+    some.nested.target = compute(
+        alphaValue,
+        beta,
+    )
 
     some.nested.target =
         compute(alphaValue, beta)
+
+    target = compute(alphaValue, beta)
+        ?: bar()
+
+    target =
+        compute(alphaValue, beta)
+            ?: bar()
 }

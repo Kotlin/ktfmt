@@ -180,7 +180,7 @@ internal open class ExpressionFormatterImpl : ExpressionFormatter {
   }
 
   context(_: FormatterStateHolder)
-  private fun formatBinaryOperationToken(expression: KtBinaryExpression, isFirst: Boolean = false) {
+  open fun formatBinaryOperationToken(expression: KtBinaryExpression, isFirst: Boolean = false) {
     when (expression.operationToken) {
       KtTokens.RANGE,
       KtTokens.RANGE_UNTIL -> {
