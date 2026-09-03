@@ -33,10 +33,10 @@ import org.jetbrains.ktfmt.format.visitor.trailingLambda
 /**
  * Custom call formatter for KotlinLang style.
  *
- * - Overrides formatting of qualified expressions. Removes custom handling of chained
- * calls and routes them all through [emitQualifiedExpression]. Together with the changes in
- * [KotlinLangExpressionFormatterImpl.formatInitializerExpression] handles formatting of qualified
- * expressions in assignment-like expressions allowing to preserve user-defined input.
+ * - Overrides formatting of qualified expressions. Removes custom handling of chained calls and
+ *   routes them all through [emitQualifiedExpression]. Together with the changes in
+ *   [KotlinLangExpressionFormatterImpl.formatAssignmentLikeExpression] handles formatting of
+ *   qualified expressions in assignment-like expressions allowing to preserve user-defined input.
  *
  * - Does not allow breaks before `->` in lambda expressions
  */
