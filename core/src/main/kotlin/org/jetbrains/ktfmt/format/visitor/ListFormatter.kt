@@ -214,13 +214,8 @@ internal open class ListFormatterImpl : ListFormatter {
       leadingBreak = !hasEmptyParens && hasTrailingComma
       breakAfterPrefix = false
     } else {
-      // A call without a trailing comma that is nonetheless forced onto multiple lines (because one
-      // of its arguments is itself a block-like multiline call) is rendered "exploded", with its
-      // closing parenthesis on its own line, just like a call with a trailing comma.
-      val contentForcesMultiline = !hasTrailingComma && arguments.any { it.isBlockLikeArgument }
       wrapInBlock = !options.manageTrailingCommas
-      breakBeforePostfix =
-          (options.manageTrailingCommas || contentForcesMultiline) && !hasEmptyParens
+      breakBeforePostfix = options.manageTrailingCommas && !hasEmptyParens
       leadingBreak = !hasEmptyParens
       breakAfterPrefix = !hasEmptyParens
     }

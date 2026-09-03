@@ -36,16 +36,18 @@ val x =
         )
         .bar()
 
-val x by foo(
-    1,
-    2,
-)
+val x by
+    foo(
+        1,
+        2,
+    )
 
-val x by foo(
-    1,
-    2,
-)
-    .bar()
+val x by
+    foo(
+            1,
+            2,
+        )
+        .bar()
 
 var x: Int
   field =
