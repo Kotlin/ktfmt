@@ -475,13 +475,13 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/DeclarationFo
 }
 
 public abstract interface class org/jetbrains/ktfmt/format/visitor/ExpressionFormatter {
+	public abstract fun formatAssignmentLikeExpression (Lorg/jetbrains/ktfmt/format/visitor/FormatterStateHolder;Lorg/jetbrains/kotlin/psi/KtExpression;Ljava/lang/String;)V
 	public abstract fun formatBinaryExpression (Lorg/jetbrains/ktfmt/format/visitor/FormatterStateHolder;Lorg/jetbrains/kotlin/psi/KtBinaryExpression;)V
 	public abstract fun formatBinaryWithTypeRHSExpression (Lorg/jetbrains/ktfmt/format/visitor/FormatterStateHolder;Lorg/jetbrains/kotlin/psi/KtBinaryExpressionWithTypeRHS;)V
 	public abstract fun formatCallableReferenceExpression (Lorg/jetbrains/ktfmt/format/visitor/FormatterStateHolder;Lorg/jetbrains/kotlin/psi/KtCallableReferenceExpression;)V
 	public abstract fun formatClassLiteralExpression (Lorg/jetbrains/ktfmt/format/visitor/FormatterStateHolder;Lorg/jetbrains/kotlin/psi/KtClassLiteralExpression;)V
 	public abstract fun formatCollectionLiteralExpression (Lorg/jetbrains/ktfmt/format/visitor/FormatterStateHolder;Lorg/jetbrains/kotlin/psi/KtCollectionLiteralExpression;)V
 	public abstract fun formatConstantExpression (Lorg/jetbrains/ktfmt/format/visitor/FormatterStateHolder;Lorg/jetbrains/kotlin/psi/KtConstantExpression;)V
-	public abstract fun formatInitializerExpression (Lorg/jetbrains/ktfmt/format/visitor/FormatterStateHolder;Lorg/jetbrains/kotlin/psi/KtExpression;Ljava/lang/String;)V
 	public abstract fun formatIsExpression (Lorg/jetbrains/ktfmt/format/visitor/FormatterStateHolder;Lorg/jetbrains/kotlin/psi/KtIsExpression;)V
 	public abstract fun formatLabeledExpression (Lorg/jetbrains/ktfmt/format/visitor/FormatterStateHolder;Lorg/jetbrains/kotlin/psi/KtLabeledExpression;)V
 	public abstract fun formatParenthesizedExpression (Lorg/jetbrains/ktfmt/format/visitor/FormatterStateHolder;Lorg/jetbrains/kotlin/psi/KtParenthesizedExpression;)V

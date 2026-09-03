@@ -23,7 +23,7 @@ import org.jetbrains.ktfmt.format.visitor.token
  * Implements a new unopinionated initializers formatting rule that preserves the user input:
  * - If there is a line break after the assignment operator, the initializer is formatted on a new
  *   line with an expression indent (same behaviour as
- *   [ExpressionFormatterImpl.formatInitializerExpression])
+ *   [ExpressionFormatterImpl.formatAssignmentLikeExpression])
  * - If there is no line break after the assignment operator, the initializer is formatted on the
  *   same line as the assignment operator
  *
@@ -37,11 +37,11 @@ import org.jetbrains.ktfmt.format.visitor.token
  */
 internal class KotlinLangExpressionFormatterImpl : ExpressionFormatterImpl() {
   context(_: FormatterStateHolder)
-  override fun formatInitializerExpression(initializer: KtExpression, assignmentOp: String) {
+  override fun formatAssignmentLikeExpression(assignment: KtExpression, assignmentOp: String) {
     builder.token(assignmentOp)
 
     var movedToOwnLine: Output.BreakTag? = null
-    if (initializer.isPrefixedByLineBreak) {
+    if (assignment.isPrefixedByLineBreak) {
       movedToOwnLine = Output.BreakTag()
       builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent, Optional.of(movedToOwnLine))
     } else {
@@ -51,7 +51,7 @@ internal class KotlinLangExpressionFormatterImpl : ExpressionFormatterImpl() {
     val indent = Indentation.If(movedToOwnLine, expressionBreakIndent, ZERO)
     builder.block(indent) {
       builder.fenceComments()
-      format(initializer)
+      format(assignment)
     }
   }
 }

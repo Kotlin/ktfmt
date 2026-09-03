@@ -34,15 +34,18 @@ import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
  */
 interface ExpressionFormatter {
   /**
-   * Format the right-hand side of an initializer expression, i.e. the expression after `=`
-   * (inclusively)
+   * Format the right-hand side of an assignment-like expression:
+   * - property initializers
+   * - assignment operators
+   * - expression bodies
+   * - backing fields
    *
    * @param assignmentOp The symbol that separates the initializer from the expression, see
    *   [org.jetbrains.kotlin.lexer.KtTokens.ALL_ASSIGNMENTS]
    */
   context(_: FormatterStateHolder)
-  fun formatInitializerExpression(
-      initializer: KtExpression,
+  fun formatAssignmentLikeExpression(
+      assignment: KtExpression,
       assignmentOp: String,
   )
 
@@ -97,17 +100,17 @@ interface ExpressionFormatter {
 
 internal open class ExpressionFormatterImpl : ExpressionFormatter {
   context(_: FormatterStateHolder)
-  override fun formatInitializerExpression(initializer: KtExpression, assignmentOp: String) {
+  override fun formatAssignmentLikeExpression(assignment: KtExpression, assignmentOp: String) {
     builder.token(assignmentOp)
-    if (initializer.isLambdaOrScopingFunction) {
-      formatLambdaOrScopingFunction(initializer)
-    } else if (initializer.isChainedScopingFunction) {
-      formatChainedScopingFunction(initializer, emitLeadingBreak = true)
+    if (assignment.isLambdaOrScopingFunction) {
+      formatLambdaOrScopingFunction(assignment)
+    } else if (assignment.isChainedScopingFunction) {
+      formatChainedScopingFunction(assignment, emitLeadingBreak = true)
     } else {
       builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent)
       builder.block(expressionBreakIndent) {
         builder.fenceComments()
-        format(initializer)
+        format(assignment)
       }
     }
   }
@@ -163,7 +166,7 @@ internal open class ExpressionFormatterImpl : ExpressionFormatter {
       // Assignments are statements in Kotlin; we don't have to worry about compound assignment.
       format(expression.left)
       builder.space()
-      formatInitializerExpression(expression.right!!, expression.operationReference.text)
+      formatAssignmentLikeExpression(expression.right!!, expression.operationReference.text)
       return
     }
 
