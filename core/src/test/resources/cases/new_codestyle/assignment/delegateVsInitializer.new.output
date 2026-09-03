@@ -5,10 +5,11 @@ val delegateSameLine by lazy {
     second()
 }
 
-val delegateOwnLine by lazy {
-    first()
-    second()
-}
+val delegateOwnLine by
+    lazy {
+        first()
+        second()
+    }
 
 val initializerSameLine = lazy {
     first()
@@ -21,8 +22,10 @@ val initializerOwnLine =
         second()
     }
 
-val delegateCall by
-    provider(alpha, beta)
+val delegateCall by provider(
+    alpha,
+    beta,
+)
 
 val delegateCallOwnLine by
     provider(alphaValue, betaValue)
