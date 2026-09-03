@@ -515,7 +515,7 @@ internal open class DeclarationFormatterImpl : DeclarationFormatter {
         }
       } else if (initializer != null) {
         builder.space()
-        formatInitializerExpression(initializer)
+        formatAssignmentLikeExpression(initializer)
       }
     }
     // for example `field = value`, `private set`, or `get = 2 * field`
@@ -661,7 +661,7 @@ internal open class DeclarationFormatterImpl : DeclarationFormatter {
       } else if (bodyExpression != null) {
         builder.space()
         builder.block {
-          formatInitializerExpression(bodyExpression)
+          formatAssignmentLikeExpression(bodyExpression)
         }
       }
       builder.guessToken(";")
@@ -713,7 +713,7 @@ internal open class DeclarationFormatterImpl : DeclarationFormatter {
       val initializer = backingField.initializer
       if (initializer != null) {
         builder.space()
-        formatInitializerExpression(initializer)
+        formatAssignmentLikeExpression(initializer)
       }
     }
   }
