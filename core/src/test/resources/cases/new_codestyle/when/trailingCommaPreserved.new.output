@@ -3,7 +3,8 @@
 
 fun f(x: Any) {
     when (x) {
-        0, 1,
+        0,
+        1,
             -> print(1)
         is SomeLongTypeNameHere,
         is AnotherLongTypeName,
