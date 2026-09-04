@@ -1,0 +1,22 @@
+fun foo() {
+  if ( // foo
+  x) {
+    bar()
+  }
+
+  when ( // foo
+  x) {
+    1 if // foo
+    baz() -> TODO()
+  }
+
+  while ( // foo
+  x) {
+    bar()
+  }
+
+  do {
+    bar()
+  } while ( // foo
+  x)
+}
