@@ -576,7 +576,6 @@ public final class org/jetbrains/ktfmt/format/visitor/PsiUtilsKt {
 	public static final fun getChainRoot (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/psi/KtExpression;
 	public static final fun getHasEmptyParenthesis (Lorg/jetbrains/kotlin/psi/KtParameterList;)Z
 	public static final fun getHasEmptyParenthesis (Lorg/jetbrains/kotlin/psi/KtValueArgumentList;)Z
-	public static final fun getHasLineBreakingCommentBefore (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)Z
 	public static final fun getHasSourceNewlineInLambdaBody (Lorg/jetbrains/kotlin/psi/KtLambdaExpression;)Z
 	public static final fun isBlockLikeArgument (Lorg/jetbrains/kotlin/psi/KtValueArgument;)Z
 	public static final fun isBlockLikeCall (Lorg/jetbrains/kotlin/psi/KtExpression;)Z

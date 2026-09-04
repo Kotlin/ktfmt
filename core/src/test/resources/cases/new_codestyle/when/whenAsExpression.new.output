@@ -1,0 +1,47 @@
+fun f(x: Int): String =
+    when (x) {
+        1 -> "one"
+        else -> "many"
+    }
+
+val p =
+    when {
+        cond -> 1
+        else -> 2
+    }
+
+class Foo(val x: Int) {
+    val name: String
+        get() =
+            when (x) {
+                1 -> "one"
+                else -> "other"
+            }
+}
+
+fun g(x: Int): Int {
+    val someVeryLongVariableNameGoesHere =
+        when (x) {
+            1 -> 1
+            else -> 2
+        }
+    consume(
+        when (x) {
+            1 -> "one"
+            else -> "many"
+        },
+        secondArgument,
+    )
+    register(
+        name = "handler",
+        body =
+            when (x) {
+                1 -> "one"
+                else -> "many"
+            },
+    )
+    return when (x) {
+        1 -> 1
+        else -> 2
+    }.also { println(it) }
+}

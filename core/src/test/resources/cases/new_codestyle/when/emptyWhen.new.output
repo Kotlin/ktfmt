@@ -1,0 +1,10 @@
+fun f(x: Int) {
+    when (x) {}
+    when {}
+    when (x) {}
+    when (x) {
+        1 -> {}
+        2 -> {}
+        else -> Unit
+    }
+}

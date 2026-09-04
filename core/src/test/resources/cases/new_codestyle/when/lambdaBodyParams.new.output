@@ -1,0 +1,20 @@
+// MAX_WIDTH 60
+
+fun f(x: ModifierType) {
+    when (x) {
+        is FirstModifierType -> { myObject ->
+            doCustomModification(x, myObject)
+        }
+        is SecondModifierType -> {
+            myObject,
+            second,
+            third,
+            fourth ->
+            doCustomModification(x, myObject)
+        }
+        is ThirdModifierType -> {}
+        is FourthModifierType -> {
+            it.doSomething()
+        }
+    }
+}
