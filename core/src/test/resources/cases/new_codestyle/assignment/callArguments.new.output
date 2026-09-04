@@ -1,0 +1,79 @@
+// MAX_WIDTH 40
+
+fun f() {
+    result = compute(alpha, beta)
+    result = compute(
+        alphaValue,
+        betaValue,
+        gammaValue,
+    )
+
+    result = compute(
+        first = alpha,
+        second = beta,
+    )
+    result = compute(
+        first = alphaValue,
+        second = betaValue,
+    )
+
+    some.nested.target = compute(
+        first = alpha,
+        second = beta,
+    )
+    result = outer(
+        inner(alphaValue, betaValue),
+        gammaValue,
+    )
+
+    result = register(alphaValue) {
+        value ->
+        consume(value)
+    }
+    result = combine(
+        transform = { value ->
+            value + alphaValue
+        },
+        fallback = betaValue,
+    )
+
+    result = consume(
+        items
+            .filter { it.isValid }
+            .map { it.value },
+    )
+    result = consume(
+        provider
+            ?.load(alphaValue)
+            ?.value,
+    )
+
+    result = consume(
+        ::transform,
+        *values,
+    )
+
+    result = register(
+        name = alphaValue,
+        handler = { value ->
+            consume(value)
+        },
+    )
+    result = consume(
+        source =
+            items
+                .filter { it.isValid }
+                .map { it.value },
+        fallback = betaValue,
+    )
+    result = outer(
+        input =
+            inner(
+                first = alphaValue,
+                second = betaValue,
+            ),
+        transform = { value ->
+            transform(value)
+        },
+    )
+}
