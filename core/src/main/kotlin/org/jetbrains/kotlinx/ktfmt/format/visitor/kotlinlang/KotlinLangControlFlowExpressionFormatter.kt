@@ -71,11 +71,12 @@ internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpress
               }
             }
             whenEntry.guard?.let { guard ->
-              builder.space()
+              builder.breakOp(Doc.FillMode.INDEPENDENT, " ", expressionBreakIndent)
               emitKeywordWithCondition(
                   "if",
                   guard.getExpression(),
                   surroundConditionWithParens = false,
+                  breakableBeforeCondition = false,
                   breakableAfterCondition = false,
               )
             }
