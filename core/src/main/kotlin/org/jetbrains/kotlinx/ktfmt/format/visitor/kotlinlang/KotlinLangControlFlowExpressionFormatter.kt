@@ -53,6 +53,7 @@ internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpress
 
       expression.entries.forEachIndexed { index, whenEntry ->
         builder.block(blockIndent) {
+          val forceMultiline = whenEntry.trailingComma != null
           if (index != 0) {
             // preserve new line if there's one
             builder.blankLineWanted(OpsBuilder.BlankLineWanted.PRESERVE)
@@ -67,7 +68,11 @@ internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpress
                 format(condition)
                 builder.guessToken(",")
                 if (index != conditions.lastIndex) {
-                  builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
+                  if (forceMultiline) {
+                    builder.forcedBreak()
+                  } else {
+                    builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
+                  }
                 }
               }
             }
@@ -83,7 +88,7 @@ internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpress
             }
           }
           val whenExpression = whenEntry.expression
-          if (whenEntry.trailingComma != null) {
+          if (forceMultiline) {
             builder.forcedBreak(expressionBreakIndent)
           } else {
             builder.space()
