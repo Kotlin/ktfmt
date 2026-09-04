@@ -146,7 +146,7 @@ val KtExpression.chainParts: List<KtExpression>
  * their own line (preceded by whitespace with a newline). Inline block comments like `x /*tag*/ ||`
  * do not force a break and should not trigger INDEPENDENT fill mode.
  */
-val PsiElement.hasLineBreakingCommentBefore: Boolean
+internal val PsiElement?.hasLineBreakingCommentBefore: Boolean
   get() {
     val comment = getPrevSiblingIgnoringWhiteSpace<PsiComment>() ?: return false
 

@@ -325,7 +325,7 @@ internal open class ControlFlowExpressionFormatterImpl : ControlFlowExpressionFo
    *   For example, guard conditions do not use parens.
    */
   context(_: FormatterStateHolder)
-  fun emitKeywordWithCondition(
+  open fun emitKeywordWithCondition(
       keyword: String,
       condition: KtExpression?,
       surroundConditionWithParens: Boolean = true,

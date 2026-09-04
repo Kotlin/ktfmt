@@ -4,6 +4,7 @@ import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.OpsBuilder
 import java.util.Optional
 import org.jetbrains.kotlin.psi.KtBlockExpression
+import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.ktfmt.format.visitor.ControlFlowExpressionFormatterImpl
@@ -16,6 +17,8 @@ import org.jetbrains.ktfmt.format.visitor.builder
 import org.jetbrains.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.ktfmt.format.visitor.forcedBreak
 import org.jetbrains.ktfmt.format.visitor.format
+import org.jetbrains.ktfmt.format.visitor.hasLineBreakingCommentBefore
+import org.jetbrains.ktfmt.format.visitor.options
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
 
@@ -35,6 +38,9 @@ import org.jetbrains.ktfmt.format.visitor.token
  * }
  * ```
  * - Only add a break before `->` when the condition ends with a trailing comma
+ *
+ * - Wrap keywords and conditions into a single block with [expressionBreakIndent] in
+ *   [emitKeywordWithCondition] to correctly handle line comments
  */
 internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpressionFormatterImpl() {
   context(_: FormatterStateHolder)
@@ -79,10 +85,15 @@ internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpress
               }
             }
             whenEntry.guard?.let { guard ->
-              builder.breakOp(Doc.FillMode.INDEPENDENT, " ", expressionBreakIndent)
+              val guardCondition = guard.getExpression()
+              if (guardCondition.hasLineBreakingCommentBefore) {
+                builder.space()
+              } else {
+                builder.breakOp(Doc.FillMode.INDEPENDENT, " ", expressionBreakIndent)
+              }
               emitKeywordWithCondition(
                   "if",
-                  guard.getExpression(),
+                  guardCondition,
                   surroundConditionWithParens = false,
                   breakableBeforeCondition = false,
                   breakableAfterCondition = false,
@@ -110,6 +121,42 @@ internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpress
         builder.forcedBreak()
       }
       builder.token("}")
+    }
+  }
+
+  context(_: FormatterStateHolder)
+  override fun emitKeywordWithCondition(
+      keyword: String,
+      condition: KtExpression?,
+      surroundConditionWithParens: Boolean,
+      breakableBeforeCondition: Boolean,
+      breakableAfterCondition: Boolean,
+  ) {
+    if (condition == null) {
+      builder.token(keyword)
+      return
+    }
+
+    builder.block(expressionBreakIndent) {
+      builder.token(keyword)
+      builder.space()
+      if (surroundConditionWithParens) {
+        builder.token("(")
+      }
+      if (options.manageTrailingCommas) {
+        if (breakableBeforeCondition) {
+          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
+        }
+        format(condition)
+        if (breakableAfterCondition) {
+          builder.breakOp(Doc.FillMode.UNIFIED, "", -expressionBreakIndent)
+        }
+      } else {
+        builder.block { format(condition) }
+      }
+    }
+    if (surroundConditionWithParens) {
+      builder.token(")")
     }
   }
 }
