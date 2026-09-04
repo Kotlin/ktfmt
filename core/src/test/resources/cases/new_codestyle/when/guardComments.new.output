@@ -1,8 +1,7 @@
 fun f(x: Any) {
     when (x) {
-        is Foo
-            if // line comment after if
-        x.isReady -> doSomething()
+        is Foo if // line comment after if
+            x.isReady -> doSomething()
         is Bar if /* block comment after if */ x.isReady -> doSomething()
         is Baz if x.isReady /* before the arrow */ -> doSomething()
         else -> doNothing()
