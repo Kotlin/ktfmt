@@ -64,10 +64,12 @@ internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpress
               builder.token("else")
             } else {
               val conditions = whenEntry.conditions
+              val lastIndex = conditions.lastIndex
+              val lastCommaIndex = if (forceMultiline) lastIndex + 1 else lastIndex
               for ((index, condition) in conditions.withIndex()) {
                 format(condition)
-                builder.guessToken(",")
-                if (index != conditions.lastIndex) {
+                if (index < lastCommaIndex) builder.token(",")
+                if (index < lastIndex) {
                   if (forceMultiline) {
                     builder.forcedBreak()
                   } else {
