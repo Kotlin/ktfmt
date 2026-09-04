@@ -329,6 +329,7 @@ internal open class ControlFlowExpressionFormatterImpl : ControlFlowExpressionFo
       keyword: String,
       condition: KtExpression?,
       surroundConditionWithParens: Boolean = true,
+      breakableBeforeCondition: Boolean = true,
       breakableAfterCondition: Boolean = true,
   ) {
     if (condition == null) {
@@ -344,7 +345,9 @@ internal open class ControlFlowExpressionFormatterImpl : ControlFlowExpressionFo
       }
       if (options.manageTrailingCommas) {
         builder.block(expressionBreakIndent) {
-          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
+          if (breakableBeforeCondition) {
+            builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
+          }
           format(condition)
           if (breakableAfterCondition) {
             builder.breakOp(Doc.FillMode.UNIFIED, "", -expressionBreakIndent)
