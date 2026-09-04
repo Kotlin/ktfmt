@@ -10,11 +10,11 @@ fun feedAnimal(animal: Animal) {
     }
 
     when (animal) {
-        is Animal.Cat if
-            animal.isHungry && animal.hasFood && animal.ownerIsHome ->
+        is Animal.Cat
+            if animal.isHungry && animal.hasFood && animal.ownerIsHome ->
             animal.feedCat()
-        is Animal.Dog if
-            someVeryLongCondition(animal) ||
+        is Animal.Dog
+            if someVeryLongCondition(animal) ||
                 anotherVeryLongCondition(animal) -> {
             animal.feedDog()
         }
