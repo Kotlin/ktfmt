@@ -60,18 +60,16 @@ fun f() {
         },
     )
     result = consume(
-        source =
-            items
-                .filter { it.isValid }
-                .map { it.value },
+        source = items
+            .filter { it.isValid }
+            .map { it.value },
         fallback = betaValue,
     )
     result = outer(
-        input =
-            inner(
-                first = alphaValue,
-                second = betaValue,
-            ),
+        input = inner(
+            first = alphaValue,
+            second = betaValue,
+        ),
         transform = { value ->
             transform(value)
         },
