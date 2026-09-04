@@ -14,6 +14,7 @@ import org.jetbrains.ktfmt.format.visitor.blockIndent
 import org.jetbrains.ktfmt.format.visitor.breakOp
 import org.jetbrains.ktfmt.format.visitor.builder
 import org.jetbrains.ktfmt.format.visitor.expressionBreakIndent
+import org.jetbrains.ktfmt.format.visitor.forcedBreak
 import org.jetbrains.ktfmt.format.visitor.format
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
@@ -33,7 +34,7 @@ import org.jetbrains.ktfmt.format.visitor.token
  *     is ReceiverParameterDescriptor -> true
  * }
  * ```
- * - Never add a break before `->`, even when the condition ends with a trailing comma
+ * - Only add a break before `->` when the condition ends with a trailing comma
  */
 internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpressionFormatterImpl() {
   context(_: FormatterStateHolder)
@@ -82,7 +83,11 @@ internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpress
             }
           }
           val whenExpression = whenEntry.expression
-          builder.space()
+          if (whenEntry.trailingComma != null) {
+            builder.forcedBreak(expressionBreakIndent)
+          } else {
+            builder.space()
+          }
           builder.token("->")
           if (whenExpression is KtBlockExpression || whenExpression is KtLambdaExpression) {
             builder.space()
