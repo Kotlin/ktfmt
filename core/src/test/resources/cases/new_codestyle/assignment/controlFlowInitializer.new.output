@@ -1,0 +1,46 @@
+// MAX_WIDTH 40
+
+val ifSameLine = if (cond) alpha
+else beta
+
+val ifOwnLine =
+    if (cond) alpha else beta
+
+val ifBlockSameLine = if (cond) {
+    alpha()
+} else {
+    beta()
+}
+
+val ifBlockOwnLine =
+    if (cond) {
+        alpha()
+    } else {
+        beta()
+    }
+
+val whenSameLine = when (value) {
+    1 -> alpha
+    else -> beta
+}
+
+val whenOwnLine =
+    when (value) {
+        1 -> alpha
+        else -> beta
+    }
+
+val trySameLine = try {
+    alpha()
+} catch (e: Exception) {
+    beta()
+}
+
+val objectSameLine = object : Base() {
+    override fun run() {}
+}
+
+val objectOwnLine =
+    object : Base() {
+        override fun run() {}
+    }

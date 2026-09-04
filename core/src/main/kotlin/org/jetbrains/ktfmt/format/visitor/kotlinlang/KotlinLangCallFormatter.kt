@@ -6,9 +6,12 @@ import java.util.Optional
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtLambdaExpression
+import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtPostfixExpression
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
+import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.ktfmt.format.visitor.CallFormatterImpl
 import org.jetbrains.ktfmt.format.visitor.FormatterStateHolder
@@ -17,16 +20,13 @@ import org.jetbrains.ktfmt.format.visitor.Indentation.Companion.ZERO
 import org.jetbrains.ktfmt.format.visitor.block
 import org.jetbrains.ktfmt.format.visitor.breakOp
 import org.jetbrains.ktfmt.format.visitor.builder
-import org.jetbrains.ktfmt.format.visitor.chainRoot
-import org.jetbrains.ktfmt.format.visitor.chainedSelectorsHaveValueArguments
 import org.jetbrains.ktfmt.format.visitor.computeGroups
 import org.jetbrains.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.ktfmt.format.visitor.format
+import org.jetbrains.ktfmt.format.visitor.formatAssignmentLikeExpression
+import org.jetbrains.ktfmt.format.visitor.formatCommaSeparatedList
 import org.jetbrains.ktfmt.format.visitor.inImport
 import org.jetbrains.ktfmt.format.visitor.isBlockLikeCall
-import org.jetbrains.ktfmt.format.visitor.isChainedBlockLikeCall
-import org.jetbrains.ktfmt.format.visitor.isChainedScopingFunction
-import org.jetbrains.ktfmt.format.visitor.isMultilineScopingFunction
 import org.jetbrains.ktfmt.format.visitor.open
 import org.jetbrains.ktfmt.format.visitor.options
 import org.jetbrains.ktfmt.format.visitor.sync
@@ -34,12 +34,49 @@ import org.jetbrains.ktfmt.format.visitor.token
 import org.jetbrains.ktfmt.format.visitor.trailingLambda
 
 /**
- * Custom call formatter for KotlinLang style that handles indentation of block-like calls with or
- * without chained call (see #633). Currently, it extracts the behaviour introduced in #634 to an
- * experimental engine API. Motivation: we don't want to change the behaviour of the existing
- * formatter while we're also evolving the new Kotlin Lang style.
+ * Custom call formatter for KotlinLang style.
+ *
+ * - Overrides formatting of qualified expressions. Removes custom handling of chained calls and
+ *   routes them all through [emitQualifiedExpression]. Together with the changes in
+ *   [KotlinLangExpressionFormatterImpl.formatAssignmentLikeExpression] handles formatting of
+ *   qualified expressions in assignment-like expressions allowing to preserve user-defined input.
+ *
+ * - Does not allow breaks before `->` in lambda expressions
+ *
+ * - Overrides formatting of call arguments and reuses [formatAssignmentLikeExpression] for named
+ *   arguments
  */
 internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
+  context(_: FormatterStateHolder)
+  override fun formatArgument(
+      argument: KtValueArgument,
+      wrapInBlock: Boolean,
+      brokeBeforeBrace: BreakTag?,
+  ) {
+    builder.sync(argument)
+    val hasArgName = argument.getArgumentName() != null
+    val isLambda = argument.getArgumentExpression() is KtLambdaExpression
+    if (hasArgName) {
+      format(argument.getArgumentName())
+      builder.space()
+      argument.getArgumentExpression()?.let { formatAssignmentLikeExpression(it) }
+      return
+    }
+    builder.block(ZERO, isEnabled = wrapInBlock) {
+      if (argument.isSpread) {
+        builder.token("*")
+      }
+      if (isLambda) {
+        formatLambdaExpression(
+            argument.getArgumentExpression() as KtLambdaExpression,
+            brokeBeforeBrace = brokeBeforeBrace,
+        )
+      } else {
+        format(argument.getArgumentExpression())
+      }
+    }
+  }
+
   context(_: FormatterStateHolder)
   override fun formatQualifiedExpression(expression: KtQualifiedExpression) {
     builder.sync(expression)
@@ -67,14 +104,6 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
           builder.token(expression.operationSign.value)
           format(expression.selectorExpression)
         }
-      }
-      expression.isChainedScopingFunction &&
-          expression.chainRoot.isMultilineScopingFunction &&
-          !chainedSelectorsHaveValueArguments(expression) -> {
-        formatChainedScopingFunction(expression, emitLeadingBreak = false)
-      }
-      expression.isChainedBlockLikeCall -> {
-        formatChainedBlockLikeCall(expression, emitLeadingBreak = false)
       }
       else -> {
         emitQualifiedExpression(expression)
@@ -138,6 +167,25 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
           )
         }
       }
+    }
+  }
+
+  context(_: FormatterStateHolder)
+  override fun formatLambdaArguments(
+      valueParameterList: KtParameterList,
+      valueParametersIndent: Indentation,
+      arrowIndent: Indentation,
+  ) {
+    builder.space()
+    builder.block(valueParametersIndent) { formatCommaSeparatedList(valueParameterList.parameters) }
+    builder.block(arrowIndent) {
+      if (valueParameterList.trailingComma != null) {
+        builder.token(",")
+        builder.space()
+      } else if (valueParameterList.parameters.isNotEmpty()) {
+        builder.space()
+      }
+      builder.token("->")
     }
   }
 }
