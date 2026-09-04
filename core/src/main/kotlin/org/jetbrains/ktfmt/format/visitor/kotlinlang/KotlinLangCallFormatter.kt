@@ -6,10 +6,12 @@ import java.util.Optional
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtPostfixExpression
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
+import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.ktfmt.format.visitor.CallFormatterImpl
 import org.jetbrains.ktfmt.format.visitor.FormatterStateHolder
@@ -21,6 +23,7 @@ import org.jetbrains.ktfmt.format.visitor.builder
 import org.jetbrains.ktfmt.format.visitor.computeGroups
 import org.jetbrains.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.ktfmt.format.visitor.format
+import org.jetbrains.ktfmt.format.visitor.formatAssignmentLikeExpression
 import org.jetbrains.ktfmt.format.visitor.formatCommaSeparatedList
 import org.jetbrains.ktfmt.format.visitor.inImport
 import org.jetbrains.ktfmt.format.visitor.isBlockLikeCall
@@ -39,8 +42,41 @@ import org.jetbrains.ktfmt.format.visitor.trailingLambda
  *   qualified expressions in assignment-like expressions allowing to preserve user-defined input.
  *
  * - Does not allow breaks before `->` in lambda expressions
+ *
+ * - Overrides formatting of call arguments and reuses [formatAssignmentLikeExpression] for named
+ *   arguments
  */
 internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
+  context(_: FormatterStateHolder)
+  override fun formatArgument(
+      argument: KtValueArgument,
+      wrapInBlock: Boolean,
+      brokeBeforeBrace: BreakTag?,
+  ) {
+    builder.sync(argument)
+    val hasArgName = argument.getArgumentName() != null
+    val isLambda = argument.getArgumentExpression() is KtLambdaExpression
+    if (hasArgName) {
+      format(argument.getArgumentName())
+      builder.space()
+      argument.getArgumentExpression()?.let { formatAssignmentLikeExpression(it) }
+      return
+    }
+    builder.block(ZERO, isEnabled = wrapInBlock) {
+      if (argument.isSpread) {
+        builder.token("*")
+      }
+      if (isLambda) {
+        formatLambdaExpression(
+            argument.getArgumentExpression() as KtLambdaExpression,
+            brokeBeforeBrace = brokeBeforeBrace,
+        )
+      } else {
+        format(argument.getArgumentExpression())
+      }
+    }
+  }
+
   context(_: FormatterStateHolder)
   override fun formatQualifiedExpression(expression: KtQualifiedExpression) {
     builder.sync(expression)
