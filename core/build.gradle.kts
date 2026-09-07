@@ -16,7 +16,6 @@
 
 import org.jetbrains.dokka.gradle.tasks.DokkaGeneratePublicationTask
 import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
-import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 import org.jetbrains.ktfmt.GenerateKtfmtFileTask
 
 plugins {
@@ -25,10 +24,9 @@ plugins {
   alias(libs.plugins.dokka)
   alias(libs.plugins.dokka.javadoc)
   alias(libs.plugins.shadowJar)
-  id("maven-publish")
-  id("signing")
   id("ktfmt.ktfmt-file-generator")
   id("ktfmt.native-image")
+  id("ktfmt.publishing")
 }
 
 dependencies {
@@ -121,44 +119,3 @@ kotlin {
 group = "org.jetbrains"
 
 version = rootProject.version
-
-publishing {
-  publications {
-    create<MavenPublication>("maven") {
-      groupId = "org.jetbrains"
-      artifactId = "ktfmt"
-      version = rootProject.version.toString()
-
-      from(components["java"])
-      artifact(tasks.named("sourcesJar"))
-      artifact(tasks.named("javadocJar"))
-
-      pom {
-        name = "Ktfmt"
-        description =
-            "A program that reformats Kotlin source code to comply with the common community standard for Kotlin code conventions."
-        url = "https://github.com/Kotlin/ktfmt"
-        inceptionYear = "2019"
-        developers { developer { name = "Kotlin" } }
-        licenses {
-          license {
-            name = "The Apache License, Version 2.0"
-            url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-          }
-        }
-        scm {
-          connection = "scm:git:https://github.com/Kotlin/ktfmt.git"
-          developerConnection = "scm:git:git@github.com:Kotlin/ktfmt.git"
-          url = "https://github.com/Kotlin/ktfmt.git"
-        }
-      }
-    }
-  }
-}
-
-if (System.getenv("SIGN_BUILD") != null) {
-  signing {
-    useGpgCmd()
-    sign(publishing.publications["maven"])
-  }
-}
