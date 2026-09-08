@@ -43,4 +43,5 @@ dependencyResolutionManagement {
 
 plugins {
   id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+  id("org.jetbrains.kotlinx.artifacts-validator-plugin") version "0.0.2"
 }
