@@ -16,44 +16,81 @@
 
 package org.jetbrains.ktfmt
 
-import org.apache.tools.ant.taskdefs.condition.Os
 import org.graalvm.buildtools.gradle.dsl.GraalVMExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaApplication
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Exec
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
+import org.gradle.api.tasks.bundling.Compression
+import org.gradle.api.tasks.bundling.Tar
+import org.gradle.api.tasks.bundling.Zip
+import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.crypto.checksum.Checksum
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
+import org.gradle.plugins.signing.SigningExtension
+
+private val Project.nativeImageGc: String
+  get() = configurationProperty("ktfmt.native.gc").getOrElse("serial")
+
+private val Project.enableNativeDebug: Boolean
+  get() = configurationProperty("ktfmt.native.debug").map { it.toBooleanStrict() }.getOrElse(false)
+
+private val Project.enableLto: Boolean
+  get() = configurationProperty("ktfmt.native.lto").map { it.toBooleanStrict() }.getOrElse(false)
+
+private val Project.enableMusl: Boolean
+  get() = configurationProperty("ktfmt.native.musl").map { it.toBooleanStrict() }.getOrElse(false)
+
+private val Project.muslHome: String?
+  get() = configurationProperty("ktfmt.native.musl.home").orNull
+
+private val Project.nativeImageExecutable: Provider<RegularFile>
+  get() =
+      layout.buildDirectory.file(
+          "native/nativeCompile/" + if (currentOs == Os.WINDOWS) "ktfmt.exe" else "ktfmt",
+      )
+
+private val Project.nativeImageArchiveBaseName: String
+  get() = "ktfmt-${currentOs.osName}-${currentArch.archName}-${rootProject.version}"
+
+private val Project.nativeImageArchiveExtension: String
+  get() = if (currentOs == Os.WINDOWS) "zip" else "tar.gz"
 
 @Suppress("unused")
 class NativeImagePlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.plugins.apply("application")
     project.plugins.apply("org.graalvm.buildtools.native")
+    project.plugins.apply("signing")
+    project.plugins.apply("org.gradle.crypto.checksum")
 
     project.extensions.configure<JavaApplication> { mainClass.set(ENTRYPOINT) }
 
-    project.plugins.withId("java") { configureNativeImage(project) }
+    project.configureNativeImage()
   }
 
-  private fun configureNativeImage(project: Project) {
-    val nativeImageLibs =
-        project.extensions.getByType<VersionCatalogsExtension>().named("nativeImageLibs")
+  private fun Project.configureNativeImage() {
+    val nativeImageLibs = extensions.getByType<VersionCatalogsExtension>().named("nativeImageLibs")
 
-    val nativeImageJavacClasspath: Configuration =
-        project.configurations.create("nativeImageJavacClasspath") {
-          extendsFrom(project.configurations.getByName("implementation"))
+    val nativeImageJavacClasspath =
+        configurations.create("nativeImageJavacClasspath") {
+          extendsFrom(configurations.getByName("implementation"))
           isCanBeResolved = true
         }
 
-    project.dependencies.apply {
+    dependencies.apply {
       add("nativeImageJavacClasspath", nativeImageLibs.findLibrary("graalvm-nativeimage").get())
       add("nativeImageClasspath", nativeImageLibs.findLibrary("jline-terminal").get())
       add("nativeImageClasspath", nativeImageLibs.findLibrary("jline-terminal-jansi").get())
@@ -61,8 +98,8 @@ class NativeImagePlugin : Plugin<Project> {
       add("nativeImageClasspath", nativeImageLibs.findLibrary("jline-terminal-jni").get())
     }
 
-    val nativeImageDir = project.layout.projectDirectory.dir(NATIVE_IMAGE_SRC_DIR)
-    val javaExtension = project.extensions.getByType<JavaPluginExtension>()
+    val nativeImageDir = layout.projectDirectory.dir(NATIVE_IMAGE_SRC_DIR)
+    val javaExtension = extensions.getByType<JavaPluginExtension>()
     val nativeImageSourceSet =
         javaExtension.sourceSets.create("nativeImageSourceSet") {
           java.srcDir(nativeImageDir.dir("java"))
@@ -71,145 +108,90 @@ class NativeImagePlugin : Plugin<Project> {
         }
 
     val compileNativeImageClasses =
-        project.tasks.register(
-            "compileNativeImageClasses",
-            org.gradle.api.tasks.compile.JavaCompile::class,
-        ) {
+        tasks.register<JavaCompile>("compileNativeImageClasses") {
           group = "build"
           description = "Compiles Native Image helper classes"
           source = nativeImageSourceSet.java
           classpath = nativeImageJavacClasspath
-          destinationDirectory.set(project.layout.buildDirectory.dir("classes/native-image"))
-          dependsOn(project.tasks.named("compileJava"))
+          destinationDirectory.set(layout.buildDirectory.dir("classes/native-image"))
+          dependsOn(tasks.named("compileJava"))
         }
 
     val nativeImageJar =
-        project.tasks.register("nativeImageJar", Jar::class) {
+        tasks.register<Jar>("nativeImageJar") {
           group = "build"
           description = "Assembles Native Image jar and resources"
-          dependsOn(compileNativeImageClasses)
-          from(project.layout.buildDirectory.dir("classes/native-image"))
+          from(compileNativeImageClasses.flatMap { it.destinationDirectory })
           from(nativeImageSourceSet.resources)
           archiveClassifier.set("nativeimage")
         }
 
     val nativeCompile =
-        project.tasks.named("nativeCompile") {
-          dependsOn(compileNativeImageClasses, nativeImageJar)
+        tasks.named("nativeCompile") {
+          dependsOn(nativeImageJar)
         }
 
-    val nativeImageExecutable =
-        project.layout.buildDirectory.file(
-            "native/nativeCompile/" + if (Os.isFamily(Os.FAMILY_WINDOWS)) "ktfmt.exe" else "ktfmt",
-        )
-
-    project.tasks.register<Exec>("nativeImageSmokeTest") {
+    tasks.register<Exec>("nativeImageSmokeTest") {
       group = "verification"
       description = "Runs the Native Image binary against the project sources"
       dependsOn(nativeCompile)
 
-      executable = nativeImageExecutable.get().asFile.absolutePath
+      val executableFile = nativeImageExecutable.get().asFile
+      executable = executableFile.absolutePath
       args(
-          project.layout.projectDirectory.dir("src").asFile.absolutePath,
+          layout.projectDirectory.dir("src").asFile.absolutePath,
           "--dry-run",
           "--set-exit-if-changed",
       )
 
       doFirst {
-        if (!nativeImageExecutable.get().asFile.exists()) {
-          throw GradleException("No executable exists at ${nativeImageExecutable.get().asFile}")
+        if (!executableFile.exists()) {
+          throw GradleException("No executable exists at $executableFile")
         }
-        if (!nativeImageExecutable.get().asFile.canExecute()) {
-          throw GradleException("${nativeImageExecutable.get().asFile} is not executable")
+        if (!executableFile.canExecute()) {
+          throw GradleException("$executableFile is not executable")
         }
       }
     }
 
-    configureGraalvmNative(project, nativeImageJar)
+    configureGraalvmNativeImage(nativeImageJar)
+
+    configureNativeImageArtifactsTask()
   }
 
-  private fun configureGraalvmNative(
-      project: Project,
-      nativeImageJar: org.gradle.api.tasks.TaskProvider<Jar>,
-  ) {
-    val nativeRelease = project.findProperty("ktfmt.native.release") == "true"
-    val nativeTarget = project.findProperty("ktfmt.native.target") ?: "compatibility"
-    val nativeGc = project.findProperty("ktfmt.native.gc") ?: "serial"
-    val nativeDebug = project.findProperty("ktfmt.native.debug") == "true"
-    val enableLto = project.findProperty("ktfmt.native.lto") == "true"
-    val muslSysroot =
-        (project.findProperty("ktfmt.native.muslHome") ?: System.getenv("MUSL_HOME"))?.toString()
-    val preferMusl =
-        (project.findProperty("ktfmt.native.musl") == "true").also { enabled ->
-          require(!enabled || muslSysroot != null) {
-            "When `ktfmt.native.musl` is true, -Pktfmt.native.muslHome or MUSL_HOME must be set to the Musl sysroot. " +
-                "See https://www.graalvm.org/latest/reference-manual/native-image/guides/build-static-executables/"
-          }
-        }
-    val preferSmol = project.findProperty("ktfmt.native.smol") == "true"
-    val nativeOpt =
-        when (val opt = project.findProperty("ktfmt.native.opt")) {
-          null ->
-              when {
-                preferSmol -> "s"
-                nativeRelease -> "3"
-                else -> "b"
-              }
-          else -> opt
-        }
-
-    project.extensions.configure<GraalVMExtension>("graalvmNative") {
+  private fun Project.configureGraalvmNativeImage(nativeImageJar: TaskProvider<Jar>) {
+    extensions.configure<GraalVMExtension>("graalvmNative") {
       binaries.named("main") {
         imageName.set("ktfmt")
         mainClass.set(ENTRYPOINT)
         classpath(
-            project.files(
+            files(
                 nativeImageJar.flatMap { it.archiveFile },
-                project.tasks.named("jar", Jar::class).flatMap { it.archiveFile },
-                project.configurations.getByName("compileClasspath"),
-                project.configurations.getByName("runtimeClasspath"),
-                project.configurations.getByName("nativeImageClasspath"),
+                tasks.named("jar", Jar::class).flatMap { it.archiveFile },
+                configurations.getByName("compileClasspath"),
+                configurations.getByName("runtimeClasspath"),
+                configurations.getByName("nativeImageClasspath"),
             ),
         )
-        buildArgs(
-            buildNativeImageArgs(
-                project,
-                nativeOpt,
-                nativeTarget,
-                nativeDebug,
-                nativeGc,
-                enableLto,
-                preferMusl,
-                muslSysroot,
-            ),
-        )
+        buildArgs(buildNativeImageArgs())
       }
     }
   }
 
-  private fun buildNativeImageArgs(
-      project: Project,
-      nativeOpt: Any,
-      nativeTarget: Any,
-      nativeDebug: Boolean,
-      nativeGc: Any,
-      enableLto: Boolean,
-      preferMusl: Boolean,
-      muslSysroot: String?,
-  ): List<String> = buildList {
-    add("-O$nativeOpt")
-    add("-march=$nativeTarget")
-    if (nativeDebug) {
+  private fun Project.buildNativeImageArgs(): List<String> = buildList {
+    val muslEnabled = enableMusl
+
+    add("-O3")
+    add("-march=compatibility")
+    if (enableNativeDebug) {
       add("-g")
       add("-H:+SourceLevelDebug")
     }
 
     add("--no-fallback")
-    add("--gc=$nativeGc")
+    add("--gc=$nativeImageGc")
     add("--future-defaults=all")
     add("--link-at-build-time=org.jetbrains.ktfmt")
-    add("--initialize-at-build-time=org.jetbrains.ktfmt")
-    add($$"--initialize-at-build-time=com.google.googlejavaformat.Indent$Const")
     add("--add-opens=java.base/java.util=ALL-UNNAMED")
     add("--color=always")
     add("-H:+ReportExceptionStackTraces")
@@ -226,56 +208,93 @@ class NativeImagePlugin : Plugin<Project> {
       add("--native-compiler-options=-flto")
       add("-H:NativeLinkerOption=-flto")
     }
-    if (preferMusl) {
-      add("-H:NativeLinkerOption=-L${muslSysroot}/lib")
+    if (muslEnabled) {
+      val muslHome =
+          muslHome
+              ?: throw GradleException(
+                  "`ktfmt.native.musl.home` required when `ktfmt.native.musl` is true",
+              )
+      add("-H:NativeLinkerOption=-L$muslHome/lib")
     }
 
-    addLinesFromFile(project, "initialize-at-build-time.txt") { "--initialize-at-build-time=$it" }
-    addLinesFromFile(project, "initialize-at-run-time.txt") { "--initialize-at-run-time=$it" }
+    addAll(linesFromFile("initialize-at-build-time.txt").map { "--initialize-at-build-time=$it" })
+    addAll(linesFromFile("initialize-at-run-time.txt").map { "--initialize-at-run-time=$it" })
 
-    when (System.getProperty("os.name")) {
-      "Linux" ->
-          when (normalizeArch(System.getProperty("os.arch"))) {
-            "x64" ->
-                if (preferMusl) {
-                  addAll(listOf("--static", "--libc=musl", "-H:+StaticLibStdCpp"))
-                } else {
-                  add("--static-nolibc")
-                }
-            else -> add("--static-nolibc")
+    when (currentOs) {
+      Os.LINUX ->
+          if (muslEnabled && currentArch == Arch.AARCH64) {
+            addAll(listOf("--static", "--libc=musl", "-H:+StaticLibStdCpp"))
+          } else {
+            add("--static-nolibc")
           }
-      "Mac OS X" -> add("--static-nolibc")
+      Os.MACOS -> add("--static-nolibc")
+      Os.WINDOWS -> Unit
     }
   }
 
-  /** Canonicalizes [java.lang.System.getProperty]("os.arch") values that vary across JVMs. */
-  private fun normalizeArch(arch: String?): String =
-      when (arch) {
-        "amd64",
-        "x86_64" -> "x64"
-        "aarch64",
-        "arm64" -> "aarch64"
-        else -> arch.orEmpty()
-      }
-
-  private fun MutableList<String>.addLinesFromFile(
-      project: Project,
-      fileName: String,
-      mapper: (String) -> String,
-  ) {
-    val file = project.layout.projectDirectory.dir(NATIVE_IMAGE_SRC_DIR).file(fileName).asFile
-    if (!file.exists()) {
-      throw GradleException("Native Image configuration file not found: $file")
-    }
-    file
-        .useLines { lines ->
-          lines
-              .map { it.trim() }
-              .filter { it.isNotEmpty() && !it.startsWith("#") }
-              .map(mapper)
-              .toList()
+  private fun Project.configureNativeImageArtifactsTask() {
+    val archive =
+        if (currentOs == Os.WINDOWS) {
+          this.tasks.register<Zip>("nativeImageArchive") { configureNativeImageArchive() }
+        } else {
+          this.tasks.register<Tar>("nativeImageArchive") {
+            this.compression = Compression.GZIP
+            configureNativeImageArchive()
+          }
         }
-        .also { addAll(it) }
+
+    val checksum =
+        tasks.register<Checksum>("nativeImageChecksum") {
+          description = "Generates the SHA-256 checksum of the native image release archive"
+          inputFiles.setFrom(archive.flatMap { it.archiveFile })
+          outputDirectory.set(layout.buildDirectory.dir("checksums/nativeImage"))
+          checksumAlgorithm.set(Checksum.Algorithm.SHA256)
+        }
+    val checksumFile = checksum.flatMap { task ->
+      task.outputDirectory.file(archive.get().archiveFileName.get() + ".sha256")
+    }
+    val artifacts =
+        tasks.register<Copy>("nativeImageArtifacts") {
+          group = "build"
+          description = "Builds and signs the native image release archive and its SHA-256 checksum"
+          from(archive, checksumFile)
+          into(layout.buildDirectory.dir("artifacts"))
+        }
+
+    val key = signingKey.orNull
+    val password = signingPassword.orNull
+    if (key.isNullOrBlank() || password.isNullOrBlank()) return
+
+    val signing = extensions.getByType<SigningExtension>()
+    signing.useInMemoryPgpKeys(signingKeyId.orNull, key, password)
+    val archiveSignatures = signing.sign(archive.get())
+    artifacts.configure {
+      dependsOn(archiveSignatures)
+      from(archiveSignatures.map { it.signatureFiles })
+    }
+  }
+
+  private fun AbstractArchiveTask.configureNativeImageArchive() {
+    val archiveName = project.nativeImageArchiveBaseName
+    val archiveExtension = project.nativeImageArchiveExtension
+
+    description = "Packs the native image distribution into the publishable release archive"
+    dependsOn(project.tasks.named("nativeCompile"))
+    from(project.nativeImageExecutable) {
+      into(archiveName)
+      filePermissions { unix("rwxr-xr-x") }
+    }
+    archiveFileName.set("$archiveName.$archiveExtension")
+    destinationDirectory.set(project.layout.buildDirectory.dir("archive"))
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
+  }
+
+  private fun Project.linesFromFile(fileName: String): List<String> {
+    val file = layout.projectDirectory.dir(NATIVE_IMAGE_SRC_DIR).file(fileName).asFile
+    if (!file.exists()) throw GradleException("Native Image configuration file not found: $file")
+
+    return file.readLines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }
   }
 
   private companion object {

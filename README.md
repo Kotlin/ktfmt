@@ -199,10 +199,6 @@ Choose "Open as a Project".
 * Run `./gradlew :ktfmt:shadowJar`
 * Run `java -jar core/build/libs/ktfmt-<VERSION>-with-dependencies.jar`
 
-### Releasing
-
-See [RELEASING.md](RELEASING.md).
-
 ## License
 
 Apache License 2.0

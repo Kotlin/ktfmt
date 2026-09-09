@@ -2,9 +2,11 @@
 org-graalvm = "25.0.1"
 graalvmPlugin = "1.1.8"
 org-jline = "3.30.6"
+gradle-crypto-checksum = "1.4.0"
 
 [libraries]
 graalvm-gradle-plugin = { module = "org.graalvm.buildtools:native-gradle-plugin", version.ref = "graalvmPlugin" }
+gradle-crypto-checksum-plugin = { module = "org.gradle.crypto.checksum:org.gradle.crypto.checksum.gradle.plugin", version.ref = "gradle-crypto-checksum" }
 graalvm-nativeimage = { module = "org.graalvm.nativeimage:svm", version.ref = "org-graalvm" }
 jline-terminal = { module = "org.jline:jline-terminal", version.ref = "org-jline" }
 jline-terminal-jansi = { module = "org.jline:jline-terminal-jansi", version.ref = "org-jline" }
