@@ -1,7 +1,6 @@
 // TRAILING_COMMA_STRATEGY NONE
 
-fun quux() =
-    listOf(
+fun quux() = listOf(
             "a",
             "b",
             listOf(
@@ -16,6 +15,23 @@ fun quux() =
                 .bar(1, 2)
                 .fold { it.boom() }
         )
+        .baz()
+
+fun quux() =
+    listOf(
+            "a",
+            "b",
+            listOf(
+                "a",
+                "b",
+            ),
+            listOf(
+                    "a",
+                    "b",
+                )
+                .baz()
+                .bar(1, 2)
+                .fold { it.boom() })
         .baz()
 
 fun quux() {
@@ -37,7 +53,6 @@ fun quux() {
               )
               .baz()
               .bar(1, 2)
-              .fold { it.boom() }
-      )
+              .fold { it.boom() })
       .baz()
 }

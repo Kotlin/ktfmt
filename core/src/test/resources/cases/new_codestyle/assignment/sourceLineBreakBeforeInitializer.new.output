@@ -1,0 +1,37 @@
+// MAX_WIDTH 50
+
+val fitsSameLine = compute(alpha, beta)
+
+val fitsOwnLine = compute(alpha, beta)
+
+val overflowsSameLine = compute(
+    alphaValue,
+    betaValue,
+    gammaValue,
+)
+
+val overflowsOwnLine =
+    compute(alphaValue, betaValue, gammaValue)
+
+fun bodyFitsSameLine() = compute(alpha, beta)
+
+fun bodyFitsOwnLine() = compute(alpha, beta)
+
+fun bodyOverflowsSameLine() = compute(
+    alphaValue,
+    betaValue,
+    gamma,
+)
+
+fun bodyOverflowsOwnLine() =
+    compute(alphaValue, betaValue, gamma)
+
+class Holder {
+    val memberSameLine = compute(
+        alphaValue,
+        betaValue,
+    )
+
+    val memberOwnLine =
+        compute(alphaValue, betaValue)
+}

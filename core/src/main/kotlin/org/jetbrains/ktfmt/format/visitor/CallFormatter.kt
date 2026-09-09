@@ -245,7 +245,7 @@ internal open class CallFormatterImpl : CallFormatter {
     builder.token("{")
 
     if (hasDeclaration) {
-      formatLambdaArguments(
+      formatLambdaParameters(
           lambdaExpression.functionLiteral.valueParameterList!!,
           declarationIndent,
           bodyIndent,
@@ -269,7 +269,7 @@ internal open class CallFormatterImpl : CallFormatter {
   }
 
   context(_: FormatterStateHolder)
-  private fun formatLambdaArguments(
+  open fun formatLambdaParameters(
       valueParameterList: KtParameterList,
       valueParametersIndent: Indentation,
       arrowIndent: Indentation,

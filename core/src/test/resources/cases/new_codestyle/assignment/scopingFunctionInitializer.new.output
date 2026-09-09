@@ -1,0 +1,46 @@
+// MAX_WIDTH 40
+
+val sameLine = run {
+    first()
+    second()
+}
+
+val ownLine =
+    run {
+        first()
+        second()
+    }
+
+val withReceiver = target.apply {
+    first()
+    second()
+}
+
+val withReceiverOwnLine =
+    target.apply {
+        first()
+        second()
+    }
+
+val singleStatement = run { first() }
+
+val singleStatementOwnLine =
+    run { first() }
+
+val letOnValue = value.let { it + 1 }
+
+val withKeyword = with(receiver) {
+    first()
+    second()
+}
+
+fun bodySameLine() = run {
+    first()
+    second()
+}
+
+fun bodyOwnLine() =
+    run {
+        first()
+        second()
+    }
