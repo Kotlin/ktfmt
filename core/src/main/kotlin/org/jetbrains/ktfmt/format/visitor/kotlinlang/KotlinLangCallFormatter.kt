@@ -171,7 +171,7 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
   }
 
   context(_: FormatterStateHolder)
-  override fun formatLambdaArguments(
+  override fun formatLambdaParameters(
       valueParameterList: KtParameterList,
       valueParametersIndent: Indentation,
       arrowIndent: Indentation,
