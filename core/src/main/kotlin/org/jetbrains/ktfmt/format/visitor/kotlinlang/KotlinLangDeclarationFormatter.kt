@@ -156,8 +156,8 @@ internal class KotlinLangDeclarationFormatterImpl : DeclarationFormatterImpl() {
       builder.space()
     }
     val hasTrailingComma = destructuringDeclaration.trailingComma != null
-    val openingDelimiter = destructuringDeclaration.lPar?.text ?: "("
-    val closingDelimiter = destructuringDeclaration.rPar?.text ?: ")"
+    val openingDelimiter = destructuringDeclaration.lPar?.text
+    val closingDelimiter = destructuringDeclaration.rPar?.text
     builder.block(expressionBreakIndent) {
       formatCommaSeparatedList(
           destructuringDeclaration.entries,
