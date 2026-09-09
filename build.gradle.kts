@@ -23,11 +23,11 @@ import org.gradle.api.file.FileCollection
 import org.gradle.process.CommandLineArgumentProvider
 
 plugins {
+  alias(libs.plugins.kotlin)
   alias(libs.plugins.dependencyAnalysis)
   alias(libs.plugins.dokka) apply false
   alias(libs.plugins.dokka.javadoc) apply false
   alias(libs.plugins.intelliJPlatform) apply false
-  alias(libs.plugins.kotlin) apply false
   alias(libs.plugins.shadowJar) apply false
 }
 
