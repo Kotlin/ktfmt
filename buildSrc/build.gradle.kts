@@ -17,7 +17,11 @@ plugins {
   `kotlin-dsl`
 }
 
-dependencies { implementation(nativeImageLibs.graalvm.gradle.plugin) }
+dependencies {
+  implementation(nativeImageLibs.graalvm.gradle.plugin)
+  implementation(nativeImageLibs.gradle.crypto.checksum.plugin)
+  implementation(libs.guava)
+}
 
 gradlePlugin {
   plugins {

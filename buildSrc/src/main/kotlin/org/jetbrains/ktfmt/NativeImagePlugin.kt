@@ -25,6 +25,7 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaApplication
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
@@ -32,6 +33,7 @@ import org.gradle.api.tasks.bundling.Compression
 import org.gradle.api.tasks.bundling.Tar
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.crypto.checksum.Checksum
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.getByType
@@ -72,10 +74,11 @@ class NativeImagePlugin : Plugin<Project> {
     project.plugins.apply("application")
     project.plugins.apply("org.graalvm.buildtools.native")
     project.plugins.apply("signing")
+    project.plugins.apply("org.gradle.crypto.checksum")
 
     project.extensions.configure<JavaApplication> { mainClass.set(ENTRYPOINT) }
 
-    project.plugins.withId("java") { project.configureNativeImage() }
+    project.configureNativeImage()
   }
 
   private fun Project.configureNativeImage() {
@@ -118,15 +121,14 @@ class NativeImagePlugin : Plugin<Project> {
         tasks.register<Jar>("nativeImageJar") {
           group = "build"
           description = "Assembles Native Image jar and resources"
-          dependsOn(compileNativeImageClasses)
-          from(layout.buildDirectory.dir("classes/native-image"))
+          from(compileNativeImageClasses.flatMap { it.destinationDirectory })
           from(nativeImageSourceSet.resources)
           archiveClassifier.set("nativeimage")
         }
 
     val nativeCompile =
         tasks.named("nativeCompile") {
-          dependsOn(compileNativeImageClasses, nativeImageJar)
+          dependsOn(nativeImageJar)
         }
 
     tasks.register<Exec>("nativeImageSmokeTest") {
@@ -154,8 +156,7 @@ class NativeImagePlugin : Plugin<Project> {
 
     configureGraalvmNativeImage(nativeImageJar)
 
-    val archive = configureNativeImageArchiveTask()
-    configureNativeImageArtifactsTask(archive)
+    configureNativeImageArtifactsTask()
   }
 
   private fun Project.configureGraalvmNativeImage(nativeImageJar: TaskProvider<Jar>) {
@@ -231,32 +232,45 @@ class NativeImagePlugin : Plugin<Project> {
     }
   }
 
-  private fun Project.configureNativeImageArchiveTask(): TaskProvider<out AbstractArchiveTask> {
-    return if (currentOs == Os.WINDOWS) {
-      tasks.register<Zip>("nativeImageArchive") { configureNativeImageArchive() }
-    } else {
-      tasks.register<Tar>("nativeImageArchive") {
-        compression = Compression.GZIP
-        configureNativeImageArchive()
-      }
-    }
-  }
+  private fun Project.configureNativeImageArtifactsTask() {
+    val archive =
+        if (currentOs == Os.WINDOWS) {
+          this.tasks.register<Zip>("nativeImageArchive") { configureNativeImageArchive() }
+        } else {
+          this.tasks.register<Tar>("nativeImageArchive") {
+            this.compression = Compression.GZIP
+            configureNativeImageArchive()
+          }
+        }
 
-  private fun Project.configureNativeImageArtifactsTask(
-      archive: TaskProvider<out AbstractArchiveTask>,
-  ) {
-    val signing = extensions.getByType<SigningExtension>()
+    val checksum =
+        tasks.register<Checksum>("nativeImageChecksum") {
+          description = "Generates the SHA-256 checksum of the native image release archive"
+          inputFiles.setFrom(archive.flatMap { it.archiveFile })
+          outputDirectory.set(layout.buildDirectory.dir("checksums/nativeImage"))
+          checksumAlgorithm.set(Checksum.Algorithm.SHA256)
+        }
+    val checksumFile = checksum.flatMap { task ->
+      task.outputDirectory.file(archive.get().archiveFileName.get() + ".sha256")
+    }
+    val artifacts =
+        tasks.register<Copy>("nativeImageArtifacts") {
+          group = "build"
+          description = "Builds and signs the native image release archive and its SHA-256 checksum"
+          from(archive, checksumFile)
+          into(layout.buildDirectory.dir("artifacts"))
+        }
+
     val key = signingKey.orNull
     val password = signingPassword.orNull
-    val signatures =
-        if (!key.isNullOrBlank() && !password.isNullOrBlank()) {
-          signing.useInMemoryPgpKeys(signingKeyId.orNull, key, password)
-          signing.sign(archive.get())
-        } else emptyList()
-    tasks.register("nativeImageArtifacts") {
-      group = "build"
-      description = "Builds and signs the native image release archive"
-      dependsOn(archive, signatures)
+    if (key.isNullOrBlank() || password.isNullOrBlank()) return
+
+    val signing = extensions.getByType<SigningExtension>()
+    signing.useInMemoryPgpKeys(signingKeyId.orNull, key, password)
+    val archiveSignatures = signing.sign(archive.get())
+    artifacts.configure {
+      dependsOn(archiveSignatures)
+      from(archiveSignatures.map { it.signatureFiles })
     }
   }
 
@@ -271,7 +285,7 @@ class NativeImagePlugin : Plugin<Project> {
       filePermissions { unix("rwxr-xr-x") }
     }
     archiveFileName.set("$archiveName.$archiveExtension")
-    destinationDirectory.set(project.layout.buildDirectory.dir("artifacts"))
+    destinationDirectory.set(project.layout.buildDirectory.dir("archive"))
     isPreserveFileTimestamps = false
     isReproducibleFileOrder = true
   }
