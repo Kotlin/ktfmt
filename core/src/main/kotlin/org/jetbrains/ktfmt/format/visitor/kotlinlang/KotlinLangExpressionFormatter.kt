@@ -77,7 +77,7 @@ internal class KotlinLangExpressionFormatterImpl : ExpressionFormatterImpl() {
     val allExpressions = expression.fullChain
     format(allExpressions.first().left)
     for ((index, currentExpression) in allExpressions.withIndex()) {
-      formatBinaryOperationToken(currentExpression, index == 0)
+      formatBinaryOperationToken(currentExpression, isFirst = index == 0)
       format(currentExpression.right)
     }
     builder.close()
