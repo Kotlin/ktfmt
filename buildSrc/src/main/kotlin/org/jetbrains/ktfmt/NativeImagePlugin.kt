@@ -37,6 +37,7 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
+import org.gradle.plugins.signing.SigningExtension
 
 private val Project.nativeImageGc: String
   get() = configurationProperty("ktfmt.native.gc").getOrElse("serial")
@@ -60,7 +61,7 @@ private val Project.nativeImageExecutable: Provider<RegularFile>
       )
 
 private val Project.nativeImageArchiveBaseName: String
-  get() = "ktfmt-${currentOs.osName}-${currentArch.archName}-$version"
+  get() = "ktfmt-${currentOs.osName}-${currentArch.archName}-${rootProject.version}"
 
 private val Project.nativeImageArchiveExtension: String
   get() = if (currentOs == Os.WINDOWS) "zip" else "tar.gz"
@@ -70,6 +71,7 @@ class NativeImagePlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.plugins.apply("application")
     project.plugins.apply("org.graalvm.buildtools.native")
+    project.plugins.apply("signing")
 
     project.extensions.configure<JavaApplication> { mainClass.set(ENTRYPOINT) }
 
@@ -151,7 +153,9 @@ class NativeImagePlugin : Plugin<Project> {
     }
 
     configureGraalvmNativeImage(nativeImageJar)
-    configureNativeImageArchiveTask()
+
+    val archive = configureNativeImageArchiveTask()
+    configureNativeImageArtifactsTask(archive)
   }
 
   private fun Project.configureGraalvmNativeImage(nativeImageJar: TaskProvider<Jar>) {
@@ -227,8 +231,8 @@ class NativeImagePlugin : Plugin<Project> {
     }
   }
 
-  private fun Project.configureNativeImageArchiveTask() {
-    if (currentOs == Os.WINDOWS) {
+  private fun Project.configureNativeImageArchiveTask(): TaskProvider<out AbstractArchiveTask> {
+    return if (currentOs == Os.WINDOWS) {
       tasks.register<Zip>("nativeImageArchive") { configureNativeImageArchive() }
     } else {
       tasks.register<Tar>("nativeImageArchive") {
@@ -238,17 +242,36 @@ class NativeImagePlugin : Plugin<Project> {
     }
   }
 
+  private fun Project.configureNativeImageArtifactsTask(
+      archive: TaskProvider<out AbstractArchiveTask>,
+  ) {
+    val signing = extensions.getByType<SigningExtension>()
+    val key = signingKey.orNull
+    val password = signingPassword.orNull
+    val signatures =
+        if (!key.isNullOrBlank() && !password.isNullOrBlank()) {
+          signing.useInMemoryPgpKeys(signingKeyId.orNull, key, password)
+          signing.sign(archive.get())
+        } else emptyList()
+    tasks.register("nativeImageArtifacts") {
+      group = "build"
+      description = "Builds and signs the native image release archive"
+      dependsOn(archive, signatures)
+    }
+  }
+
   private fun AbstractArchiveTask.configureNativeImageArchive() {
     val archiveName = project.nativeImageArchiveBaseName
     val archiveExtension = project.nativeImageArchiveExtension
 
     description = "Packs the native image distribution into the publishable release archive"
+    dependsOn(project.tasks.named("nativeCompile"))
     from(project.nativeImageExecutable) {
       into(archiveName)
       filePermissions { unix("rwxr-xr-x") }
     }
     archiveFileName.set("$archiveName.$archiveExtension")
-    destinationDirectory.set(project.layout.buildDirectory.dir("archives"))
+    destinationDirectory.set(project.layout.buildDirectory.dir("artifacts"))
     isPreserveFileTimestamps = false
     isReproducibleFileOrder = true
   }

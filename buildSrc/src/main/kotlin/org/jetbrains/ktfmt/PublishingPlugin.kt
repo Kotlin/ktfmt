@@ -22,13 +22,6 @@ private val Project.repoUsername
 private val Project.repoPassword
   get() = configurationProperty("libs.repo.password")
 
-private val Project.signingKeyId
-  get() = configurationProperty("libs.sign.key.id")
-private val Project.signingKey
-  get() = configurationProperty("libs.sign.key.private")
-private val Project.signingPassword
-  get() = configurationProperty("libs.sign.passphrase")
-
 /**
  * Based on
  * https://github.com/Kotlin/kotlinx-io/blob/master/build-logic/src/main/kotlin/kotlinx/io/conventions/kotlinx-io-publish.gradle.kts
