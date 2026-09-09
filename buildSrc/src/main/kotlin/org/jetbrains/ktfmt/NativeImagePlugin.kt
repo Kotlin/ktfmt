@@ -16,16 +16,21 @@
 
 package org.jetbrains.ktfmt
 
-import org.apache.tools.ant.taskdefs.condition.Os
 import org.graalvm.buildtools.gradle.dsl.GraalVMExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaApplication
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Exec
+import org.gradle.api.tasks.bundling.AbstractArchiveTask
+import org.gradle.api.tasks.bundling.Compression
+import org.gradle.api.tasks.bundling.Tar
+import org.gradle.api.tasks.bundling.Zip
 import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.getByType
@@ -100,7 +105,7 @@ class NativeImagePlugin : Plugin<Project> {
 
     val nativeImageExecutable =
         project.layout.buildDirectory.file(
-            "native/nativeCompile/" + if (Os.isFamily(Os.FAMILY_WINDOWS)) "ktfmt.exe" else "ktfmt",
+            "native/nativeCompile/" + if (project.currentOs == Os.WINDOWS) "ktfmt.exe" else "ktfmt",
         )
 
     project.tasks.register<Exec>("nativeImageSmokeTest") {
@@ -124,6 +129,8 @@ class NativeImagePlugin : Plugin<Project> {
         }
       }
     }
+
+    configureNativeImageArchiveTask(project, nativeImageExecutable)
 
     configureGraalvmNative(project, nativeImageJar)
   }
@@ -276,6 +283,84 @@ class NativeImagePlugin : Plugin<Project> {
               .toList()
         }
         .also { addAll(it) }
+  }
+
+  private val Project.currentOs: Os
+    get() =
+        providers
+            .systemProperty("os.name")
+            .map {
+              when (it) {
+                "Windows" -> Os.WINDOWS
+                "Mac OS X" -> Os.MACOS
+                else -> Os.LINUX
+              }
+            }
+            .get()
+
+  private val Project.currentArch: Arch
+    get() =
+        providers
+            .systemProperty("os.arch")
+            .map {
+              when (it) {
+                "aarch64",
+                "arm64" -> Arch.AARCH64
+                "x86_64",
+                "amd64" -> Arch.X64
+                else -> error("Unsupported native-image host architecture: $it")
+              }
+            }
+            .get()
+
+  private val Project.nativeImageArchiveBaseName: String
+    get() = "ktfmt-${currentOs.osName}-${currentArch.archName}-${project.version}"
+
+  private val Project.nativeImageArchiveExtension: String
+    get() = if (currentOs == Os.WINDOWS) "zip" else "tar.gz"
+
+  enum class Os(val osName: String) {
+    WINDOWS("windows"),
+    MACOS("macos"),
+    LINUX("linux"),
+  }
+
+  enum class Arch(val archName: String) {
+    AARCH64("aarch64"),
+    X64("x86_64"),
+  }
+
+  private fun configureNativeImageArchiveTask(
+      project: Project,
+      nativeImageExecutable: Provider<RegularFile>,
+  ) {
+    when {
+      System.getProperty("os.name").lowercase().contains("windows") ->
+          project.tasks.register<Zip>("nativeImageArchive") {
+            configureNativeImageArchive(project, nativeImageExecutable)
+          }
+      else ->
+          project.tasks.register<Tar>("nativeImageArchive") {
+            compression = Compression.GZIP
+            configureNativeImageArchive(project, nativeImageExecutable)
+          }
+    }
+  }
+
+  private fun AbstractArchiveTask.configureNativeImageArchive(
+      project: Project,
+      nativeImageExecutable: Provider<RegularFile>,
+  ) {
+    description = "Packs the native image distribution into the publishable release archive"
+    from(nativeImageExecutable) {
+      into(project.nativeImageArchiveBaseName)
+    }
+    archiveFileName.set(
+        "${project.nativeImageArchiveBaseName}.${project.nativeImageArchiveExtension}",
+    )
+    destinationDirectory.set(project.layout.buildDirectory.map { it.dir("archives") })
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
   }
 
   private companion object {
