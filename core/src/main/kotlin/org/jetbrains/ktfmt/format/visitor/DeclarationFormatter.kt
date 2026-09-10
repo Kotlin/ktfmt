@@ -382,6 +382,13 @@ internal open class DeclarationFormatterImpl : DeclarationFormatter {
       destructuringDeclaration: KtDestructuringDeclaration,
   ) {
     builder.sync(destructuringDeclaration)
+    // The only modifiers that a desctructuring devlaration can have are modifiers.
+    // Therefore, we can format them and force a line break after
+    val modifierList = destructuringDeclaration.modifierList
+    if (modifierList != null) {
+      formatModifierList(modifierList)
+      builder.forcedBreak()
+    }
     val valOrVarKeyword = destructuringDeclaration.valOrVarKeyword
     if (valOrVarKeyword != null) {
       builder.token(valOrVarKeyword.text)
