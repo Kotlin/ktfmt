@@ -22,6 +22,9 @@ import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
 import org.jetbrains.kotlin.lexer.KtSingleValueToken
+import org.jetbrains.kotlin.psi.KtAnnotatedExpression
+import org.jetbrains.kotlin.psi.KtAnnotation
+import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtBinaryExpressionWithTypeRHS
@@ -338,3 +341,24 @@ internal val KtBinaryExpression.fullChain: List<KtBinaryExpression>
     }
   }
       .asReversed()
+
+/**
+ * Returns all top-level annotations of an expression. Solves the problem that
+ * `KtAnnotatedExpression.annotations` only returns elements of type [KtAnnotation], and accordingly
+ * `KtAnnotatedExpression.annotationEntries` returns only elements of type [KtAnnotationEntry]. The
+ * problem arises when an expression contains both on top level:
+ * ```
+ * fun foo() {
+ *     @[A B] @C foo()
+ * }
+ * ```
+ *
+ * For this example
+ * - `KtAnnotatedExpression.annotations` returns `[KtAnnotation("@[A B]")]`
+ * - `KtAnnotatedExpression.annotationEntries` returns `[KtAnnotationEntry("A"),
+ *   KtAnnotationEntry("B"), KtAnnotationEntry("@C")]`
+ * - `KtAnnotatedExpression.topLevelAnnotations` will return `[KtAnnotation("@[A B]"),
+ *   KtAnnotationEntry("@C")]`
+ */
+internal val KtAnnotatedExpression.topLevelAnnotations: List<PsiElement>
+  get() = children.filter { it is KtAnnotation || it is KtAnnotationEntry }

@@ -14,6 +14,7 @@ import org.jetbrains.ktfmt.format.visitor.builder
 import org.jetbrains.ktfmt.format.visitor.format
 import org.jetbrains.ktfmt.format.visitor.isBinaryExpression
 import org.jetbrains.ktfmt.format.visitor.sync
+import org.jetbrains.ktfmt.format.visitor.topLevelAnnotations
 
 /**
  * Custom annotation expression formatter for KotlinLang style. For annotations on declarations and
@@ -42,8 +43,8 @@ internal class KotlinLangAnnotationFormatterImpl : AnnotationFormatterImpl() {
     val baseExpression = expression.baseExpression
 
     builder.block {
-      val annotationEntries = expression.annotationEntries
-      for ((index, annotationEntry) in annotationEntries.withIndex()) {
+      val annotations = expression.topLevelAnnotations
+      for ((index, annotationEntry) in annotations.withIndex()) {
         if (index > 0) {
           builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
         }

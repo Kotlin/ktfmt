@@ -32,12 +32,12 @@ internal open class AnnotationFormatterImpl : AnnotationFormatter {
       val baseExpression = expression.baseExpression
 
       builder.block {
-        val annotationEntries = expression.annotationEntries
-        for (annotationEntry in annotationEntries) {
-          if (annotationEntry !== annotationEntries.first()) {
+        val annotations = expression.topLevelAnnotations
+        for ((index, annotation) in annotations.withIndex()) {
+          if (index > 0) {
             builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
           }
-          format(annotationEntry)
+          format(annotation)
         }
       }
 
@@ -58,8 +58,8 @@ internal open class AnnotationFormatterImpl : AnnotationFormatter {
   }
 
   /**
-   * A KtAnnotation is used only to group multiple annotations with the same use-site-target. It
-   * only appears in a modifier list since annotated expressions do not have use-site-targets.
+   * A KtAnnotation is used only to group multiple annotations with the same use-site-target, e.g.
+   * `@[A B] foo()`. It can appear in a modifier list or on an annotated expression.
    */
   context(_: FormatterStateHolder)
   override fun formatAnnotation(annotation: KtAnnotation) {
