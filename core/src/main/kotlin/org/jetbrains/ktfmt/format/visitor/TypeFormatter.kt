@@ -53,7 +53,6 @@ interface TypeFormatter {
   context(_: FormatterStateHolder)
   fun formatType(
       type: KtElement,
-      modifierList: KtModifierList?,
       typeElement: KtTypeElement?,
   )
 }
@@ -61,7 +60,7 @@ interface TypeFormatter {
 internal class TypeFormatterImpl : TypeFormatter {
   context(_: FormatterStateHolder)
   override fun formatTypeReference(type: KtTypeReference) {
-    formatType(type, type.modifierList, type.typeElement)
+    formatType(type, type.typeElement)
   }
 
   context(_: FormatterStateHolder)
@@ -71,7 +70,7 @@ internal class TypeFormatterImpl : TypeFormatter {
 
   context(_: FormatterStateHolder)
   override fun formatNullableType(type: KtNullableType) {
-    formatType(type, type.modifierList, type.innerType)
+    formatType(type, type.innerType)
     builder.token("?")
   }
 
@@ -193,19 +192,20 @@ internal class TypeFormatterImpl : TypeFormatter {
   context(_: FormatterStateHolder)
   override fun formatType(
       type: KtElement,
-      modifierList: KtModifierList?,
       typeElement: KtTypeElement?,
   ) {
     builder.sync(type)
-    // Normally we'd visit the children nodes through accessors on 'typeReference', and  we wouldn't
-    // loop over children.
-    // But, in this case the modifier list can either be inside the parenthesis:
+    // Normally we'd visit the children nodes through accessors on 'typeReference', and we wouldn't
+    // loop over children. However, in this case the [type] can have several modifier lists,
+    // either be inside the parenthesis:
     // ... (@Composable (x) -> Unit)
     // or outside of them:
     // ... @Composable ((x) -> Unit)
+    // or both:
+    // ... @Composable (suspend (x) -> Unit)
     for (child in type.node.children()) {
       when {
-        child.psi == modifierList -> format(modifierList)
+        child.psi is KtModifierList -> format(child.psi)
         child.psi == typeElement -> format(typeElement)
         child.elementType == KtTokens.LPAR -> builder.token("(")
         child.elementType == KtTokens.RPAR -> builder.token(")")
