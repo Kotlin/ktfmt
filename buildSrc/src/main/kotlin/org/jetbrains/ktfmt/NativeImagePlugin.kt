@@ -129,6 +129,10 @@ class NativeImagePlugin : Plugin<Project> {
     val nativeCompile =
         tasks.named("nativeCompile") {
           dependsOn(nativeImageJar)
+          inputs.files(
+              nativeImageDir.file("initialize-at-build-time.txt"),
+              nativeImageDir.file("initialize-at-run-time.txt"),
+          )
         }
 
     tasks.register<Exec>("nativeImageSmokeTest") {
@@ -279,8 +283,7 @@ class NativeImagePlugin : Plugin<Project> {
     val archiveExtension = project.nativeImageArchiveExtension
 
     description = "Packs the native image distribution into the publishable release archive"
-    dependsOn(project.tasks.named("nativeCompile"))
-    from(project.nativeImageExecutable) {
+    from(project.tasks.named("nativeCompile")) {
       into(archiveName)
       filePermissions { unix("rwxr-xr-x") }
     }
