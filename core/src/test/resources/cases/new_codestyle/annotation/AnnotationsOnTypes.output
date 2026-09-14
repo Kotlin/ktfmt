@@ -41,6 +41,9 @@ class SupertypeFits : @Ann Base()
 class SupertypeOverflows :
     @Ann("arg") Base<String, Int>(), @Ann I
 
+class SupertypeOverflows :
+    @Ann("arg") Base<String, Int>(), @Ann I
+
 fun functionTypeFits(compact: @Composable () -> Unit) {}
 
 fun functionTypeOverflows(
