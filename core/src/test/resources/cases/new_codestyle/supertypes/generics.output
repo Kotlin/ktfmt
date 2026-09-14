@@ -1,0 +1,21 @@
+// MAX_WIDTH 60
+
+class Generic : Base<Int>(), Comparable<Generic>
+
+class Nested :
+    Base<Map<String, List<Int>>>(),
+    First<Map<String, Int>>,
+    Second<List<String>>
+
+interface Combined<T> : First<T>, Second<List<T>>
+    where T : Comparable<T>
+
+class Generic : Base<Int>(), Comparable<Generic>
+
+class Nested :
+    Base<Map<String, List<Int>>>(),
+    First<Map<String, Int>>,
+    Second<List<String>>
+
+interface Combined<T> : First<T>, Second<List<T>>
+    where T : Comparable<T>

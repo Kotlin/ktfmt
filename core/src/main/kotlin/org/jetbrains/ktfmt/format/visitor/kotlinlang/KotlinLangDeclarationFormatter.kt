@@ -2,6 +2,9 @@ package org.jetbrains.ktfmt.format.visitor.kotlinlang
 
 import com.google.googlejavaformat.Doc
 import org.jetbrains.kotlin.psi.KtBackingField
+import org.jetbrains.kotlin.psi.KtClassOrObject
+import org.jetbrains.kotlin.psi.KtContextReceiverList
+import org.jetbrains.kotlin.psi.KtDelegatedSuperTypeEntry
 import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtModifierList
@@ -19,14 +22,20 @@ import org.jetbrains.ktfmt.format.visitor.blockIndent
 import org.jetbrains.ktfmt.format.visitor.breakOp
 import org.jetbrains.ktfmt.format.visitor.builder
 import org.jetbrains.ktfmt.format.visitor.expressionBreakIndent
+import org.jetbrains.ktfmt.format.visitor.fenceComments
+import org.jetbrains.ktfmt.format.visitor.forcedBreak
 import org.jetbrains.ktfmt.format.visitor.format
 import org.jetbrains.ktfmt.format.visitor.formatAssignmentLikeExpression
 import org.jetbrains.ktfmt.format.visitor.formatCommaSeparatedList
+import org.jetbrains.ktfmt.format.visitor.formatContextReceiverList
 import org.jetbrains.ktfmt.format.visitor.formatModifierList
+import org.jetbrains.ktfmt.format.visitor.formatSuperTypeList
 import org.jetbrains.ktfmt.format.visitor.formatTypeConstraintList
 import org.jetbrains.ktfmt.format.visitor.formatTypeParameterList
+import org.jetbrains.ktfmt.format.visitor.isPrefixedByLineBreak
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
+import org.jetbrains.ktfmt.util.CONTEXT_PARAMETER_LIST
 
 /**
  * Custom declaration formatter for KotlinLang style.
@@ -36,8 +45,67 @@ import org.jetbrains.ktfmt.format.visitor.token
  *
  * - Uses [KotlinLangExpressionFormatterImpl.formatAssignmentLikeExpression] to format rhs of
  *   destructuring declarations.
+ *
+ * - [formatClassOrObject] handles formatting of the supertype lists similar to how
+ *   [formatAssignmentLikeExpression] works. General rule: preserve user-defined breaks after the
+ *   `:` in the supertype list.
  */
 internal class KotlinLangDeclarationFormatterImpl : DeclarationFormatterImpl() {
+  context(_: FormatterStateHolder)
+  override fun formatClassOrObject(classOrObject: KtClassOrObject) {
+    builder.sync(classOrObject)
+    val contextReceiverList =
+      classOrObject.getStubOrPsiChild(CONTEXT_PARAMETER_LIST) as? KtContextReceiverList
+    builder.block {
+      contextReceiverList?.let {
+        formatContextReceiverList(contextReceiverList)
+        builder.forcedBreak()
+      }
+      classOrObject.modifierList?.let { formatModifierList(it) }
+      classOrObject.getDeclarationKeyword()?.let { builder.token(it.text) }
+
+      classOrObject.nameIdentifier?.let { name ->
+        builder.space()
+        builder.token(name.text)
+        format(classOrObject.typeParameterList)
+      }
+      format(classOrObject.primaryConstructor)
+
+      var forceBreakBeforeTypeConstraints = false
+      classOrObject.getSuperTypeList()?.let { superTypes ->
+        forceBreakBeforeTypeConstraints =
+            superTypes.entries.lastOrNull() is KtDelegatedSuperTypeEntry
+        builder.space()
+        builder.block {
+          builder.token(":")
+          builder.breakOp(
+              breakAllowed = superTypes.isPrefixedByLineBreak,
+              plusIndent = expressionBreakIndent,
+          )
+          builder.block(expressionBreakIndent) {
+            builder.fenceComments()
+            formatSuperTypeList(superTypes)
+          }
+        }
+      }
+
+      classOrObject.typeConstraintList?.let { typeConstraintList ->
+        if (forceBreakBeforeTypeConstraints) {
+          builder.forcedBreak(expressionBreakIndent)
+        }
+        formatTypeConstraintList(typeConstraintList)
+      }
+
+      classOrObject.body?.let {
+        builder.space()
+        format(it)
+      }
+    }
+    if (classOrObject.nameIdentifier != null) {
+      builder.forcedBreak()
+    }
+  }
+
   context(_: FormatterStateHolder)
   override fun emitPropertyDeclaration(
       modifiers: KtModifierList?,
