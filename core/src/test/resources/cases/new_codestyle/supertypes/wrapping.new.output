@@ -1,0 +1,46 @@
+// MAX_WIDTH 40
+
+class Basket<T>() : WovenObject {
+    // some body
+}
+
+class Derived : Base(),
+    FirstInterface,
+    SecondInterface
+
+class WithBody : Base(),
+    FirstInterface,
+    SecondInterface {
+    fun value() = 1
+}
+
+class WithArguments(value: Int) : Base(
+        first = value,
+        second = value + 1,
+    ),
+    FirstInterface,
+    SecondInterface
+
+class Basket<T>() : WovenObject {
+    // some body
+}
+
+class Derived :
+    Base(),
+    FirstInterface,
+    SecondInterface
+
+class WithBody :
+    Base(),
+    FirstInterface,
+    SecondInterface {
+    fun value() = 1
+}
+
+class WithArguments(value: Int) :
+    Base(
+        first = value,
+        second = value + 1,
+    ),
+    FirstInterface,
+    SecondInterface
