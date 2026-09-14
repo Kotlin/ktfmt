@@ -44,6 +44,9 @@ class DelegationFits : I by @Anno impl
 
 class DelegationOverflows : InterfaceName by @Anno("arg") impl.field
 
+class DelegationOverflows :
+    InterfaceName by @Anno("arg") impl.field
+
 fun statements() {
     if (@Stuff(Magic::class) isGood(a) && isOk(b) && fine(c)) go()
 
