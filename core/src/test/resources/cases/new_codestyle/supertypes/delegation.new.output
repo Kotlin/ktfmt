@@ -1,0 +1,28 @@
+// MAX_WIDTH 60
+
+class MyList(impl: List<Int>) : Collection<Int> by impl
+
+class Delegated(first: First, second: Second) : Base(),
+    First by first,
+    Second by second
+
+class FactoryDelegate : First by createDelegate(
+        firstArgument,
+        secondArgument,
+    ),
+    Second
+
+class Constrained<T>(bar: Bar<T>) : Bar<T> by bar, Marker
+    where T : Qux, T : Comparable<T>
+
+class MyList(impl: List<Int>) : Collection<Int> by impl
+
+class Delegated(first: First, second: Second) :
+    Base(), First by first, Second by second
+
+class FactoryDelegate :
+    First by createDelegate(firstArgument, secondArgument),
+    Second
+
+class Constrained<T>(bar: Bar<T>) : Bar<T> by bar, Marker
+    where T : Qux, T : Comparable<T>

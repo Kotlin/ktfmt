@@ -37,6 +37,9 @@ fun isExpression(x: Any) = x is
 
 class SupertypeFits : @Ann Base()
 
+class SupertypeOverflows : @Ann("arg") Base<String, Int>(),
+    @Ann I
+
 class SupertypeOverflows :
     @Ann("arg") Base<String, Int>(), @Ann I
 
