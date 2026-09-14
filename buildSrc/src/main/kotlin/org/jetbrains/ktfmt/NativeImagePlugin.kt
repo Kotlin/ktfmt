@@ -295,10 +295,9 @@ class NativeImagePlugin : Plugin<Project> {
     val signing = extensions.getByType<SigningExtension>()
     signing.useInMemoryPgpKeys(signingKeyId.orNull, key, password)
     val archiveSignatures = signing.sign(archive.get())
-    artifacts.configure {
-      dependsOn(archiveSignatures)
-      from(archiveSignatures.map { it.signatureFiles })
-    }
+    val signatureFiles =
+        files(archiveSignatures.map { it.signatureFiles }).builtBy(archiveSignatures)
+    artifacts.configure { from(signatureFiles) }
   }
 
   private fun AbstractArchiveTask.configureNativeImageArchive(
