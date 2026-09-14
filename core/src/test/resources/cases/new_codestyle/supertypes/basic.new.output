@@ -1,0 +1,39 @@
+// MAX_WIDTH 40
+
+class Derived : Base()
+
+class WithArgument(value: Int) : Base(
+        value,
+    ),
+    First,
+    Second {}
+
+class WithoutBody : First, Second
+
+interface Combined : First, Second
+
+class MultipleSupertypes : Base(),
+    FirstInterface,
+    SecondInterface,
+    ThirdInterface {}
+
+class SourceLineBreak :
+    Base(), First, Second {}
+
+class Derived : Base()
+
+class WithArgument(value: Int) :
+    Base(value), First, Second {}
+
+class WithoutBody : First, Second
+
+interface Combined : First, Second
+
+class MultipleSupertypes :
+    Base(),
+    FirstInterface,
+    SecondInterface,
+    ThirdInterface {}
+
+class SourceLineBreak :
+    Base(), First, Second {}
