@@ -22,6 +22,7 @@ import org.jetbrains.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.ktfmt.format.visitor.format
 import org.jetbrains.ktfmt.format.visitor.formatAssignmentLikeExpression
 import org.jetbrains.ktfmt.format.visitor.formatCommaSeparatedList
+import org.jetbrains.ktfmt.format.visitor.formatModifierList
 import org.jetbrains.ktfmt.format.visitor.formatTypeConstraintList
 import org.jetbrains.ktfmt.format.visitor.formatTypeParameterList
 import org.jetbrains.ktfmt.format.visitor.sync
@@ -150,6 +151,11 @@ internal class KotlinLangDeclarationFormatterImpl : DeclarationFormatterImpl() {
       destructuringDeclaration: KtDestructuringDeclaration,
   ) {
     builder.sync(destructuringDeclaration)
+    val modifierList = destructuringDeclaration.modifierList
+    if (modifierList != null) {
+      formatModifierList(modifierList)
+      builder.forcedBreak()
+    }
     val valOrVarKeyword = destructuringDeclaration.valOrVarKeyword
     if (valOrVarKeyword != null) {
       builder.token(valOrVarKeyword.text)
