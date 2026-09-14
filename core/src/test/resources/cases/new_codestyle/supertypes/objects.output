@@ -1,0 +1,29 @@
+// MAX_WIDTH 50
+
+object Singleton : Base(), First, Second {}
+
+class Owner {
+  companion object :
+      Factory<Owner>, RegistryEntry {}
+}
+
+fun create(): Any {
+  return object :
+      Adapter(), FirstInterface, SecondInterface {
+    override fun run() {}
+  }
+}
+
+object Singleton : Base(), First, Second {}
+
+class Owner {
+  companion object :
+      Factory<Owner>, RegistryEntry {}
+}
+
+fun create(): Any {
+  return object :
+      Adapter(), FirstInterface, SecondInterface {
+    override fun run() {}
+  }
+}
