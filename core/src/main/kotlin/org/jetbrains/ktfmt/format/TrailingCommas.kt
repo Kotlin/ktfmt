@@ -36,7 +36,7 @@ import org.jetbrains.kotlin.psi.KtWhenEntry
 /** Detects trailing commas or elements that should have trailing commas. */
 object TrailingCommas {
 
-  class Detector {
+  class Detector(val options: FormattingOptions) {
     private val trailingCommas = mutableListOf<PsiElement>()
 
     fun getTrailingCommaElements(): List<PsiElement> = trailingCommas
@@ -50,6 +50,10 @@ object TrailingCommas {
 
     private fun isTrailingComma(element: PsiElement): Boolean {
       if (element !is LeafPsiElement || element.elementType != KtTokens.COMMA) {
+        return false
+      }
+      // Experimental engine does not manage trailing commas in when entries
+      if (options.useExperimentalEngine && element.parent is KtWhenEntry) {
         return false
       }
       return extractManagedList(element.parent)?.trailingComma == element
