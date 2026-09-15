@@ -1,0 +1,12 @@
+fun f(x: Int) {
+    when (x) {
+        1, // one
+        2 -> print(1)
+        3, /* three */ 4 -> print(2)
+        5, /* five */ 6 -> print(3)
+        7,
+        // eight
+        8 -> print(4)
+        else -> print(0)
+    }
+}

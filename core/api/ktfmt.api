@@ -300,7 +300,8 @@ public final class org/jetbrains/ktfmt/format/TrailingCommas {
 }
 
 public final class org/jetbrains/ktfmt/format/TrailingCommas$Detector {
-	public fun <init> ()V
+	public fun <init> (Lorg/jetbrains/ktfmt/format/FormattingOptions;)V
+	public final fun getOptions ()Lorg/jetbrains/ktfmt/format/FormattingOptions;
 	public final fun getTrailingCommaElements ()Ljava/util/List;
 	public final fun takeElement (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
 }
@@ -576,7 +577,6 @@ public final class org/jetbrains/ktfmt/format/visitor/PsiUtilsKt {
 	public static final fun getChainRoot (Lorg/jetbrains/kotlin/psi/KtExpression;)Lorg/jetbrains/kotlin/psi/KtExpression;
 	public static final fun getHasEmptyParenthesis (Lorg/jetbrains/kotlin/psi/KtParameterList;)Z
 	public static final fun getHasEmptyParenthesis (Lorg/jetbrains/kotlin/psi/KtValueArgumentList;)Z
-	public static final fun getHasLineBreakingCommentBefore (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)Z
 	public static final fun getHasSourceNewlineInLambdaBody (Lorg/jetbrains/kotlin/psi/KtLambdaExpression;)Z
 	public static final fun isBlockLikeArgument (Lorg/jetbrains/kotlin/psi/KtValueArgument;)Z
 	public static final fun isBlockLikeCall (Lorg/jetbrains/kotlin/psi/KtExpression;)Z

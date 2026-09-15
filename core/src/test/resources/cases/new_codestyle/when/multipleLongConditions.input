@@ -1,0 +1,10 @@
+// MAX_WIDTH 90
+
+fun f() {
+    when (it.resolvedCall.resultingDescriptor) {
+        is LocalVariableDescriptor,
+        is ValueParameterDescriptor,
+        is ReceiverParameterDescriptor -> true
+        else -> false
+    }
+}

@@ -38,7 +38,7 @@ object RedundantElementManager {
     val code = file.text
     val redundantImportDetector = RedundantImportDetector(enabled = options.removeUnusedImports)
     val redundantSemicolonDetector = RedundantSemicolonDetector()
-    val trailingCommaDetector = TrailingCommas.Detector()
+    val trailingCommaDetector = TrailingCommas.Detector(options)
 
     file.accept(
         object : KtTreeVisitorVoid() {
