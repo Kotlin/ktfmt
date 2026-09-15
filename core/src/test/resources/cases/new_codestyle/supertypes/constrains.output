@@ -1,0 +1,167 @@
+// MAX_WIDTH 60
+
+// Short headers with and without a body.
+class Short<T> : Base<T>() where T : Any
+
+class ShortBody<T> : Base<T>() where T : Any {}
+
+interface ShortInterface<T> : First<T> where T : Any
+
+// Only the constraints force the header to wrap.
+class Bounds<T> : Base<T>()
+    where
+        T : CharSequence,
+        T : Comparable<T>,
+        T : Serializable
+
+// Only the supertype list is long.
+class Supertypes<T> :
+    FirstInterface<T>, SecondInterface<T>, ThirdInterface<T>
+    where T : Any
+
+// Both lists wrap, followed by a nonempty body.
+class Both<T> :
+    Base<T>(), FirstInterface<T>, SecondInterface<T>
+    where
+        T : CharSequence,
+        T : Comparable<T>,
+        T : Serializable {
+  fun value(): T = TODO()
+}
+
+// Several parameters with interdependent and recursive
+// bounds.
+interface Related<K, V> : First<K>, Second<V>
+    where K : Comparable<K>, V : Map<K, List<V>>
+
+class Recursive<T> : Base<T>(), Comparable<Recursive<T>>
+    where T : Comparable<in T> {
+  override fun compareTo(other: Recursive<T>): Int = 0
+}
+
+// Inline bounds combined with a where clause for another
+// parameter.
+class Mixed<T : Any, U> : Base<Map<T, U>>(), First<U>
+    where U : Collection<T>, U : Serializable
+
+// Nested generic arguments and a nullable bound.
+interface Nested<K, V> :
+    First<Map<K, List<V?>>>, Second<List<Map<K, V>>>
+    where
+        K : Comparable<K>,
+        V : Collection<Map<K, List<String?>>>
+
+interface Nullable<T> : First<T>, Second<T>
+    where T : CharSequence?
+
+// Function types introduce commas, arrows, and parentheses
+// inside a bound.
+interface Functions<F> : First<F>, Second<F>
+    where F : (String, List<Int>) -> Map<String, Int>
+
+interface Suspending<F> : First<F>
+    where F : suspend (String, Int) -> Unit
+
+// Annotated bound types, including annotation arguments
+// containing commas.
+class Annotated<T> : Base<T>(), First<T>
+    where
+        T : @Bound("left", "right")
+        CharSequence,
+        T : @Bound("recursive")
+        Comparable<T>
+
+// Constructor arguments compete with both header lists for
+// space.
+class Constructed<T>(value: T, values: List<T>) :
+    Base<T>(value, values, enabled = true),
+    First<T>,
+    Second<T> where T : CharSequence, T : Comparable<T> {
+  val size = values.size
+}
+
+// Delegation expressions end immediately before where.
+class Delegated<T>(first: First<T>, second: Second<T>) :
+    First<T> by first, Second<T> by second
+    where T : CharSequence, T : Comparable<T>
+
+class Factory<T>(value: T) :
+    Base<T>(),
+    First<T> by createDelegate(value, enabled = true)
+    where T : CharSequence, T : Comparable<T>
+
+class Lambda<T>(value: T) :
+    First<T> by createDelegate({ value }), Second<T>
+    where T : Any {
+  fun value(): T = value
+}
+
+// Comments at the boundary between the two lists.
+class BeforeWhere<T> :
+    Base<T>(), First<T> /* end of supertypes */
+    where T : Any
+
+class LineBeforeWhere<T> :
+    Base<T>(), First<T> // end of supertypes
+where T : CharSequence, T : Comparable<T>
+
+class AfterWhere<T> : Base<T>(), First<T>
+    where // first bound follows
+    T : CharSequence, T : Comparable<T>
+
+// Comments around constraint names, colons, commas, and the
+// opening brace.
+class Commented<T> :
+    Base<T>(),
+    // last supertype
+    First<T>
+    where /* parameter */
+        T /* colon */ : /* bound */ CharSequence,
+        // recursive bound
+        T : Comparable<T> /* body follows */ {
+  fun value(): T = TODO()
+}
+
+class AfterBound<T> : Base<T>(), First<T>
+    where
+        T : CharSequence, // another bound
+        T : Comparable<T> // body follows on the next line
+{
+  fun value(): T = TODO()
+}
+
+// Trailing commas in type parameters, supertypes, and
+// constraints.
+class Trailing<
+    T,
+    U,
+> : Base<T>(), First<U>
+    where T : CharSequence, U : Comparable<U> {
+  fun value(): T = TODO()
+}
+
+// Identical headers with different source line breaks.
+class SourceBreaks<T> : Base<T>(), First<T>
+    where T : CharSequence, T : Comparable<T> {}
+
+class SourceBreaks<T> : Base<T>(), First<T>
+    where T : CharSequence, T : Comparable<T> {}
+
+class SourceBreaks<T> : Base<T>(), First<T>
+    where T : CharSequence, T : Comparable<T> {}
+
+class SourceBreaks<T> : Base<T>(), First<T>
+    where T : CharSequence, T : Comparable<T> {}
+
+// An enclosing body reduces the available width.
+class Outer {
+  interface Inner<T> : First<T>, Second<T>
+      where T : CharSequence, T : Comparable<T>
+
+  fun local() {
+    class Local<T> : Base<T>(), First<T>
+        where T : CharSequence, T : Comparable<T> {
+      fun value(): T = TODO()
+    }
+  }
+}
