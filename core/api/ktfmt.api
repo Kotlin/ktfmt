@@ -300,7 +300,8 @@ public final class org/jetbrains/kotlinx/ktfmt/format/TrailingCommas {
 }
 
 public final class org/jetbrains/kotlinx/ktfmt/format/TrailingCommas$Detector {
-	public fun <init> ()V
+	public fun <init> (Lorg/jetbrains/kotlinx/ktfmt/format/FormattingOptions;)V
+	public final fun getOptions ()Lorg/jetbrains/kotlinx/ktfmt/format/FormattingOptions;
 	public final fun getTrailingCommaElements ()Ljava/util/List;
 	public final fun takeElement (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
 }
