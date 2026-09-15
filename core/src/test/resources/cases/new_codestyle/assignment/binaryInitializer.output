@@ -1,0 +1,36 @@
+// MAX_WIDTH 40
+
+val sumSameLine =
+    alpha +
+        beta +
+        gamma +
+        delta +
+        epsilon
+
+val sumOwnLine =
+    alpha +
+        beta +
+        gamma +
+        delta +
+        epsilon
+
+val elvisSameLine =
+    compute(alpha) ?: fallbackValue
+
+val elvisOwnLine =
+    compute(alpha) ?: fallbackValue
+
+val rangeSameLine =
+    firstValue..lastValue
+
+val andSameLine =
+    isFirst &&
+        isSecond &&
+        isThird &&
+        isFourth
+
+fun bodyElvis() =
+    compute(alpha) ?: fallbackValue
+
+fun bodyElvisOwnLine() =
+    compute(alpha) ?: fallbackValue

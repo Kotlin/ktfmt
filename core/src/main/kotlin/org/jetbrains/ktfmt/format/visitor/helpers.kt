@@ -388,11 +388,11 @@ internal inline fun formatDestructuringDeclarationEntry(
 }
 
 context(_: FormatterStateHolder)
-internal inline fun formatInitializerExpression(
+internal inline fun formatAssignmentLikeExpression(
     initializer: KtExpression,
     assignmentOp: String = "=",
 ) {
-  formatter.expressionFormatter.formatInitializerExpression(initializer, assignmentOp)
+  formatter.expressionFormatter.formatAssignmentLikeExpression(initializer, assignmentOp)
 }
 
 context(_: FormatterStateHolder)
