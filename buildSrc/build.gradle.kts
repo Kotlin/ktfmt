@@ -25,10 +25,6 @@ dependencies {
 
 gradlePlugin {
   plugins {
-    register("ktfmt-file-generator") {
-      id = "ktfmt.ktfmt-file-generator"
-      implementationClass = "org.jetbrains.ktfmt.GenerateKtfmtFilePlugin"
-    }
     register("native-image") {
       id = "ktfmt.native-image"
       implementationClass = "org.jetbrains.ktfmt.NativeImagePlugin"
