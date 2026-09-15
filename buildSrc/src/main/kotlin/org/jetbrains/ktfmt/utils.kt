@@ -37,9 +37,6 @@ internal enum class Arch(val archName: String) {
   X64("x86_64"),
 }
 
-internal fun Project.nativeImageProperty(name: String): Provider<String> =
-    providers.gradleProperty(name).orElse(providers.environmentVariable(name))
-
 /**
  * TeamCity injects build parameters as extra properties via an init script, so we use
  * `findProperty` here.
