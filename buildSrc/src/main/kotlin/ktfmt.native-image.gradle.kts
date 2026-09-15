@@ -1,13 +1,11 @@
 import org.gradle.crypto.checksum.Checksum
 import org.gradle.internal.extensions.stdlib.capitalized
 import org.gradle.kotlin.dsl.register
-import org.jetbrains.ktfmt.Arch
 import org.jetbrains.ktfmt.NativeImageSmokeTestTask
 import org.jetbrains.ktfmt.Os
 import org.jetbrains.ktfmt.currentArch
 import org.jetbrains.ktfmt.currentOs
 import org.jetbrains.ktfmt.ktfmtVersion
-import org.jetbrains.ktfmt.nativeImageProperty
 import org.jetbrains.ktfmt.signingKey
 import org.jetbrains.ktfmt.signingKeyId
 import org.jetbrains.ktfmt.signingPassword
@@ -31,17 +29,6 @@ val nativeImageJavacClasspath =
 
 val nativeImageLibs = extensions.getByType<VersionCatalogsExtension>().named("nativeImageLibs")
 val nativeImageDir = layout.projectDirectory.dir("src/main/native-image")
-
-val nativeImageGc = nativeImageProperty("ktfmt.native.gc").orElse("serial")
-
-val enableNativeDebug =
-    nativeImageProperty("ktfmt.native.debug").map { it.toBooleanStrict() }.orElse(false)
-
-val enableLto = nativeImageProperty("ktfmt.native.lto").map { it.toBooleanStrict() }.orElse(false)
-
-val enableMusl = nativeImageProperty("ktfmt.native.musl").map { it.toBooleanStrict() }.orElse(false)
-
-val muslHome = nativeImageProperty("ktfmt.native.musl.home")
 
 dependencies {
   nativeImageJavacClasspath(nativeImageLibs.findLibrary("graalvm-nativeimage").get())
@@ -161,78 +148,38 @@ graalvmNative {
             configurations.getByName("nativeImageClasspath"),
         ),
     )
-    buildArgs.addAll(nativeImageArgs())
-  }
-}
+    buildArgs.addAll(
+        "-O3",
+        "-march=compatibility",
+        "--no-fallback",
+        "--future-defaults=all",
+        "--link-at-build-time=org.jetbrains.ktfmt",
+        "--add-opens=java.base/java.util=ALL-UNNAMED",
+        "--color=always",
+        "-H:+ReportExceptionStackTraces",
+        "-H:-UseContainerSupport",
+        "-R:+InstallSegfaultHandler",
+        "-H:+UnlockExperimentalVMOptions",
+        "-H:-ReduceImplicitExceptionStackTraceInformation",
+        "-H:-UnlockExperimentalVMOptions",
+        "-J--enable-native-access=ALL-UNNAMED",
+        "-J--illegal-native-access=allow",
+        "-J--sun-misc-unsafe-memory-access=allow",
+    )
 
-fun nativeImageArgs(): Provider<List<String>> {
-  val args = objects.listProperty<String>()
+    buildArgs.addAll(
+        linesFromFile("initialize-at-build-time.txt").map { lines ->
+          lines.map { "--initialize-at-build-time=$it" }
+        },
+    )
+    buildArgs.addAll(
+        linesFromFile("initialize-at-run-time.txt").map { lines ->
+          lines.map { "--initialize-at-run-time=$it" }
+        },
+    )
 
-  args.addAll("-O3", "-march=compatibility")
-  args.addAll(enableNativeDebug.toArgs("-g", "-H:+SourceLevelDebug"))
-
-  args.add("--no-fallback")
-  args.add(nativeImageGc.map { "--gc=$it" })
-  args.addAll(
-      "--future-defaults=all",
-      "--link-at-build-time=org.jetbrains.ktfmt",
-      "--add-opens=java.base/java.util=ALL-UNNAMED",
-      "--color=always",
-      "-H:+ReportExceptionStackTraces",
-      "-H:-UseContainerSupport",
-      "-R:+InstallSegfaultHandler",
-      "-H:+UnlockExperimentalVMOptions",
-      "-H:-ReduceImplicitExceptionStackTraceInformation",
-      "-H:-UnlockExperimentalVMOptions",
-      "-J--enable-native-access=ALL-UNNAMED",
-      "-J--illegal-native-access=allow",
-      "-J--sun-misc-unsafe-memory-access=allow",
-  )
-
-  args.addAll(enableLto.toArgs("--native-compiler-options=-flto", "-H:NativeLinkerOption=-flto"))
-  args.addAll(muslLinkerArgs())
-
-  args.addAll(
-      linesFromFile("initialize-at-build-time.txt").map { lines ->
-        lines.map { "--initialize-at-build-time=$it" }
-      },
-  )
-  args.addAll(
-      linesFromFile("initialize-at-run-time.txt").map { lines ->
-        lines.map { "--initialize-at-run-time=$it" }
-      },
-  )
-
-  args.addAll(staticLinkingArgs())
-  return args
-}
-
-fun muslLinkerArgs(): Provider<List<String>> =
-    enableMusl.zip(muslHome.orElse("")) { muslEnabled, home ->
-      when {
-        !muslEnabled -> emptyList()
-        home.isEmpty() ->
-            throw GradleException(
-                "`ktfmt.native.musl.home` required when `ktfmt.native.musl` is true",
-            )
-        else -> listOf("-H:NativeLinkerOption=-L$home/lib")
-      }
-    }
-
-fun staticLinkingArgs(): Provider<List<String>> {
-  val os = currentOs
-  val arch = currentArch
-
-  return enableMusl.map { muslEnabled ->
-    when (os) {
-      Os.LINUX ->
-          if (muslEnabled && arch == Arch.AARCH64) {
-            listOf("--static", "--libc=musl", "-H:+StaticLibStdCpp")
-          } else {
-            listOf("--static-nolibc")
-          }
-      Os.MACOS -> listOf("--static-nolibc")
-      Os.WINDOWS -> emptyList()
+    if (currentOs != Os.WINDOWS) {
+      buildArgs.add("--static-nolibc")
     }
   }
 }
@@ -246,9 +193,4 @@ fun linesFromFile(fileName: String): Provider<List<String>> {
 
 fun TaskProvider<out AbstractArchiveTask>.signTask(): TaskCollection<Sign> {
   return tasks.withType<Sign>().matching { it.name == "sign${name.capitalized()}" }
-}
-
-fun Provider<Boolean>.toArgs(vararg args: String): Provider<List<String>> {
-  val enabledArgs = args.toList()
-  return map { enabled -> if (enabled) enabledArgs else emptyList() }
 }
