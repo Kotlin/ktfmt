@@ -33,9 +33,5 @@ gradlePlugin {
       id = "ktfmt.native-image"
       implementationClass = "org.jetbrains.ktfmt.NativeImagePlugin"
     }
-    register("publishing") {
-      id = "ktfmt.publishing"
-      implementationClass = "org.jetbrains.ktfmt.PublishingPlugin"
-    }
   }
 }
