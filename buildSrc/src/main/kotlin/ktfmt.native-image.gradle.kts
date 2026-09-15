@@ -86,31 +86,27 @@ val nativeCompile =
     }
 
 val nativeImageArchiveExtension = if (currentOs == Os.WINDOWS) "zip" else "tar.gz"
-val nativeImageArchiveBaseName = ktfmtVersion.map {
-  "ktfmt-${currentOs.osName}-${currentArch.archName}-${it}"
+val nativeImageArchiveBaseName =
+    "ktfmt-${currentOs.osName}-${currentArch.archName}"
+        .let { name ->
+          ktfmtVersion.map { "$name-$it" }
+        }
+val nativeImageArchiveName = nativeImageArchiveExtension.let { extension ->
+  nativeImageArchiveBaseName.map { "$it.$extension" }
 }
-val nativeImageArchiveName = nativeImageArchiveBaseName.map { "$it.$nativeImageArchiveExtension" }
 val archiveDirectory = layout.buildDirectory.dir("archive")
 
 val archive =
-    if (currentOs == Os.WINDOWS) {
-      tasks.register<Zip>("nativeImageArchive") {
-        configureNativeImageArchive(
-            nativeCompile,
-            nativeImageArchiveBaseName,
-            nativeImageArchiveName,
-            archiveDirectory,
-        )
-      }
-    } else {
-      tasks.register<Tar>("nativeImageArchive") {
-        this.compression = Compression.GZIP
-        configureNativeImageArchive(
-            nativeCompile,
-            nativeImageArchiveBaseName,
-            nativeImageArchiveName,
-            archiveDirectory,
-        )
+    tasks.register("nativeImageArchive", if (currentOs == Os.WINDOWS) Zip::class else Tar::class) {
+      description = "Packs the native image distribution into the publishable release archive"
+      archiveFileName.set(nativeImageArchiveName)
+      destinationDirectory.set(archiveDirectory)
+      isPreserveFileTimestamps = false
+      isReproducibleFileOrder = true
+      if (this is Tar) compression = Compression.GZIP
+      from(nativeCompile) {
+        into(nativeImageArchiveBaseName)
+        filePermissions { unix("rwxr-xr-x") }
       }
     }
 
@@ -122,29 +118,28 @@ val checksum =
       checksumAlgorithm.set(Checksum.Algorithm.SHA256)
     }
 
-val checksumFile = checksum.flatMap { task ->
-  task.outputDirectory.file(archive.get().archiveFileName.get() + ".sha256")
-}
-
-var signatureFiles: FileCollection? = null
-
 signing {
   val key = signingKey.orNull
   val password = signingPassword.orNull
   if (!key.isNullOrBlank() && !password.isNullOrBlank()) {
     useInMemoryPgpKeys(signingKeyId.orNull, key, password)
-    val archiveSignatures = sign(archive.get())
-    signatureFiles = files(archiveSignatures.map { it.signatureFiles }).builtBy(archiveSignatures)
+    sign(archive.get())
   }
 }
 
-val artifacts =
-    tasks.register<Copy>("nativeImageArtifacts") {
-      group = "build"
-      description = "Builds and signs the native image release archive and its SHA-256 checksum"
-      from(archive, checksumFile, signatureFiles)
-      into(layout.buildDirectory.dir("artifacts"))
-    }
+tasks.register<Copy>("nativeImageArtifacts") {
+  group = "build"
+  description = "Builds and signs the native image release archive and its SHA-256 checksum"
+  /**
+   * We can't use `signTask` as a task provider because it may not be registered (if the signing is
+   * not configured). Therefore, we have to manually wire the dependency between `signTask.map {
+   * it.signatureFiles }` and `signTask`.
+   */
+  val signTask = archive.signTask()
+  val signatures = files(signTask.map { it.signatureFiles }).builtBy(signTask)
+  from(archive, checksum, signatures)
+  into(layout.buildDirectory.dir("artifacts"))
+}
 
 tasks.register<NativeImageSmokeTestTask>("nativeImageSmokeTest") {
   group = "verification"
@@ -248,28 +243,16 @@ fun staticLinkingArgs(): Provider<List<String>> {
   }
 }
 
-fun AbstractArchiveTask.configureNativeImageArchive(
-    nativeCompile: TaskProvider<Task>,
-    archiveName: Provider<String>,
-    fileName: Provider<String>,
-    destination: Provider<Directory>,
-) {
-  description = "Packs the native image distribution into the publishable release archive"
-  from(nativeCompile) {
-    into(archiveName)
-    filePermissions { unix("rwxr-xr-x") }
-  }
-  archiveFileName.set(fileName)
-  destinationDirectory.set(destination)
-  isPreserveFileTimestamps = false
-  isReproducibleFileOrder = true
-}
-
 fun linesFromFile(fileName: String): Provider<List<String>> {
   val file = nativeImageDir.file(fileName)
   return providers.fileContents(file).asText.map { text ->
     text.lines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("#") }
   }
+}
+
+fun TaskProvider<out AbstractArchiveTask>.signTask(): TaskCollection<Sign> {
+  val signTaskName = "sign${name.replaceFirstChar { it.uppercase() }}"
+  return tasks.withType<Sign>().named { it == signTaskName }
 }
 
 fun Provider<Boolean>.toArgs(vararg args: String): Provider<List<String>> {
