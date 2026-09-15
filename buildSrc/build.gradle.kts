@@ -22,12 +22,3 @@ dependencies {
   implementation(nativeImageLibs.gradle.crypto.checksum.plugin)
   implementation(libs.guava)
 }
-
-gradlePlugin {
-  plugins {
-    register("native-image") {
-      id = "ktfmt.native-image"
-      implementationClass = "org.jetbrains.ktfmt.NativeImagePlugin"
-    }
-  }
-}
