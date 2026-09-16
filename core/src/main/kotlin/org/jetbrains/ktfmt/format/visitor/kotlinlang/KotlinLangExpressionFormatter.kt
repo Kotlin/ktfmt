@@ -1,8 +1,5 @@
 package org.jetbrains.ktfmt.format.visitor.kotlinlang
 
-import com.google.googlejavaformat.Doc
-import com.google.googlejavaformat.Output
-import java.util.Optional
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtExpression
@@ -48,14 +45,11 @@ internal class KotlinLangExpressionFormatterImpl : ExpressionFormatterImpl() {
   override fun formatAssignmentLikeExpression(assignment: KtExpression, assignmentOp: String) {
     builder.token(assignmentOp)
 
-    var movedToOwnLine: Output.BreakTag? = null
-    if (assignment.isPrefixedByLineBreak) {
-      movedToOwnLine = Output.BreakTag()
-      builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent, Optional.of(movedToOwnLine))
-    } else {
-      builder.space()
-    }
-
+    val movedToOwnLine =
+        builder.breakOp(
+            breakAllowed = assignment.isPrefixedByLineBreak,
+            plusIndent = expressionBreakIndent,
+        )
     val indent = Indentation.If(movedToOwnLine, expressionBreakIndent, ZERO)
     inAssignment(assignment, movedToOwnLine) {
       builder.block(indent) {

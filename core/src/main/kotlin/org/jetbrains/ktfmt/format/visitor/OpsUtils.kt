@@ -65,6 +65,22 @@ internal fun OpsBuilder.breakOp(
     optionalTag: Optional<Output.BreakTag> = Optional.empty(),
 ) = breakOp(fillMode, flat, plusIndent.indent, optionalTag)
 
+internal fun OpsBuilder.breakOp(
+    breakAllowed: Boolean,
+    fillMode: Doc.FillMode = Doc.FillMode.UNIFIED,
+    flat: String = " ",
+    plusIndent: Indentation = ZERO,
+): Output.BreakTag? {
+  var breakTaken: Output.BreakTag? = null
+  if (breakAllowed) {
+    breakTaken = Output.BreakTag()
+    breakOp(fillMode, flat, plusIndent, Optional.of(breakTaken))
+  } else {
+    space()
+  }
+  return breakTaken
+}
+
 internal fun OpsBuilder.open(plusIndent: Indentation) = open(plusIndent.indent)
 
 internal fun OpsBuilder.forcedBreak(plusIndent: Indentation) = forcedBreak(plusIndent.indent)
