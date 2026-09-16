@@ -1,6 +1,7 @@
 package org.jetbrains.kotlinx.ktfmt.format.visitor
 
 import com.google.googlejavaformat.layout.LayoutBuilder
+import com.google.googlejavaformat.Output.BreakTag
 import java.util.IdentityHashMap
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtExpression
@@ -23,6 +24,13 @@ class FormatterState(
     get() = inExpressionTracker.last()
 
   var inImport: Boolean = false
+
+  /**
+   * Stores the break tag that denotes whether the line break was taken before the assignment
+   * expression
+   */
+  val assignmentBreaks: Map<KtExpression, BreakTag>
+    field = mutableMapOf<KtExpression, BreakTag>()
 
   /** Hug points for lambdas that can hug an enclosing construct, keyed by the lambda. */
   private val hugPoints = IdentityHashMap<PsiElement, LayoutBuilder.HugPoint>()
@@ -64,6 +72,15 @@ class FormatterState(
       body()
     } finally {
       inExpressionTracker.removeLast()
+    }
+  }
+
+  fun inAssignment(assignment: KtExpression, tag: BreakTag?, body: () -> Unit) {
+    tag?.let { assignmentBreaks[assignment] = tag }
+    try {
+      body()
+    } finally {
+      assignmentBreaks.remove(assignment)
     }
   }
 }
