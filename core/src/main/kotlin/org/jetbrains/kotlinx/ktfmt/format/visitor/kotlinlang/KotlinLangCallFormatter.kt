@@ -10,13 +10,13 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtPostfixExpression
 import org.jetbrains.kotlin.psi.KtQualifiedExpression
-import org.jetbrains.kotlin.psi.KtStringTemplateExpression
 import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlinx.ktfmt.format.visitor.CallFormatterImpl
 import org.jetbrains.kotlinx.ktfmt.format.visitor.FormatterStateHolder
 import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation
 import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation.Companion.ZERO
+import org.jetbrains.kotlinx.ktfmt.format.visitor.assignmentBreaks
 import org.jetbrains.kotlinx.ktfmt.format.visitor.block
 import org.jetbrains.kotlinx.ktfmt.format.visitor.breakOp
 import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
@@ -94,14 +94,6 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
           format(selectorExpression)
         }
       }
-      receiver is KtStringTemplateExpression -> {
-        builder.block(expressionBreakIndent) {
-          format(receiver)
-          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
-          builder.token(expression.operationSign.value)
-          format(expression.selectorExpression)
-        }
-      }
       receiver is KtWhenExpression -> {
         builder.block {
           format(receiver)
@@ -118,15 +110,43 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
   context(_: FormatterStateHolder)
   override fun emitQualifiedExpression(expression: KtExpression) {
     val groupingInfos = expression.computeGroups(expressionBreakIndent)
+
+    /**
+     * If this expression is a call chain RHS of an assignment-like expression, and we already have
+     * a line break after the assignment operator, we don't need to add an extra indent level:
+     * ```
+     * val x =
+     *     foo(
+     *         // don't need extra indent
+     *         a = 10,
+     *         b = 20
+     *     )
+     *
+     * val x = foo(
+     *         // need extra indent
+     *         a = 10,
+     *         b = 20
+     *     )
+     * ```
+     *
+     * Indent in other cases is
+     */
+    val inAssignmentWithLineBreak = assignmentBreaks[expression]
+    val chainIndent =
+        when (groupingInfos.first().expression) {
+          is KtCallExpression ->
+              Indentation.If(inAssignmentWithLineBreak, ZERO, expressionBreakIndent)
+          else -> expressionBreakIndent
+        }
     if (groupingInfos.last().isTrailingLambda) {
       val trailingLambda = expression.chainParts.last().trailingLambdaExpression!!
       builder.openHuggable(
-          expressionBreakIndent,
-          expressionBreakIndent,
+          chainIndent,
+          chainIndent,
           hugPoint(trailingLambda),
       )
     } else {
-      builder.open(expressionBreakIndent)
+      builder.open(chainIndent)
     }
     run {
       // allows adjusting arguments indentation if a break will be made
@@ -146,11 +166,10 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
 
             // emit `doIt` from `doIt(1, 2) { it }`
             format(selectorExpression.calleeExpression)
-
             val isLastPartOrBlockLikeCall =
                 isLast || !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
             val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
-            val lambdaIndentElse = if (isTrailingLambda) -expressionBreakIndent else ZERO
+            val lambdaIndentElse = if (isTrailingLambda) -chainIndent else ZERO
 
             // remember to emit `(1, 2) { it }` from `doIt(1, 2) { it }`
             deferredCallArguments =
