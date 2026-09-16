@@ -114,7 +114,7 @@ signing {
   }
 }
 
-tasks.register<Copy>("nativeImageArtifacts") {
+tasks.register<Sync>("nativeImageArtifacts") {
   group = "build"
   description = "Builds and signs the native image release archive and its SHA-256 checksum"
   /**
