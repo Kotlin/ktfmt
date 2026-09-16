@@ -17,6 +17,7 @@ import org.jetbrains.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.ktfmt.format.visitor.fenceComments
 import org.jetbrains.ktfmt.format.visitor.format
 import org.jetbrains.ktfmt.format.visitor.fullChain
+import org.jetbrains.ktfmt.format.visitor.inAssignment
 import org.jetbrains.ktfmt.format.visitor.isPrefixedByLineBreak
 import org.jetbrains.ktfmt.format.visitor.sync
 import org.jetbrains.ktfmt.format.visitor.token
@@ -56,9 +57,11 @@ internal class KotlinLangExpressionFormatterImpl : ExpressionFormatterImpl() {
     }
 
     val indent = Indentation.If(movedToOwnLine, expressionBreakIndent, ZERO)
-    builder.block(indent) {
-      builder.fenceComments()
-      format(assignment)
+    inAssignment(assignment, movedToOwnLine) {
+      builder.block(indent) {
+        builder.fenceComments()
+        format(assignment)
+      }
     }
   }
 

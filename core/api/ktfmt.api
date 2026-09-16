@@ -505,6 +505,7 @@ public abstract interface class org/jetbrains/ktfmt/format/visitor/FileFormatter
 
 public final class org/jetbrains/ktfmt/format/visitor/FormatterState {
 	public fun <init> (Lorg/jetbrains/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/OpsBuilder;Lorg/jetbrains/ktfmt/format/visitor/AbstractKotlinFormatter;)V
+	public final fun getAssignmentBreaks ()Ljava/util/Map;
 	public final fun getBlockIndent ()Lorg/jetbrains/ktfmt/format/visitor/Indentation$Const;
 	public final fun getBuilder ()Lcom/google/googlejavaformat/OpsBuilder;
 	public final fun getExpressionBreakIndent ()Lorg/jetbrains/ktfmt/format/visitor/Indentation$Const;
@@ -513,6 +514,7 @@ public final class org/jetbrains/ktfmt/format/visitor/FormatterState {
 	public final fun getInExpressionTracker ()Ljava/util/List;
 	public final fun getInImport ()Z
 	public final fun getOptions ()Lorg/jetbrains/ktfmt/format/FormattingOptions;
+	public final fun inAssignment (Lorg/jetbrains/kotlin/psi/KtExpression;Lcom/google/googlejavaformat/Output$BreakTag;Lkotlin/jvm/functions/Function0;)V
 	public final fun inElement (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;Lkotlin/jvm/functions/Function0;)V
 	public final fun inImport (Lkotlin/jvm/functions/Function0;)V
 	public final fun markForPartialFormat ()V
