@@ -98,6 +98,11 @@ tasks {
   }
 }
 
+publishing.publications.named<MavenPublication>("maven") {
+  artifact(tasks.named("sourcesJar"))
+  artifact(tasks.named("javadocJar"))
+}
+
 kotlin {
   @OptIn(org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation::class) abiValidation()
 
