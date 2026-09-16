@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-// @licenselint-loose-mode
-
 package org.jetbrains.ktfmt
 
-import java.nio.file.Path
-import java.util.Properties
-import kotlin.io.path.inputStream
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.tasks.InputFile
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 abstract class GenerateKtfmtFileTask : DefaultTask() {
 
-  @get:InputFile abstract val propertiesFile: RegularFileProperty
+  @get:Input abstract val properties: MapProperty<String, String>
 
   @get:OutputFile abstract val outputFile: RegularFileProperty
 
@@ -40,8 +36,7 @@ abstract class GenerateKtfmtFileTask : DefaultTask() {
 
   @TaskAction
   fun generate() {
-    val properties = parseProperties(propertiesFile.get().asFile.toPath())
-    val ktfmtFileSource = generateKtfmtFile(properties)
+    val ktfmtFileSource = generateKtfmtFile(properties.get())
     outputFile.get().asFile.apply {
       parentFile.mkdirs()
       writeText(ktfmtFileSource)
@@ -49,13 +44,6 @@ abstract class GenerateKtfmtFileTask : DefaultTask() {
   }
 
   companion object {
-    private fun parseProperties(file: Path): Map<String, String> =
-        Properties()
-            .apply { load(file.inputStream()) }
-            .map { it.key.toString() to it.value.toString() }
-            .filter { it.first.startsWith("ktfmt.") }
-            .associate { it.first.removePrefix("ktfmt.") to it.second }
-
     private fun generateKtfmtFile(properties: Map<String, String>): String =
         """
         /*
@@ -77,14 +65,9 @@ abstract class GenerateKtfmtFileTask : DefaultTask() {
         package org.jetbrains.ktfmt.util
 
         object Ktfmt {
-        %s
+        ${properties.map { "    const val ${it.key} = \"${it.value}\"" }.joinToString("\n")}
         }
         """
             .trimIndent()
-            .format(
-                properties
-                    .map() { (propName, propValue) -> "  const val ${propName} = \"${propValue}\"" }
-                    .joinToString("\n"),
-            )
   }
 }
