@@ -39,11 +39,9 @@ val ktfmtFiles =
     }
 
 fun JavaExec.configureKtfmtRun(files: FileCollection, check: Boolean) {
-  group = if (check) "verification" else "formatting"
-  classpath(ktfmtCliClasspath)
   mainClass = "org.jetbrains.ktfmt.cli.Main"
   argumentProviders.add(KtfmtArgumentsProvider(files, check))
-  inputs.files(files)
+  classpath(ktfmtCliClasspath)
 }
 
 val ktfmtCheck =
@@ -61,5 +59,5 @@ val ktfmtFormat =
     }
 
 subprojects {
-  tasks.named { it == "check" }.configureEach { dependsOn(rootProject.tasks.named("ktfmtCheck")) }
+  tasks.named { it == "check" }.configureEach { dependsOn(ktfmtCheck) }
 }
