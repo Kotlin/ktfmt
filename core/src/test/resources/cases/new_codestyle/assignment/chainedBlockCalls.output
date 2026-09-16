@@ -1,0 +1,33 @@
+// MAX_WIDTH 40
+
+fun foo() {
+  val x =
+      foo(
+              a = 10,
+              b = 20,
+          )
+          .bar(
+              a = 10,
+              b = 20,
+          )
+          .bar(
+              a = 10,
+              b = 20,
+          )
+          .baz()
+
+  val x =
+      foo(
+              a = 10,
+              b = 20,
+          )
+          .bar(
+              a = 10,
+              b = 20,
+          )
+          .bar(
+              a = 10,
+              b = 20,
+          )
+          .baz()
+}
