@@ -44,22 +44,11 @@ val nativeImageSourceSet =
       compileClasspath += nativeImageJavacClasspath
     }
 
-val compileNativeImageClasses =
-    tasks.register<JavaCompile>("compileNativeImageClasses") {
-      group = "build"
-      description = "Compiles Native Image helper classes"
-      source = nativeImageSourceSet.java
-      classpath = nativeImageJavacClasspath
-      destinationDirectory = layout.buildDirectory.dir("classes/native-image")
-      dependsOn(tasks.named("compileJava"))
-    }
-
 val nativeImageJar =
     tasks.register<Jar>("nativeImageJar") {
       group = "build"
       description = "Assembles Native Image jar and resources"
-      from(compileNativeImageClasses.flatMap { it.destinationDirectory })
-      from(nativeImageSourceSet.resources)
+      from(nativeImageSourceSet.output)
       archiveClassifier = "nativeimage"
     }
 
