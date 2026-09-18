@@ -118,6 +118,10 @@ internal inline val inImport: Boolean
   get() = state.inImport
 
 context(_: FormatterStateHolder)
+internal inline val assignmentBreaks: Map<KtExpression, BreakTag?>
+  get() = state.assignmentBreaks
+
+context(_: FormatterStateHolder)
 internal inline fun format(element: PsiElement?) {
   formatter.format(element)
 }
@@ -125,6 +129,15 @@ internal inline fun format(element: PsiElement?) {
 context(_: FormatterStateHolder)
 internal inline fun markForPartialFormat() {
   state.markForPartialFormat()
+}
+
+context(_: FormatterStateHolder)
+internal inline fun inAssignment(
+    assignment: KtExpression,
+    tag: BreakTag?,
+    noinline body: () -> Unit,
+) {
+  state.inAssignment(assignment, tag, body)
 }
 
 /**
@@ -388,11 +401,11 @@ internal inline fun formatDestructuringDeclarationEntry(
 }
 
 context(_: FormatterStateHolder)
-internal inline fun formatInitializerExpression(
+internal inline fun formatAssignmentLikeExpression(
     initializer: KtExpression,
     assignmentOp: String = "=",
 ) {
-  formatter.expressionFormatter.formatInitializerExpression(initializer, assignmentOp)
+  formatter.expressionFormatter.formatAssignmentLikeExpression(initializer, assignmentOp)
 }
 
 context(_: FormatterStateHolder)
