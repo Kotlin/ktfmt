@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [0.65]
+
 ### Added
 
 - Support partial formatting with `--lines`/`--line` and matching
