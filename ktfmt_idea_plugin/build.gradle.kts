@@ -26,7 +26,7 @@ plugins {
 val ktfmtVersion = rootProject.version
 val pluginVersion = "1.3"
 
-group = "org.jetbrains"
+group = "org.jetbrains.kotlinx"
 
 version = "$pluginVersion.$ktfmtVersion"
 
