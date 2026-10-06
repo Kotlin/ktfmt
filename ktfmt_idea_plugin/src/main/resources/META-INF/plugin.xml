@@ -12,10 +12,10 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <formattingService
-                implementation="org.jetbrains.ktfmt.intellij.KtfmtFormattingService"/>
-        <postStartupActivity implementation="org.jetbrains.ktfmt.intellij.InitialConfigurationStartupActivity"/>
+                implementation="org.jetbrains.kotlinx.ktfmt.intellij.KtfmtFormattingService"/>
+        <postStartupActivity implementation="org.jetbrains.kotlinx.ktfmt.intellij.InitialConfigurationStartupActivity"/>
         <!--suppress PluginXmlCapitalization -->
-        <projectConfigurable instance="org.jetbrains.ktfmt.intellij.KtfmtConfigurable"
+        <projectConfigurable instance="org.jetbrains.kotlinx.ktfmt.intellij.KtfmtConfigurable"
                              id="org.jetbrains.ktfmt_idea_plugin.settings"
                              displayName="Ktfmt Settings"
                              parentId="editor"/>
