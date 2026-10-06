@@ -81,6 +81,7 @@ val archive =
       isReproducibleFileOrder = true
       if (this is Tar) compression = Compression.GZIP
       from(nativeCompile) {
+        include(if (currentOs == Os.WINDOWS) "ktfmt.exe" else "ktfmt")
         into(nativeImageArchiveBaseName)
         filePermissions { unix("rwxr-xr-x") }
       }
