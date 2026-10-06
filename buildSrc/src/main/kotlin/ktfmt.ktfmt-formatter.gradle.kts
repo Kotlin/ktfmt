@@ -9,7 +9,7 @@ import org.gradle.kotlin.dsl.assign
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
-import org.jetbrains.ktfmt.KtfmtArgumentsProvider
+import org.jetbrains.kotlinx.ktfmt.KtfmtArgumentsProvider
 
 val ktfmtCliDependencies = configurations.dependencyScope("ktfmtCliDependencies")
 val ktfmtCliClasspath =
@@ -39,7 +39,7 @@ val ktfmtFiles =
     }
 
 fun JavaExec.configureKtfmtRun(files: FileCollection, check: Boolean) {
-  mainClass = "org.jetbrains.ktfmt.cli.Main"
+  mainClass = "org.jetbrains.kotlinx.ktfmt.cli.Main"
   argumentProviders.add(KtfmtArgumentsProvider(files, check))
   classpath(ktfmtCliClasspath)
 }

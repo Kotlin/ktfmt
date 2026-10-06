@@ -1,13 +1,13 @@
 import org.gradle.crypto.checksum.Checksum
 import org.gradle.kotlin.dsl.register
-import org.jetbrains.ktfmt.NativeImageSmokeTestTask
-import org.jetbrains.ktfmt.Os
-import org.jetbrains.ktfmt.currentArch
-import org.jetbrains.ktfmt.currentOs
-import org.jetbrains.ktfmt.ktfmtVersion
-import org.jetbrains.ktfmt.signingKey
-import org.jetbrains.ktfmt.signingKeyId
-import org.jetbrains.ktfmt.signingPassword
+import org.jetbrains.kotlinx.ktfmt.NativeImageSmokeTestTask
+import org.jetbrains.kotlinx.ktfmt.Os
+import org.jetbrains.kotlinx.ktfmt.currentArch
+import org.jetbrains.kotlinx.ktfmt.currentOs
+import org.jetbrains.kotlinx.ktfmt.ktfmtVersion
+import org.jetbrains.kotlinx.ktfmt.signingKey
+import org.jetbrains.kotlinx.ktfmt.signingKeyId
+import org.jetbrains.kotlinx.ktfmt.signingPassword
 
 plugins {
   application
@@ -17,7 +17,7 @@ plugins {
 }
 
 application {
-  mainClass = "org.jetbrains.ktfmt.cli.Main"
+  mainClass = "org.jetbrains.kotlinx.ktfmt.cli.Main"
 }
 
 val nativeImageJavacClasspath =
@@ -134,7 +134,7 @@ tasks.register<NativeImageSmokeTestTask>("nativeImageSmokeTest") {
 graalvmNative {
   binaries.named("main") {
     imageName = "ktfmt"
-    mainClass = "org.jetbrains.ktfmt.cli.Main"
+    mainClass = "org.jetbrains.kotlinx.ktfmt.cli.Main"
     classpath(
         files(
             nativeImageJar.flatMap { it.archiveFile },
@@ -149,7 +149,7 @@ graalvmNative {
         "-march=compatibility",
         "--no-fallback",
         "--future-defaults=all",
-        "--link-at-build-time=org.jetbrains.ktfmt",
+        "--link-at-build-time=org.jetbrains.kotlinx.ktfmt",
         "--add-opens=java.base/java.util=ALL-UNNAMED",
         "--color=always",
         "--gc=serial",

@@ -9,4 +9,4 @@ kotlin.collections.EmptyMap
 kotlin.enums.EnumEntriesList
 kotlin.jvm.functions.Function1
 kotlin.text.Regex
-org.jetbrains.ktfmt
+org.jetbrains.kotlinx.ktfmt

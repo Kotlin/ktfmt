@@ -16,7 +16,7 @@
 
 import org.jetbrains.dokka.gradle.tasks.DokkaGeneratePublicationTask
 import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
-import org.jetbrains.ktfmt.GenerateKtfmtFileTask
+import org.jetbrains.kotlinx.ktfmt.GenerateKtfmtFileTask
 
 plugins {
   kotlin("jvm")
@@ -75,7 +75,9 @@ tasks {
     jvmArgs("-Dfile.encoding=UTF-16")
   }
 
-  withType(Jar::class) { manifest { attributes["Main-Class"] = "org.jetbrains.ktfmt.cli.Main" } }
+  withType(Jar::class) {
+    manifest { attributes["Main-Class"] = "org.jetbrains.kotlinx.ktfmt.cli.Main" }
+  }
 
   register<Jar>("sourcesJar") {
     description = "Sources jar including generated sources and compatibility utils"

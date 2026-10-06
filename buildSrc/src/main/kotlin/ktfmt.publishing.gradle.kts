@@ -4,10 +4,10 @@
  */
 import org.gradle.kotlin.dsl.`maven-publish`
 import org.gradle.kotlin.dsl.signing
-import org.jetbrains.ktfmt.configurationProperty
-import org.jetbrains.ktfmt.signingKey
-import org.jetbrains.ktfmt.signingKeyId
-import org.jetbrains.ktfmt.signingPassword
+import org.jetbrains.kotlinx.ktfmt.configurationProperty
+import org.jetbrains.kotlinx.ktfmt.signingKey
+import org.jetbrains.kotlinx.ktfmt.signingKeyId
+import org.jetbrains.kotlinx.ktfmt.signingPassword
 
 plugins {
   `maven-publish`
