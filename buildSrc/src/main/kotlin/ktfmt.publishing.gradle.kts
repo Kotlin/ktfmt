@@ -39,7 +39,7 @@ publishing {
 
   publications {
     create<MavenPublication>("maven") {
-      groupId = "org.jetbrains"
+      groupId = "org.jetbrains.kotlinx"
       artifactId = "ktfmt"
       version = rootProject.version.toString()
 

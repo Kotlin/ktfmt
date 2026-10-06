@@ -121,6 +121,6 @@ kotlin {
   }
 }
 
-group = "org.jetbrains"
+group = "org.jetbrains.kotlinx"
 
 version = rootProject.version
