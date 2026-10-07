@@ -75,7 +75,7 @@ interface ControlFlowExpressionFormatter {
   fun formatThrowExpression(expression: KtThrowExpression)
 }
 
-internal class ControlFlowExpressionFormatterImpl : ControlFlowExpressionFormatter {
+internal open class ControlFlowExpressionFormatterImpl : ControlFlowExpressionFormatter {
   context(_: FormatterStateHolder)
   override fun formatReturnExpression(expression: KtReturnExpression) {
     builder.sync(expression)
@@ -325,10 +325,12 @@ internal class ControlFlowExpressionFormatterImpl : ControlFlowExpressionFormatt
    *   For example, guard conditions do not use parens.
    */
   context(_: FormatterStateHolder)
-  private fun emitKeywordWithCondition(
+  open fun emitKeywordWithCondition(
       keyword: String,
       condition: KtExpression?,
       surroundConditionWithParens: Boolean = true,
+      breakableBeforeCondition: Boolean = true,
+      breakableAfterCondition: Boolean = true,
   ) {
     if (condition == null) {
       builder.token(keyword)
@@ -343,9 +345,13 @@ internal class ControlFlowExpressionFormatterImpl : ControlFlowExpressionFormatt
       }
       if (options.manageTrailingCommas) {
         builder.block(expressionBreakIndent) {
-          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
+          if (breakableBeforeCondition) {
+            builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO)
+          }
           format(condition)
-          builder.breakOp(Doc.FillMode.UNIFIED, "", -expressionBreakIndent)
+          if (breakableAfterCondition) {
+            builder.breakOp(Doc.FillMode.UNIFIED, "", -expressionBreakIndent)
+          }
         }
       } else {
         builder.block { format(condition) }
