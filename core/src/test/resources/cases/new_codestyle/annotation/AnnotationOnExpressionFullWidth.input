@@ -54,7 +54,8 @@ fun statements() {
 
     val (@Anno("arg") first, @Anno("arg") second) = pair
 
-    val whenExpr = @Suppress("WHEN") when (value) {
-        else -> compute(alpha, beta, gamma, delta)
-    }
+    val whenExpr =
+        @Suppress("WHEN") when (value) {
+            else -> compute(alpha, beta, gamma, delta)
+        }
 }
