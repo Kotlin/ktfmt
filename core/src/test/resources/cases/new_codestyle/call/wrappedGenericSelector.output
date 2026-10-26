@@ -1,0 +1,11 @@
+// MAX_WIDTH 36
+
+val result =
+    source
+        .convert<
+            ExtremelyLongInputType,
+            ExtremelyLongOutputType,
+        >(
+            input = value,
+        )
+        .finish()
