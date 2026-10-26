@@ -1,0 +1,17 @@
+// MAX_WIDTH 20
+
+fun simple() {
+  val x =
+      Klass.foo()
+          .bar()
+          .baz()
+
+  val x =
+      Klass.foo()
+          .bar()
+          .baz()
+
+  Klass.foo()
+      .bar()
+      .baz()
+}
