@@ -16,10 +16,8 @@ fun calls() {
             )
             .bar()
 
-    val qualifiedChain = factory
-        .foo(
-            a = 10,
-            b = 20,
-        )
-        .bar()
+    val qualifiedChain = factory.foo(
+        a = 10,
+        b = 20,
+    ).bar()
 }
