@@ -1,0 +1,10 @@
+// MAX_WIDTH 38
+
+val result = source.load()
+    .let transformed@{ value ->
+        if (value.isEmpty())
+            return@transformed fallback
+                .load()
+        value.normalize()
+    }
+    .finish()

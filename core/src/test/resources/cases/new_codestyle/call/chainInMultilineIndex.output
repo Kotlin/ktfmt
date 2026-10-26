@@ -1,0 +1,8 @@
+// MAX_WIDTH 34
+
+val value =
+    records[
+            lookup
+                .resolve(key)
+                .position()]
+        ?.transform()

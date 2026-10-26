@@ -1,0 +1,9 @@
+// MAX_WIDTH 38
+
+val result = repository.fetch { key }
+    .payload
+    .metadata
+    .normalize(
+        format = selectedFormat,
+    )
+    .also { it.validate() }
