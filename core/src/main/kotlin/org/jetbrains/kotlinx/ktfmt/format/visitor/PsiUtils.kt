@@ -387,19 +387,24 @@ internal val PsiElement.isPrefixedByLineBreak: Boolean
 internal val KtExpression?.startsWithBlockLikeCall: Boolean
   get() =
       when (this) {
-        is KtCallExpression -> isBlockLikeChainPart
+        is KtCallExpression,
+        is KtArrayAccessExpression -> isBlockLikeChainPart
         is KtQualifiedExpression -> selectorExpression.startsWithBlockLikeCall
         else -> false
       }
 
 /**
  * Returns whether this expression is a block-like part of a call chain: a lambda with multiple body
- * statements, or a call with a block-like call shape or a multi-statement lambda argument.
+ * statements, a call with a block-like call shape or a multi-statement lambda argument, or an array
+ * access with a trailing comma or block-like index expression.
  */
 internal val KtExpression?.isBlockLikeChainPart: Boolean
   get() {
     if (this == null) return false
     if (this is KtLambdaExpression) return hasMultipleBodyStatements
+    if (this is KtArrayAccessExpression) {
+      return trailingComma != null || indexExpressions.any { it.isBlockLikeChainPart }
+    }
 
     val callExpression = callExpression ?: return false
     return callExpression.isBlockLikeCall ||

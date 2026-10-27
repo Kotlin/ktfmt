@@ -21,6 +21,7 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.assignmentBreaks
 import org.jetbrains.kotlinx.ktfmt.format.visitor.block
 import org.jetbrains.kotlinx.ktfmt.format.visitor.breakOp
 import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
+import org.jetbrains.kotlinx.ktfmt.format.visitor.chainRoot
 import org.jetbrains.kotlinx.ktfmt.format.visitor.computeGroups
 import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.kotlinx.ktfmt.format.visitor.format
@@ -199,7 +200,8 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
     val chainIndent =
         when {
           !inAssignmentWithLineBreak -> ZERO
-          groupingInfos.first().expression is KtCallExpression ->
+          groupingInfos.first().expression is KtCallExpression ||
+              expression.chainRoot is KtArrayAccessExpression ->
               Indentation.If(assignmentLineBreakTag, ZERO, expressionBreakIndent)
           else -> expressionBreakIndent
         }
@@ -217,7 +219,7 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
   }
 
   private fun KtExpression?.isNonBlockCall(): Boolean =
-      this is KtCallExpression && !isBlockLikeChainPart
+      (this is KtCallExpression || this is KtArrayAccessExpression) && !isBlockLikeChainPart
 
   context(_: FormatterStateHolder)
   private fun emitSelectorBreak(
@@ -315,6 +317,20 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
         builder.space()
       }
       builder.token("->")
+    }
+  }
+
+  context(_: FormatterStateHolder)
+  override fun formatArrayAccessBrackets(expression: KtArrayAccessExpression) {
+    builder.block(expressionBreakIndent) {
+      formatCommaSeparatedList(
+          expression.indexExpressions,
+          forceMultiline = expression.trailingComma != null,
+          wrapInBlock = true,
+          prefix = "[",
+          postfix = "]",
+          breakBeforePostfix = true,
+      )
     }
   }
 }
