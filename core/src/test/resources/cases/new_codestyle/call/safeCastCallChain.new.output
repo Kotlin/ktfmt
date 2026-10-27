@@ -1,0 +1,7 @@
+// MAX_WIDTH 34
+
+val result = (source
+    as? DataSource)
+    ?.load(configuration)
+    ?.normalize()
+    ?.payload

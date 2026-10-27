@@ -4,5 +4,14 @@ val value =
     records[
             lookup
                 .resolve(key)
-                .position()]
+                .position(),
+        ]
+        ?.transform()
+
+val value =
+    records[
+            lookup
+                .resolve(key)
+                .position(),
+        ]
         ?.transform()
