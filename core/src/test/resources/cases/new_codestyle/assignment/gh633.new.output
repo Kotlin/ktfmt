@@ -9,17 +9,17 @@ fun f() {
 
 fun f() {
     foo(
-        1,
-        2,
-    )
+            1,
+            2,
+        )
         .bar()
 }
 
 fun f() {
     foo(
-        1,
-        2,
-    )
+            1,
+            2,
+        )
         .bar()
 }
 
@@ -29,9 +29,9 @@ val x = foo(
 )
 
 val x = foo(
-    1,
-    2,
-)
+        1,
+        2,
+    )
     .bar()
 
 val x by foo(
@@ -40,9 +40,9 @@ val x by foo(
 )
 
 val x by foo(
-    1,
-    2,
-)
+        1,
+        2,
+    )
     .bar()
 
 var x: Int
@@ -53,9 +53,9 @@ var x: Int
 
 var x: Int
     field = foo(
-        1,
-        2,
-    )
+            1,
+            2,
+        )
         .bar()
 
 val x = // comment
@@ -74,9 +74,9 @@ val x = foo(
 
 val x = foo(
     bar(
-        1,
-        2,
-    )
+            1,
+            2,
+        )
         .baz(),
     3,
 )

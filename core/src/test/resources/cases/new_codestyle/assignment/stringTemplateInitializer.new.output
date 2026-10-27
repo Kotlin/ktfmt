@@ -1,0 +1,26 @@
+// MAX_WIDTH 40
+
+val sameLine = "alpha $value beta"
+
+val ownLine = "alpha $value beta"
+
+val templateSameLine = "alpha ${compute(value)} beta gamma"
+
+val templateOwnLine =
+    "alpha ${compute(value)} beta gamma"
+
+val rawSameLine = """
+    alpha
+    beta
+    """
+
+val rawOwnLine =
+    """
+    alpha
+    beta
+    """
+
+val rawWithSelector = """
+alpha
+"""
+    .trimIndent()

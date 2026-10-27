@@ -1,0 +1,26 @@
+// MAX_WIDTH 40
+// TRAILING_COMMA_STRATEGY NONE
+
+fun calls() {
+  val qualified =
+      factory.foo(
+          a = 10,
+          b = 20,
+      )
+
+  val qualifiedChain =
+      factory
+          .foo(
+              a = 10,
+              b = 20,
+          )
+          .bar()
+
+  val qualifiedChain =
+      factory
+          .foo(
+              a = 10,
+              b = 20,
+          )
+          .bar()
+}

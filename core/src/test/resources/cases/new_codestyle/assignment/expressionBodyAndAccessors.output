@@ -1,0 +1,32 @@
+// MAX_WIDTH 40
+
+class Holder {
+  val sameLine: Int
+    get() = compute(alpha, beta)
+
+  val ownLine: Int
+    get() = compute(alpha, beta)
+
+  val scoping: Int
+    get() = run {
+      first()
+      second()
+    }
+
+  val scopingOwnLine: Int
+    get() = run {
+      first()
+      second()
+    }
+
+  var mutable: Int = 0
+    set(value) {
+      field = value
+    }
+
+  fun bodySameLine(): Int =
+      compute(alpha, beta)
+
+  fun bodyOwnLine(): Int =
+      compute(alpha, beta)
+}

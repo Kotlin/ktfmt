@@ -1,0 +1,23 @@
+// MAX_WIDTH 45
+
+val outer = run {
+    val innerSameLine = compute(alpha, beta)
+    val innerOwnLine = compute(alpha, beta)
+    innerSameLine + innerOwnLine
+}
+
+val nestedCall = outerCall(
+    innerCall(
+        alpha,
+        beta,
+    ),
+)
+
+fun outerFun() = run {
+    val inner =
+        items.map { item ->
+            val nested = compute(item)
+            nested
+        }
+    inner
+}

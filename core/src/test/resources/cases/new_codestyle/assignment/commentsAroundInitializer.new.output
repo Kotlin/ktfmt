@@ -1,0 +1,31 @@
+// MAX_WIDTH 45
+
+val trailingLineComment = // comment
+    compute(alpha)
+
+val ownLineComment =
+    // comment
+    compute(alpha)
+
+val blockCommentSameLine = /* comment */ compute(
+    alpha,
+)
+
+val blockCommentOwnLine =
+    /* comment */ compute(alpha)
+
+val commentBeforeLambda = // comment
+    run {
+        first()
+    }
+
+val commentAndScoping =
+    /* comment */ run {
+        first()
+    }
+
+class Holder {
+    var member: Int =
+        // comment
+        0
+}

@@ -9,10 +9,17 @@ private fun Window.animationQueue(): AnimationQueue =
 
 fun callFits(): Int = @Suppress("A") compute()
 
-fun callOverflows(): Int =
+fun callOverflows(): Int = @Suppress("UNCHECKED_CAST")
+compute(a)
+
+fun callWithNewLine(): Int =
     @Suppress("UNCHECKED_CAST") compute(a)
 
-fun multipleAnnotations(): Int =
+fun multipleAnnotations(): Int = @Suppress("A")
+@Suppress("B")
+compute()
+
+fun multipleAnnotationsWithNewLine(): Int =
     @Suppress("A") @Suppress("B") compute()
 
 fun annotatedFirstOperandOnly() {
@@ -35,8 +42,9 @@ fun annotatedReturn(): Int {
 
 fun lambdaArgumentFits() = g(@Anno { log(1) })
 
-fun lambdaArgumentOverflows() =
-    register(@Anno { v -> log(v) })
+fun lambdaArgumentOverflows() = register(
+    @Anno { v -> log(v) },
+)
 
 val objectLiteral =
     @Suppress("UNUSED")
@@ -60,8 +68,8 @@ fun statements() {
 
     add(@Suppress("MagicNumber") 10)
 
-    @Suppress("UNCHECKED_CAST") b =
-        compute(a, b, c) as Int
+    @Suppress("UNCHECKED_CAST") b = compute(a, b, c)
+        as Int
 
     try {} catch (@Anno e: Exception) {}
 
@@ -72,8 +80,8 @@ fun statements() {
 
     val (@Anno a, @Anno b) = pair
 
-    val (@Anno("arg") first, @Anno("arg") second) =
-        pair
+    val (
+        @Anno("arg") first, @Anno("arg") second) = pair
 
     val whenExpr =
         @Suppress("WHEN")
