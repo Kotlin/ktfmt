@@ -21,6 +21,7 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.assignmentBreaks
 import org.jetbrains.kotlinx.ktfmt.format.visitor.block
 import org.jetbrains.kotlinx.ktfmt.format.visitor.breakOp
 import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
+import org.jetbrains.kotlinx.ktfmt.format.visitor.canBeBlockLikeChainPart
 import org.jetbrains.kotlinx.ktfmt.format.visitor.chainRoot
 import org.jetbrains.kotlinx.ktfmt.format.visitor.computeGroups
 import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
@@ -110,8 +111,7 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
   context(_: FormatterStateHolder)
   override fun emitQualifiedExpression(expression: KtExpression) {
     val groupingInfos = expression.computeGroups(expressionBreakIndent)
-    val hasBlockLikeChainParts = groupingInfos.any { it.expression.startsWithBlockLikeCall }
-    val layout = computeChainLayout(expression, groupingInfos)
+    val layout = computeChainLayout(expression)
 
     /**
      * If [ChainLayout.hasAssignmentBreakTag] is true, selector breaks are always enabled.
@@ -129,7 +129,7 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
      *    .baz()
      * ```
      */
-    var selectorBreaksEnabled = !hasBlockLikeChainParts
+    var selectorBreaksEnabled = groupingInfos.none { it.expression.startsWithBlockLikeCall }
 
     builder.block(layout.chainIndent) {
       for (group in groupingInfos) {
@@ -171,7 +171,6 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
   context(_: FormatterStateHolder)
   private fun computeChainLayout(
       expression: KtExpression,
-      groupingInfos: List<GroupInfo>,
   ): ChainLayout {
     val assignmentLineBreakTag = assignmentBreaks[expression]
     val inAssignmentWithLineBreak = assignmentLineBreakTag != null
@@ -200,8 +199,7 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
     val chainIndent =
         when {
           !inAssignmentWithLineBreak -> ZERO
-          groupingInfos.first().expression is KtCallExpression ||
-              expression.chainRoot is KtArrayAccessExpression ->
+          expression.chainRoot.canBeBlockLikeChainPart ->
               Indentation.If(assignmentLineBreakTag, ZERO, expressionBreakIndent)
           else -> expressionBreakIndent
         }
@@ -219,7 +217,7 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
   }
 
   private fun KtExpression?.isNonBlockCall(): Boolean =
-      (this is KtCallExpression || this is KtArrayAccessExpression) && !isBlockLikeChainPart
+      canBeBlockLikeChainPart && !isBlockLikeChainPart
 
   context(_: FormatterStateHolder)
   private fun emitSelectorBreak(
