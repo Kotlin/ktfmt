@@ -1,0 +1,15 @@
+// MAX_WIDTH 44
+
+val result = source
+    .collect(
+        config = configProvider
+            .load()
+            .decode()
+            .normalize(),
+        fallback = defaults
+            .query { it.active }
+            .map(::toRecord),
+    ) { item ->
+        item.source.fetch().convert()
+    }
+    .finish { it.persist() }

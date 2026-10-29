@@ -1,0 +1,7 @@
+// MAX_WIDTH 34
+
+val result = receiver
+    .`when`()
+    .`with space`()
+    .`is`()
+    .normalize()

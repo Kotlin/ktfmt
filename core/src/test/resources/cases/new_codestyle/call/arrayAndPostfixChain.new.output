@@ -1,0 +1,12 @@
+// MAX_WIDTH 40
+// TRAILING_COMMA_STRATEGY COMPLETE
+
+val result =
+    receiver.values[0]!!
+        .transform<Output>(
+            firstArgument,
+            secondArgument,
+        )
+        .finish { value ->
+            value
+        }

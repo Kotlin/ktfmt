@@ -1,0 +1,15 @@
+fun calls() {
+    val result = factory
+        .load(
+            nested = makeValue(
+                first = 10,
+                second = 20,
+            ),
+        )
+        ?.consume(
+            firstArgument = 30,
+            secondArgument = 40,
+        ) { value ->
+            value
+        }
+}
