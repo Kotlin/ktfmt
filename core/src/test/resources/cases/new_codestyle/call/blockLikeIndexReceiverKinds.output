@@ -1,0 +1,24 @@
+// MAX_WIDTH 60
+
+fun f() {
+  abcd[
+          1,
+      ]
+      .gammaFunctionCall()
+      .deltaFunctionCall()
+      .epsilonCall()
+
+  this[
+          1,
+      ]
+      .gammaFunctionCall()
+      .deltaFunctionCall()
+      .epsilonCall()
+
+  (abcd)[
+          1,
+      ]
+      .gammaFunctionCall()
+      .deltaFunctionCall()
+      .epsilonCall()
+}
