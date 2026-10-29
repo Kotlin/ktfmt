@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+* KDoc: don't allow a line break right after a tag at the start of the line (https://github.com/Kotlin/ktfmt/issues/711)
+
 ## [0.65]
 
 ### Added
