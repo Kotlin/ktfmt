@@ -7,8 +7,8 @@ fun simple() {
 
     val x =
         foo()
-        .bar()
-        .baz()
+            .bar()
+            .baz()
 
     foo()
         .bar()

@@ -21,7 +21,6 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.assignmentBreaks
 import org.jetbrains.kotlinx.ktfmt.format.visitor.block
 import org.jetbrains.kotlinx.ktfmt.format.visitor.breakOp
 import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
-import org.jetbrains.kotlinx.ktfmt.format.visitor.canBeBlockLikeChainPart
 import org.jetbrains.kotlinx.ktfmt.format.visitor.chainRoot
 import org.jetbrains.kotlinx.ktfmt.format.visitor.computeGroups
 import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
@@ -33,7 +32,6 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.isBlockLikeCall
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isBlockLikeChainPart
 import org.jetbrains.kotlinx.ktfmt.format.visitor.open
 import org.jetbrains.kotlinx.ktfmt.format.visitor.options
-import org.jetbrains.kotlinx.ktfmt.format.visitor.startsWithBlockLikeCall
 import org.jetbrains.kotlinx.ktfmt.format.visitor.sync
 import org.jetbrains.kotlinx.ktfmt.format.visitor.token
 import org.jetbrains.kotlinx.ktfmt.format.visitor.trailingLambda
@@ -115,9 +113,8 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
 
     /**
      * If [ChainLayout.hasAssignmentBreakTag] is true, selector breaks are always enabled.
-     * Otherwise, we only enable them only after we encountered the first non-block call in the
-     * chain. This allows us to avoid unconventional breaks in the call chains with block-like
-     * calls:
+     * Otherwise, we only enable them after we encountered the first non-block part in the chain.
+     * This allows us to avoid unconventional breaks in the call chains with block-like calls:
      * ```
      * val a = listOf(
      *    10,
@@ -129,16 +126,13 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
      *    .baz()
      * ```
      */
-    var selectorBreaksEnabled = groupingInfos.none { it.expression.startsWithBlockLikeCall }
+    var selectorBreaksEnabled = false
 
     builder.block(layout.chainIndent) {
       for (group in groupingInfos) {
         val expression = group.expression
-        if (expression.isNonBlockCall()) {
-          selectorBreaksEnabled = true
-        }
         emitSelectorBreak(group, selectorBreaksEnabled, layout)
-        if (expression is KtQualifiedExpression && expression.selectorExpression.isNonBlockCall()) {
+        if (!expression.isBlockLikeChainPart) {
           selectorBreaksEnabled = true
         }
 
@@ -177,7 +171,8 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
 
     /**
      * If this expression is a call chain RHS of an assignment-like expression, and we already have
-     * a line break after the assignment operator, we don't need to add an extra indent level:
+     * a line break after the assignment operator, a block-like chain root doesn't need an extra
+     * indent level:
      * ```
      * val x =
      *     foo(
@@ -199,7 +194,7 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
     val chainIndent =
         when {
           !inAssignmentWithLineBreak -> ZERO
-          expression.chainRoot.canBeBlockLikeChainPart ->
+          expression.chainRoot.isBlockLikeChainPart ->
               Indentation.If(assignmentLineBreakTag, ZERO, expressionBreakIndent)
           else -> expressionBreakIndent
         }
@@ -215,9 +210,6 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
         deferredCallIndent = deferredCallIndent,
     )
   }
-
-  private fun KtExpression?.isNonBlockCall(): Boolean =
-      canBeBlockLikeChainPart && !isBlockLikeChainPart
 
   context(_: FormatterStateHolder)
   private fun emitSelectorBreak(
@@ -274,7 +266,8 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
         builder.token(ktExpression.operationSign.value)
         format(ktExpression.selectorExpression)
       }
-      is KtArrayAccessExpression -> formatArrayAccessBrackets(ktExpression)
+      is KtArrayAccessExpression ->
+          builder.block(layout.deferredCallIndent) { formatArrayAccessBrackets(ktExpression) }
       is KtPostfixExpression -> builder.token(ktExpression.operationReference.text)
       else -> format(ktExpression)
     }

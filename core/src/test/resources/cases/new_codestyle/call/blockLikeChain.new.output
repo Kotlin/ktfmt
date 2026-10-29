@@ -1,12 +1,14 @@
 // MAX_WIDTH 40
 // TRAILING_COMMA_STRATEGY COMPLETE
 
-val result = factory.load(
-    firstArgument,
-    secondArgument,
-).consume(
-    thirdArgument,
-    fourthArgument,
-) { value ->
-    value
-}
+val result = factory
+    .load(
+        firstArgument,
+        secondArgument,
+    )
+    .consume(
+        thirdArgument,
+        fourthArgument,
+    ) { value ->
+        value
+    }
