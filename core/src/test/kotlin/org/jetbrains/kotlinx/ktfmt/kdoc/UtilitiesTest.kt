@@ -132,6 +132,23 @@ class UtilitiesTest {
     check("if >= 3", listOf("if >=", "3"))
     check("if >= 3.", listOf("if >= 3."))
 
+    // A kdoc tag cannot be separated from the text that follows it
+    check("@see some.qualified.reference", listOf("@see some.qualified.reference")) {
+      it.hanging = true
+    }
+    check(
+        "@param foo This is a description",
+        listOf("@param foo", "This", "is", "a", "description"),
+    ) {
+      it.hanging = true
+    }
+    check("@see [Link Text] trailing words", listOf("@see [Link Text]", "trailing", "words")) {
+      it.hanging = true
+    }
+    // Only the tag at the beginning of the text is kept with the next word;
+    // tags mentioned in the middle of the text can still be broken after
+    check("Foo @Suppress, and", listOf("Foo @Suppress,", "and"))
+
     check(
         "SDK version - [`Partial(Mode.UseIfAvailable)`](Partial) on API 24+",
         listOf("SDK", "version - [`Partial(Mode.UseIfAvailable)`](Partial)", "on", "API", "24+"),

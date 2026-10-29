@@ -418,7 +418,7 @@ class Paragraph(private val task: FormattingTask) {
    * need to make sure we don't make it the first word on the next line since that would change the
    * documentation.
    */
-  private fun canBreakAt(prev: String, word: String): Boolean {
+  private fun canBreakAt(prev: String, word: String, startOfParagraph: Boolean = false): Boolean {
     // Can we start a new line with this without interpreting it in a special
     // way?
 
@@ -435,6 +435,12 @@ class Paragraph(private val task: FormattingTask) {
 
     if (prev == "@sample") {
       return false // https://github.com/Kotlin/ktfmt/issues/310
+    }
+
+    if (startOfParagraph && prev.isKDocTag()) {
+      // Don't break right after a kdoc tag that starts the paragraph: the next word after tag is a
+      // link that should not be separated from the tag
+      return false
     }
 
     if (!word.first().isLetter()) {
@@ -496,7 +502,7 @@ class Paragraph(private val task: FormattingTask) {
           }
           if (j != -1) {
             // combine everything in the string; we can't break link text or @sample tags
-            if (start == from + 1 && canBreakAt(words[start - 1], words[start])) {
+            if (start == from + 1 && canBreakAt(words[start - 1], words[start], from == 0)) {
               combined.add(words[from])
               from = start
             }
@@ -506,7 +512,7 @@ class Paragraph(private val task: FormattingTask) {
               break
             }
           } // else: unterminated [, ignore
-        } else if (canBreakAt(words[i - 1], next)) {
+        } else if (canBreakAt(words[i - 1], next, from == 0 && i == 1)) {
           to = i
           break
         }
