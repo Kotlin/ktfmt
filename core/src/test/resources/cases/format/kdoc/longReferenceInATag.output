@@ -1,0 +1,10 @@
+/**
+ * @see long.long.long.long.long.long.long.long.long.long.long.long.long.long.long.long.long.long.name
+ */
+val a = 10
+
+/**
+ * @see[long.long.long.long.long.long.long.long.long.long.long.long.long.long.long.long.long.long.name]
+ * test
+ */
+val a = 10
