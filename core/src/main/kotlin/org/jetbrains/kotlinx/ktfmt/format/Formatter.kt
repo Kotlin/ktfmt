@@ -36,6 +36,7 @@ import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.jetbrains.kotlinx.ktfmt.debughelpers.printOps
 import org.jetbrains.kotlinx.ktfmt.format.RedundantElementManager.addRedundantElements
 import org.jetbrains.kotlinx.ktfmt.format.RedundantElementManager.dropRedundantElements
+import org.jetbrains.kotlinx.ktfmt.kdoc.AligningCommentsHelper
 import org.jetbrains.kotlinx.ktfmt.kdoc.KDocCommentsHelper
 
 object Formatter {
@@ -152,8 +153,10 @@ object Formatter {
   ): String {
     val code = file.text
     val kotlinInput = KotlinInput(code, file)
-    val javaOutput =
-        JavaOutput(lineSeparator, kotlinInput, KDocCommentsHelper(lineSeparator, options.maxWidth))
+    val commentsHelper =
+        if (options.useExperimentalEngine) AligningCommentsHelper(kotlinInput)
+        else KDocCommentsHelper(lineSeparator, options.maxWidth)
+    val javaOutput = JavaOutput(lineSeparator, kotlinInput, commentsHelper)
     val builder = OpsBuilder(kotlinInput, javaOutput)
     file.accept(createAstVisitor(options, builder))
     builder.sync(kotlinInput.text.length)

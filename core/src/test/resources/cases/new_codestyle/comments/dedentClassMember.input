@@ -1,0 +1,14 @@
+class Example {
+        /*
+         * First line.
+         * Second line.
+         */
+        fun starred() {}
+
+        /*
+        First line.
+          Indented line.
+        Last line.
+        */
+        fun plain() {}
+}

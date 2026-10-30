@@ -1,0 +1,4 @@
+class Example {
+  /** First line. Second line. */
+  fun documented() {}
+}
