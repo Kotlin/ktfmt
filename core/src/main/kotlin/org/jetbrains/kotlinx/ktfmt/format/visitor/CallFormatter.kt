@@ -34,7 +34,7 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation.Companion.ZERO
  */
 interface CallFormatter {
   /**
-   * @param wrapInBlock if true, the argument is emitted inside its own [OpsBuilder] block, so it
+   * @param wrapInBlock if true, the argument is emitted inside its own [LayoutBuilder] block, so it
    *   can break independently of its siblings.
    * @param brokeBeforeBrace see [formatLambdaExpression]; `null` when no break tag is being tracked
    *   for this argument.

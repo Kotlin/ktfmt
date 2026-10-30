@@ -19,11 +19,10 @@ package org.jetbrains.kotlinx.ktfmt.format
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Range
 import com.google.common.collect.RangeSet
-import com.google.googlejavaformat.Doc
-import com.google.googlejavaformat.DocBuilder
-import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.java.FormatterException
 import com.google.googlejavaformat.java.JavaOutput
+import com.google.googlejavaformat.layout.LayoutBuilder
+import com.google.googlejavaformat.layout.LayoutSolver
 import org.jetbrains.kotlin.com.intellij.openapi.util.text.StringUtil
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
@@ -33,7 +32,7 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtImportDirective
 import org.jetbrains.kotlin.psi.psiUtil.endOffset
 import org.jetbrains.kotlin.psi.psiUtil.startOffset
-import org.jetbrains.kotlinx.ktfmt.debughelpers.printOps
+import org.jetbrains.kotlinx.ktfmt.debughelpers.printDoc
 import org.jetbrains.kotlinx.ktfmt.format.RedundantElementManager.addRedundantElements
 import org.jetbrains.kotlinx.ktfmt.format.RedundantElementManager.dropRedundantElements
 import org.jetbrains.kotlinx.ktfmt.kdoc.KDocCommentsHelper
@@ -154,17 +153,15 @@ object Formatter {
     val kotlinInput = KotlinInput(code, file)
     val javaOutput =
         JavaOutput(lineSeparator, kotlinInput, KDocCommentsHelper(lineSeparator, options.maxWidth))
-    val builder = OpsBuilder(kotlinInput, javaOutput)
+    val builder = LayoutBuilder(kotlinInput, javaOutput)
     file.accept(createAstVisitor(options, builder))
     builder.sync(kotlinInput.text.length)
     builder.drain()
-    val ops = builder.build()
+    val doc = builder.build()
     if (options.debuggingPrintOpsAfterFormatting) {
-      printOps(ops)
+      printDoc(doc)
     }
-    val doc = DocBuilder().withOps(ops).build()
-    doc.computeBreaks(javaOutput.commentsHelper, options.maxWidth, Doc.State(+0, 0))
-    doc.write(javaOutput)
+    LayoutSolver.format(doc, options.maxWidth, javaOutput, javaOutput.commentsHelper)
     javaOutput.flush()
 
     val tokenRangeSet = kotlinInput.characterRangesToTokenRanges(characterRanges)
@@ -173,7 +170,10 @@ object Formatter {
     )
   }
 
-  private fun createAstVisitor(options: FormattingOptions, builder: OpsBuilder): PsiElementVisitor {
+  private fun createAstVisitor(
+      options: FormattingOptions,
+      builder: LayoutBuilder,
+  ): PsiElementVisitor {
     if (KotlinVersion.CURRENT < MINIMUM_KOTLIN_VERSION) {
       throw RuntimeException("Unsupported runtime Kotlin version: " + KotlinVersion.CURRENT)
     }

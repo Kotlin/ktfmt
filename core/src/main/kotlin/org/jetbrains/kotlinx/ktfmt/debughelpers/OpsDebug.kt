@@ -26,6 +26,7 @@ import com.google.googlejavaformat.Op
 import com.google.googlejavaformat.OpenOp
 import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.Output
+import com.google.googlejavaformat.layout.Doc as LayoutDoc
 import java.util.regex.Pattern
 
 /** A regex to extract the indent size from OpenOp.toString(). */
@@ -87,5 +88,40 @@ fun printOps(ops: ImmutableList<Op>) {
     }
     println(line)
   }
+  println()
+}
+
+/**
+ * printDoc prints a [LayoutDoc] tree in a hierarchical way.
+ *
+ * It's useful when debugging incorrect newlines.
+ */
+fun printDoc(doc: LayoutDoc) {
+  println("Doc: ")
+  fun visit(node: LayoutDoc, indent: Int) {
+    val prefix = "  ".repeat(indent)
+    when (node) {
+      is LayoutDoc.Group -> {
+        val plusIndent = node.plusIndent().eval()
+        println("$prefix[ ${if (plusIndent != 0) plusIndent else ""}")
+        for (child in node.docs()) {
+          visit(child, indent + 1)
+        }
+        println("$prefix]")
+      }
+      is LayoutDoc.Choice -> {
+        println("$prefix Choice(prefixWidth=${node.prefixWidth()}) {")
+        println("$prefix  preferred:")
+        visit(node.preferred(), indent + 2)
+        println("$prefix  fallback:")
+        visit(node.fallback(), indent + 2)
+        println("$prefix}")
+      }
+      is LayoutDoc.Text -> println("""$prefix"${node.text()}"""")
+      is LayoutDoc.Space -> println("""$prefix" """")
+      else -> println("$prefix$node")
+    }
+  }
+  visit(doc, 0)
   println()
 }

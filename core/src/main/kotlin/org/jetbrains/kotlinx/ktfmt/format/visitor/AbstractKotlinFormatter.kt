@@ -2,7 +2,7 @@ package org.jetbrains.kotlinx.ktfmt.format.visitor
 
 import com.google.common.base.Throwables
 import com.google.googlejavaformat.FormattingError
-import com.google.googlejavaformat.OpsBuilder
+import com.google.googlejavaformat.layout.LayoutBuilder
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtAnnotation
@@ -88,7 +88,7 @@ import org.jetbrains.kotlinx.ktfmt.format.FormattingOptions
 
 abstract class AbstractKotlinFormatter(
     val options: FormattingOptions,
-    val builder: OpsBuilder,
+    val builder: LayoutBuilder,
     val annotationFormatter: AnnotationFormatter = AnnotationFormatterImpl(),
     val callFormatter: CallFormatter = CallFormatterImpl(),
     val controlFlowExpressionFormatter: ControlFlowExpressionFormatter =

@@ -85,6 +85,7 @@ public final class org/jetbrains/kotlinx/ktfmt/cli/ParsedArgs$Companion {
 }
 
 public final class org/jetbrains/kotlinx/ktfmt/debughelpers/OpsDebugKt {
+	public static final fun printDoc (Lcom/google/googlejavaformat/layout/Doc;)V
 	public static final fun printOps (Lcom/google/common/collect/ImmutableList;)V
 }
 
@@ -103,13 +104,6 @@ public final class org/jetbrains/kotlinx/ktfmt/format/EnumEntryList {
 public final class org/jetbrains/kotlinx/ktfmt/format/EnumEntryList$Companion {
 	public final fun extractChildList (Lorg/jetbrains/kotlin/psi/KtClassBody;)Lorg/jetbrains/kotlinx/ktfmt/format/EnumEntryList;
 	public final fun extractParentList (Lorg/jetbrains/kotlin/psi/KtEnumEntry;)Lorg/jetbrains/kotlinx/ktfmt/format/EnumEntryList;
-}
-
-public final class org/jetbrains/kotlinx/ktfmt/format/FenceCommentsOp : com/google/googlejavaformat/Op {
-	public static final field INSTANCE Lorg/jetbrains/kotlinx/ktfmt/format/FenceCommentsOp;
-	public fun add (Lcom/google/googlejavaformat/DocBuilder;)V
-	public final fun getAS_LIST ()Lcom/google/common/collect/ImmutableList;
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class org/jetbrains/kotlinx/ktfmt/format/FileType : java/lang/Enum {
@@ -214,7 +208,7 @@ public final class org/jetbrains/kotlinx/ktfmt/format/KotlinInput : com/google/g
 }
 
 public final class org/jetbrains/kotlinx/ktfmt/format/KotlinInputAstVisitor : org/jetbrains/kotlinx/ktfmt/format/visitor/AbstractKotlinFormatter {
-	public fun <init> (Lorg/jetbrains/kotlinx/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/OpsBuilder;)V
+	public fun <init> (Lorg/jetbrains/kotlinx/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/layout/LayoutBuilder;)V
 }
 
 public final class org/jetbrains/kotlinx/ktfmt/format/KotlinTok : com/google/googlejavaformat/Input$Tok {
@@ -320,11 +314,11 @@ public final class org/jetbrains/kotlinx/ktfmt/format/WhitespaceTombstones {
 }
 
 public abstract class org/jetbrains/kotlinx/ktfmt/format/visitor/AbstractKotlinFormatter : org/jetbrains/kotlin/psi/KtTreeVisitorVoid, org/jetbrains/kotlinx/ktfmt/format/visitor/FormatterStateHolder {
-	public fun <init> (Lorg/jetbrains/kotlinx/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/OpsBuilder;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/AnnotationFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/CallFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ControlFlowExpressionFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/DeclarationFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ExpressionFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/FileFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ListFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/TypeFormatter;)V
-	public synthetic fun <init> (Lorg/jetbrains/kotlinx/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/OpsBuilder;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/AnnotationFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/CallFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ControlFlowExpressionFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/DeclarationFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ExpressionFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/FileFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ListFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/TypeFormatter;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lorg/jetbrains/kotlinx/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/layout/LayoutBuilder;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/AnnotationFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/CallFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ControlFlowExpressionFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/DeclarationFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ExpressionFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/FileFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ListFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/TypeFormatter;)V
+	public synthetic fun <init> (Lorg/jetbrains/kotlinx/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/layout/LayoutBuilder;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/AnnotationFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/CallFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ControlFlowExpressionFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/DeclarationFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ExpressionFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/FileFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ListFormatter;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/TypeFormatter;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun format (Lorg/jetbrains/kotlin/com/intellij/psi/PsiElement;)V
 	public final fun getAnnotationFormatter ()Lorg/jetbrains/kotlinx/ktfmt/format/visitor/AnnotationFormatter;
-	public final fun getBuilder ()Lcom/google/googlejavaformat/OpsBuilder;
+	public final fun getBuilder ()Lcom/google/googlejavaformat/layout/LayoutBuilder;
 	public final fun getCallFormatter ()Lorg/jetbrains/kotlinx/ktfmt/format/visitor/CallFormatter;
 	public final fun getControlFlowExpressionFormatter ()Lorg/jetbrains/kotlinx/ktfmt/format/visitor/ControlFlowExpressionFormatter;
 	public final fun getDeclarationFormatter ()Lorg/jetbrains/kotlinx/ktfmt/format/visitor/DeclarationFormatter;
@@ -504,9 +498,9 @@ public abstract interface class org/jetbrains/kotlinx/ktfmt/format/visitor/FileF
 }
 
 public final class org/jetbrains/kotlinx/ktfmt/format/visitor/FormatterState {
-	public fun <init> (Lorg/jetbrains/kotlinx/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/OpsBuilder;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/AbstractKotlinFormatter;)V
+	public fun <init> (Lorg/jetbrains/kotlinx/ktfmt/format/FormattingOptions;Lcom/google/googlejavaformat/layout/LayoutBuilder;Lorg/jetbrains/kotlinx/ktfmt/format/visitor/AbstractKotlinFormatter;)V
 	public final fun getBlockIndent ()Lorg/jetbrains/kotlinx/ktfmt/format/visitor/Indentation$Const;
-	public final fun getBuilder ()Lcom/google/googlejavaformat/OpsBuilder;
+	public final fun getBuilder ()Lcom/google/googlejavaformat/layout/LayoutBuilder;
 	public final fun getExpressionBreakIndent ()Lorg/jetbrains/kotlinx/ktfmt/format/visitor/Indentation$Const;
 	public final fun getFormatter ()Lorg/jetbrains/kotlinx/ktfmt/format/visitor/AbstractKotlinFormatter;
 	public final fun getInExpression ()Z
