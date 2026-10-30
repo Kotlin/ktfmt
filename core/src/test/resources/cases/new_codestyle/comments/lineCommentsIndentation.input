@@ -1,0 +1,13 @@
+class Example {
+// First line.
+//
+// Second line.
+fun indented() {
+// Inside body.
+val value = 1 // Trailing comment.
+            // Over-indented line.
+}
+
+        // Over-indented member.
+        fun dedented() {}
+}

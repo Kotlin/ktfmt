@@ -1,0 +1,11 @@
+// MAX_WIDTH 40
+
+class Example {
+    //No space after the slashes.
+    // This comment is longer than the configured width.
+    //    Keep this relative indentation.
+    ///No space after three slashes.
+    //noinspection unused
+    //$NON-NLS-1$
+    fun commented() {}
+}
