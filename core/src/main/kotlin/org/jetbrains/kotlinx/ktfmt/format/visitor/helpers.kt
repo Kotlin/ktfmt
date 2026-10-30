@@ -3,8 +3,8 @@
 package org.jetbrains.kotlinx.ktfmt.format.visitor
 
 import com.google.googlejavaformat.FormattingError
-import com.google.googlejavaformat.OpsBuilder
 import com.google.googlejavaformat.Output.BreakTag
+import com.google.googlejavaformat.layout.LayoutBuilder
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtAnnotation
@@ -102,7 +102,7 @@ internal inline val options: FormattingOptions
   get() = state.options
 
 context(_: FormatterStateHolder)
-internal inline val builder: OpsBuilder
+internal inline val builder: LayoutBuilder
   get() = state.builder
 
 context(_: FormatterStateHolder)

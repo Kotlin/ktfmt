@@ -1,6 +1,6 @@
 package org.jetbrains.kotlinx.ktfmt.format
 
-import com.google.googlejavaformat.OpsBuilder
+import com.google.googlejavaformat.layout.LayoutBuilder
 import org.jetbrains.kotlinx.ktfmt.format.visitor.AbstractKotlinFormatter
 import org.jetbrains.kotlinx.ktfmt.format.visitor.kotlinlang.KotlinLangAnnotationFormatterImpl
 import org.jetbrains.kotlinx.ktfmt.format.visitor.kotlinlang.KotlinLangCallFormatterImpl
@@ -10,7 +10,7 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.kotlinlang.KotlinLangListForma
 
 internal class KotlinLangInputAstVisitor(
     options: FormattingOptions,
-    builder: OpsBuilder,
+    builder: LayoutBuilder,
 ) :
     AbstractKotlinFormatter(
         options,

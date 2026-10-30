@@ -8,7 +8,6 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.block
 import org.jetbrains.kotlinx.ktfmt.format.visitor.breakOp
 import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
 import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
-import org.jetbrains.kotlinx.ktfmt.format.visitor.fenceComments
 import org.jetbrains.kotlinx.ktfmt.format.visitor.format
 import org.jetbrains.kotlinx.ktfmt.format.visitor.formatChainedBlockLikeCall
 import org.jetbrains.kotlinx.ktfmt.format.visitor.formatChainedScopingFunction

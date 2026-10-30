@@ -1,6 +1,6 @@
 package org.jetbrains.kotlinx.ktfmt.format.visitor
 
-import com.google.googlejavaformat.OpsBuilder
+import com.google.googlejavaformat.layout.LayoutBuilder
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlinx.ktfmt.format.FormattingOptions
@@ -11,7 +11,7 @@ interface FormatterStateHolder {
 
 class FormatterState(
     val options: FormattingOptions,
-    val builder: OpsBuilder,
+    val builder: LayoutBuilder,
     val formatter: AbstractKotlinFormatter,
 ) {
   val blockIndent = Indentation.Const(options.blockIndent)
