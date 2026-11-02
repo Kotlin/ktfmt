@@ -19,8 +19,6 @@ import org.jetbrains.kotlin.psi.KtThisExpression
  * @property [isTrailingLambda] is true if this expression is the only lambda in the chain, and it
  *   is the last part of the chain
  * @property [isLast] is true if this expression is the last part of the chain
- * @property [hugsTrailingLambda] is true if this is a trailing lambda whose header is hugged with
- *   the rest of the chain (see [computeGroups]), instead of being grouped with the chain's prefix
  */
 internal data class GroupInfo(
     val expression: KtExpression,
@@ -28,23 +26,13 @@ internal data class GroupInfo(
     var closingGroups: Int = 0,
     var isTrailingLambda: Boolean = false,
     var isLast: Boolean = false,
-    var hugsTrailingLambda: Boolean = false,
 )
 
-/**
- * @param hugTrailingLambda if true, and the chain has a trailing lambda and breaks before at least
- *   one `.`, don't group the trailing lambda with the chain's prefix. Instead the caller lays out
- *   the whole chain so that it can hug the trailing lambda's header, see
- *   [GroupInfo.hugsTrailingLambda].
- */
-internal fun KtExpression.computeGroups(
-    continuationIndent: Indentation.Const,
-    hugTrailingLambda: Boolean = false,
-): List<GroupInfo> {
+internal fun KtExpression.computeGroups(continuationIndent: Indentation.Const): List<GroupInfo> {
   val parts = this.chainParts
   // whether we want to make a lambda look like a block, this make Kotlin DSLs look as expected
   val hasTrailingLambda = parts.last().isLambda && parts.count { it.isLambda } == 1
-  return computeGroupingInfo(parts, hasTrailingLambda, continuationIndent, hugTrailingLambda)
+  return computeGroupingInfo(parts, hasTrailingLambda, continuationIndent)
 }
 
 /**
@@ -81,7 +69,6 @@ internal fun computeGroupingInfo(
     parts: List<KtExpression>,
     hasTrailingLambda: Boolean,
     continuationIndent: Indentation.Const,
-    hugTrailingLambda: Boolean = false,
 ): List<GroupInfo> {
   val groupingInfos = List(parts.size) { GroupInfo(parts[it]) }
   groupingInfos.lastOrNull()?.let {
@@ -112,13 +99,6 @@ internal fun computeGroupingInfo(
       is KtPostfixExpression -> {
         group(lastAnchor, index)
       }
-    }
-  }
-  if (hasTrailingLambda) {
-    if (hugTrailingLambda && lastAnchor > 0) {
-      groupingInfos.last().hugsTrailingLambda = true
-    } else {
-      group(0, groupingInfos.lastIndex)
     }
   }
   return groupingInfos

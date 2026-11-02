@@ -331,6 +331,16 @@ internal val KtCallElement.trailingLambda: KtLambdaArgument?
     else throw ParseError("Maximum one trailing lambda is allowed", lambdaArguments[1])
   }
 
+/** The lambda in `doIt { ... }` or `a.doIt(b) { ... }`, if it is the call's only lambda. */
+internal val KtExpression.trailingLambdaExpression: KtLambdaExpression?
+  get() {
+    var argument = callExpression?.trailingLambda?.getArgumentExpression()
+    if (argument is KtLabeledExpression) {
+      argument = argument.baseExpression
+    }
+    return argument as? KtLambdaExpression
+  }
+
 /**
  * Returns all parts of a binary expression chain. AST parses multi-operand expressions from right
  * to left: `a + b + c + d == a + (b + (c + d))`, while formatter is interested in the order from

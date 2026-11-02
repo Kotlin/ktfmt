@@ -9,7 +9,6 @@ import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtArrayAccessExpression
 import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtExpression
-import org.jetbrains.kotlin.psi.KtLabeledExpression
 import org.jetbrains.kotlin.psi.KtLambdaArgument
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtParameterList
@@ -250,7 +249,7 @@ internal open class CallFormatterImpl : CallFormatter {
     val functionLiteral = lambdaExpression.functionLiteral
     val arrow = functionLiteral.arrow
     if (arrow == null && functionLiteral.lBrace.hasTrailingComment) {
-      state.markHugPoint(lambdaExpression)
+      markHugPoint(lambdaExpression)
     }
     builder.token("{")
 
@@ -261,12 +260,12 @@ internal open class CallFormatterImpl : CallFormatter {
           bodyIndent,
           beforeArrow = {
             if (arrow != null && arrow.hasTrailingComment) {
-              state.markHugPoint(lambdaExpression)
+              markHugPoint(lambdaExpression)
             }
           },
       )
     }
-    state.markHugPoint(lambdaExpression)
+    markHugPoint(lambdaExpression)
 
     if (hasBody) {
       builder.breakOp(Doc.FillMode.UNIFIED, " ", closingBraceIndent)
@@ -505,18 +504,21 @@ internal open class CallFormatterImpl : CallFormatter {
    */
   context(_: FormatterStateHolder)
   open fun emitQualifiedExpression(expression: KtExpression) {
-    val trailingLambda = expression.chainParts.last().trailingLambdaExpression
-    val groupingInfos =
-        expression.computeGroups(expressionBreakIndent, hugTrailingLambda = trailingLambda != null)
-    if (groupingInfos.last().hugsTrailingLambda) {
-      builder.openHuggable(expressionBreakIndent, ZERO, state.hugPoint(trailingLambda!!))
+    val groupingInfos = expression.computeGroups(expressionBreakIndent)
+    if (groupingInfos.last().isTrailingLambda) {
+      val trailingLambda = expression.chainParts.last().trailingLambdaExpression!!
+      builder.openHuggable(
+          expressionBreakIndent,
+          expressionBreakIndent,
+          hugPoint(trailingLambda),
+      )
     } else {
       builder.open(expressionBreakIndent)
     }
     run {
       // allows adjusting arguments indentation if a break will be made
       val nameTag = BreakTag()
-      for ((ktExpression, openingGroups, closingGroups, isTrailingLambda, isLast, hugsLambda) in
+      for ((ktExpression, openingGroups, closingGroups, isTrailingLambda, isLast) in
           groupingInfos) {
         if (ktExpression is KtQualifiedExpression) {
           builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, Optional.of(nameTag))
@@ -533,8 +535,7 @@ internal open class CallFormatterImpl : CallFormatter {
             format(selectorExpression.calleeExpression)
 
             val argsIndentElse = if (isLast) ZERO else expressionBreakIndent
-            val lambdaIndentElse =
-                if (isTrailingLambda && !hugsLambda) -expressionBreakIndent else ZERO
+            val lambdaIndentElse = if (isTrailingLambda) -expressionBreakIndent else ZERO
 
             // remember to emit `(1, 2) { it }` from `doIt(1, 2) { it }`
             deferredCallArguments =
@@ -568,19 +569,6 @@ internal open class CallFormatterImpl : CallFormatter {
     }
     builder.close()
   }
-
-  /** The lambda in `doIt { ... }` or `a.doIt(b) { ... }`, if it is the call's only lambda. */
-  private val KtExpression.trailingLambdaExpression: KtLambdaExpression?
-    get() {
-      val call =
-          ((this as? KtQualifiedExpression)?.selectorExpression ?: this) as? KtCallExpression
-              ?: return null
-      var argument = call.lambdaArguments.singleOrNull()?.getArgumentExpression()
-      if (argument is KtLabeledExpression) {
-        argument = argument.baseExpression
-      }
-      return argument as? KtLambdaExpression
-    }
 
   data class DeferredCallArguments(
       val call: KtCallExpression,

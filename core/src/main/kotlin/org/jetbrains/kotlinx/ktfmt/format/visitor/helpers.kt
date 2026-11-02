@@ -127,6 +127,14 @@ internal inline fun markForPartialFormat() {
   state.markForPartialFormat()
 }
 
+context(_: FormatterStateHolder)
+internal inline fun hugPoint(element: PsiElement): LayoutBuilder.HugPoint = state.hugPoint(element)
+
+context(_: FormatterStateHolder)
+internal inline fun markHugPoint(element: PsiElement) {
+  state.markHugPoint(element)
+}
+
 /**
  * Throws a formatting error
  *
