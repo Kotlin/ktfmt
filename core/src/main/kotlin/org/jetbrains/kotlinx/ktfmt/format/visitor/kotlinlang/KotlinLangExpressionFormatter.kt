@@ -2,6 +2,7 @@ package org.jetbrains.kotlinx.ktfmt.format.visitor.kotlinlang
 
 import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.Output
+import com.google.googlejavaformat.layout.LayoutBuilder
 import java.util.Optional
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtBinaryExpression
@@ -16,8 +17,10 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
 import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.kotlinx.ktfmt.format.visitor.format
 import org.jetbrains.kotlinx.ktfmt.format.visitor.fullChain
+import org.jetbrains.kotlinx.ktfmt.format.visitor.huggableBlock
 import org.jetbrains.kotlinx.ktfmt.format.visitor.inAssignment
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isPrefixedByLineBreak
+import org.jetbrains.kotlinx.ktfmt.format.visitor.isPrefixedByLineComment
 import org.jetbrains.kotlinx.ktfmt.format.visitor.sync
 import org.jetbrains.kotlinx.ktfmt.format.visitor.token
 
@@ -29,7 +32,8 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.token
  *   line with an expression indent (same behaviour as
  *   [ExpressionFormatterImpl.formatAssignmentLikeExpression])
  * - If there is no line break after the assignment operator, the initializer is formatted on the
- *   same line as the assignment operator
+ *   same line as the assignment operator when its first line fits. Otherwise, it can break after
+ *   the operator.
  *
  * ```
  * fun exprBody1() = compute(alpha)
@@ -47,19 +51,20 @@ internal class KotlinLangExpressionFormatterImpl : ExpressionFormatterImpl() {
   override fun formatAssignmentLikeExpression(assignment: KtExpression, assignmentOp: String) {
     builder.token(assignmentOp)
 
-    var movedToOwnLine: Output.BreakTag? = null
-    if (assignment.isPrefixedByLineBreak) {
-      movedToOwnLine = Output.BreakTag()
-      builder.breakOp(Doc.FillMode.UNIFIED, " ", expressionBreakIndent, Optional.of(movedToOwnLine))
-    } else {
-      builder.space()
-    }
+    val hugPoint = if (assignment.isPrefixedByLineBreak) null else LayoutBuilder.newHugPoint()
+    builder.huggableBlock(hugPoint, ZERO, ZERO) {
+      val movedToOwnLine = Output.BreakTag()
+      val fillMode =
+          if (assignment.isPrefixedByLineComment) Doc.FillMode.FORCED else Doc.FillMode.UNIFIED
+      builder.breakOp(fillMode, " ", expressionBreakIndent, Optional.of(movedToOwnLine))
 
-    val indent = Indentation.If(movedToOwnLine, expressionBreakIndent, ZERO)
-    inAssignment(assignment, movedToOwnLine) {
-      builder.block(indent) {
-        builder.fenceComments()
-        format(assignment)
+      val indent = Indentation.If(movedToOwnLine, expressionBreakIndent, ZERO)
+      inAssignment(assignment, movedToOwnLine) {
+        builder.block(indent) {
+          builder.fenceComments()
+          if (hugPoint != null) builder.hugPoint(hugPoint)
+          format(assignment)
+        }
       }
     }
   }

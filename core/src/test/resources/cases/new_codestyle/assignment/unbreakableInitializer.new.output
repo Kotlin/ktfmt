@@ -2,7 +2,8 @@
 
 val short = anIdentifier
 
-val sameLine = aVeryLongUnbreakableName
+val sameLine =
+    aVeryLongUnbreakableName
 
 val ownLine =
     aVeryLongUnbreakableName
@@ -15,7 +16,31 @@ val qualifiedSameLine = some
 val qualifiedOwnLine =
     some.deeply.nested.value
 
-fun bodySameLine() = aVeryLongUnbreakableName
+fun bodySameLine() =
+    aVeryLongUnbreakableName
 
 fun bodyOwnLine() =
     aVeryLongUnbreakableName
+
+val fits = nameWithFifteenChar
+
+val extra =
+    nameWithFifteenChar
+
+fun nested() {
+    val local =
+        aVeryLongUnbreakableName
+    target =
+        aVeryLongUnbreakableName
+    target +=
+        aVeryLongUnbreakableName
+}
+
+fun longCall() =
+    aVeryLongUnbreakableName(
+        alpha,
+        beta,
+    )
+
+val tooLong =
+    anIdentifierThatCannotFitEvenOnItsOwnLine

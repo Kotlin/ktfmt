@@ -13,9 +13,8 @@ val typeArgumentOverflows:
 
 fun returnTypeFits(): @Ann String = ""
 
-fun returnTypeOverflows(
-    a: String,
-): @Ann("arg") List<Int> = listOf()
+fun returnTypeOverflows(a: String): @Ann("arg") List<Int> =
+    listOf()
 
 fun paramTypeFits(a: @Ann List<Int>) {}
 
