@@ -10,14 +10,14 @@ private fun Window.animationQueue(): AnimationQueue =
 fun callFits(): Int = @Suppress("A") compute()
 
 fun callOverflows(): Int = @Suppress("UNCHECKED_CAST")
-compute(a)
+    compute(a)
 
 fun callWithNewLine(): Int =
     @Suppress("UNCHECKED_CAST") compute(a)
 
 fun multipleAnnotations(): Int = @Suppress("A")
-@Suppress("B")
-compute()
+    @Suppress("B")
+    compute()
 
 fun multipleAnnotationsWithNewLine(): Int =
     @Suppress("A") @Suppress("B") compute()
