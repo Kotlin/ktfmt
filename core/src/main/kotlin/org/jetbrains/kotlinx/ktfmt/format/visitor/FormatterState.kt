@@ -1,7 +1,7 @@
 package org.jetbrains.kotlinx.ktfmt.format.visitor
 
-import com.google.googlejavaformat.layout.LayoutBuilder
 import com.google.googlejavaformat.Output.BreakTag
+import com.google.googlejavaformat.layout.LayoutBuilder
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlinx.ktfmt.format.FormattingOptions

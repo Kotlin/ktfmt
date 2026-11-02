@@ -19,7 +19,8 @@ val elvisSameLine = compute(alpha)
 val elvisOwnLine =
     compute(alpha) ?: fallbackValue
 
-val rangeSameLine = firstValue..lastValue
+val rangeSameLine =
+    firstValue..lastValue
 
 val andSameLine = isFirst &&
     isSecond &&
