@@ -1,6 +1,7 @@
 package org.jetbrains.kotlinx.ktfmt.format.visitor.kotlinlang
 
 import com.google.googlejavaformat.Doc
+import com.google.googlejavaformat.layout.LayoutBuilder
 import org.jetbrains.kotlin.psi.KtBackingField
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtDelegatedSuperTypeEntry
@@ -29,6 +30,7 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.formatModifierList
 import org.jetbrains.kotlinx.ktfmt.format.visitor.formatSuperTypeList
 import org.jetbrains.kotlinx.ktfmt.format.visitor.formatTypeConstraintList
 import org.jetbrains.kotlinx.ktfmt.format.visitor.formatTypeParameterList
+import org.jetbrains.kotlinx.ktfmt.format.visitor.huggableBlock
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isPrefixedByLineBreak
 import org.jetbrains.kotlinx.ktfmt.format.visitor.sync
 import org.jetbrains.kotlinx.ktfmt.format.visitor.token
@@ -68,13 +70,19 @@ internal class KotlinLangDeclarationFormatterImpl : DeclarationFormatterImpl() {
         builder.space()
         builder.block {
           builder.token(":")
-          builder.breakOp(
-              breakAllowed = superTypes.isPrefixedByLineBreak,
-              plusIndent = expressionBreakIndent,
-          )
-          builder.block(expressionBreakIndent) {
-            builder.fenceComments()
-            formatSuperTypeList(superTypes)
+          val hugPoint = if (superTypes.isPrefixedByLineBreak) null else LayoutBuilder.newHugPoint()
+          builder.huggableBlock(hugPoint, ZERO, ZERO) {
+            builder.breakOp(
+                flat = " ",
+                plusIndent = expressionBreakIndent,
+            )
+            builder.block(expressionBreakIndent) {
+              builder.fenceComments()
+              // Only the break after ':' is flattened when hugging. The list's comma breaks
+              // stay in a nested group, and the solver checks that its first rendered line fits.
+              if (hugPoint != null) builder.hugPoint(hugPoint)
+              formatSuperTypeList(superTypes)
+            }
           }
         }
       }

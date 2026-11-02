@@ -83,10 +83,8 @@ class Constructed<T>(value: T, values: List<T>) : Base<T>(
 }
 
 // Delegation expressions end immediately before where.
-class Delegated<T>(
-    first: First<T>,
-    second: Second<T>,
-) : First<T> by first, Second<T> by second
+class Delegated<T>(first: First<T>, second: Second<T>) :
+    First<T> by first, Second<T> by second
     where T : CharSequence, T : Comparable<T>
 
 class Factory<T>(value: T) : Base<T>(),
