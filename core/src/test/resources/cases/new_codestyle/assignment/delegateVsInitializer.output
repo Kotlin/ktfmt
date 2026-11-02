@@ -1,0 +1,33 @@
+// MAX_WIDTH 40
+
+val delegateSameLine by lazy {
+  first()
+  second()
+}
+
+val delegateOwnLine by lazy {
+  first()
+  second()
+}
+
+val initializerSameLine = lazy {
+  first()
+  second()
+}
+
+val initializerOwnLine = lazy {
+  first()
+  second()
+}
+
+val delegateCall by
+    provider(alpha, beta)
+
+val delegateCallOwnLine by
+    provider(alphaValue, betaValue)
+
+val initializerCall =
+    provider(alpha, beta)
+
+val initializerCallOwnLine =
+    provider(alphaValue, betaValue)

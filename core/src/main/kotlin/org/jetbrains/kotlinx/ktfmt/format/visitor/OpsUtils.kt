@@ -51,6 +51,22 @@ internal fun LayoutBuilder.block(
   }
 }
 
+internal fun LayoutBuilder.huggableBlock(
+    hugPoint: LayoutBuilder.HugPoint?,
+    plusIndent: Indentation = ZERO,
+    huggedPlusIndent: Indentation = ZERO,
+    fallbackIfFlatOnNextLine: Boolean = false,
+    block: () -> Unit,
+) {
+  if (hugPoint != null) {
+    openHuggable(plusIndent.indent, huggedPlusIndent.indent, hugPoint, fallbackIfFlatOnNextLine)
+  }
+  block()
+  if (hugPoint != null) {
+    close()
+  }
+}
+
 internal fun LayoutBuilder.breakOp(
     fillMode: Doc.FillMode = Doc.FillMode.UNIFIED,
     flat: String = " ",
