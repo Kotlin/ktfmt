@@ -4,7 +4,8 @@ val sameLine = "alpha $value beta"
 
 val ownLine = "alpha $value beta"
 
-val templateSameLine = "alpha ${compute(value)} beta gamma"
+val templateSameLine =
+    "alpha ${compute(value)} beta gamma"
 
 val templateOwnLine =
     "alpha ${compute(value)} beta gamma"

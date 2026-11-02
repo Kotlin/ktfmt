@@ -7,9 +7,8 @@ val ownLineComment =
     // comment
     compute(alpha)
 
-val blockCommentSameLine = /* comment */ compute(
-    alpha,
-)
+val blockCommentSameLine = /* comment */
+    compute(alpha)
 
 val blockCommentOwnLine =
     /* comment */ compute(alpha)

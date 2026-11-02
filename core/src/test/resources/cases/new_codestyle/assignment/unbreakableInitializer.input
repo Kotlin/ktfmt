@@ -16,3 +16,17 @@ fun bodySameLine() = aVeryLongUnbreakableName
 
 fun bodyOwnLine() =
     aVeryLongUnbreakableName
+
+val fits = nameWithFifteenChar
+
+val extra = nameWithFifteenChar
+
+fun nested() {
+    val local = aVeryLongUnbreakableName
+    target = aVeryLongUnbreakableName
+    target += aVeryLongUnbreakableName
+}
+
+fun longCall() = aVeryLongUnbreakableName(alpha, beta)
+
+val tooLong = anIdentifierThatCannotFitEvenOnItsOwnLine
