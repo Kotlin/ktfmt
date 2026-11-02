@@ -7,10 +7,13 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtReturnExpression
 import org.jetbrains.kotlinx.ktfmt.format.visitor.AnnotationFormatterImpl
 import org.jetbrains.kotlinx.ktfmt.format.visitor.FormatterStateHolder
+import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation
 import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation.Companion.ZERO
+import org.jetbrains.kotlinx.ktfmt.format.visitor.assignmentBreaks
 import org.jetbrains.kotlinx.ktfmt.format.visitor.block
 import org.jetbrains.kotlinx.ktfmt.format.visitor.breakOp
 import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
+import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.kotlinx.ktfmt.format.visitor.format
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isBinaryExpression
 import org.jetbrains.kotlinx.ktfmt.format.visitor.sync
@@ -42,7 +45,12 @@ internal class KotlinLangAnnotationFormatterImpl : AnnotationFormatterImpl() {
     builder.sync(expression)
     val baseExpression = expression.baseExpression
 
-    builder.block {
+    // We need to add indent if the current expression is an RHS of a broken assignment-like
+    val assignmentBreak = assignmentBreaks[expression]
+    val indent =
+        if (assignmentBreak != null) Indentation.If(assignmentBreak, ZERO, expressionBreakIndent)
+        else ZERO
+    builder.block(indent) {
       val annotations = expression.topLevelAnnotations
       for ((index, annotationEntry) in annotations.withIndex()) {
         if (index > 0) {
