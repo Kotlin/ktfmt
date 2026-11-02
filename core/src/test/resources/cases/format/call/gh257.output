@@ -1,7 +1,6 @@
 fun f() {
-  VeryLongNamedServiceMocker.whenever(VeryLongNamedServiceMocker.Method.FunctionName).thenRespond<
-      LongType,
-  > {
-    // do a thing
-  }
+  VeryLongNamedServiceMocker.whenever(VeryLongNamedServiceMocker.Method.FunctionName)
+      .thenRespond<LongType> {
+        // do a thing
+      }
 }

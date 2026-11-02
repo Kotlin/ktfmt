@@ -60,4 +60,17 @@ internal fun LayoutBuilder.breakOp(
 
 internal fun LayoutBuilder.open(plusIndent: Indentation) = open(plusIndent.indent)
 
+/**
+ * Opens a level that can hug the preceding text.
+ *
+ * If the level doesn't fit on the current line, but its content up to [hugPoint] does, the level's
+ * own breaks stay flat and it is indented by [huggedPlusIndent]. Otherwise it is laid out normally,
+ * indented by [brokenPlusIndent].
+ */
+internal fun LayoutBuilder.openHuggable(
+    brokenPlusIndent: Indentation,
+    huggedPlusIndent: Indentation,
+    hugPoint: LayoutBuilder.HugPoint,
+) = openHuggable(brokenPlusIndent.indent, huggedPlusIndent.indent, hugPoint, false)
+
 internal fun LayoutBuilder.forcedBreak(plusIndent: Indentation) = forcedBreak(plusIndent.indent)

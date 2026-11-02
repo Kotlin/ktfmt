@@ -1,0 +1,15 @@
+fun f() {
+  someReceiverObject
+      .someLongFunctionName(argumentNumberOne, argumentNumberTwo)
+      .map { item -> // comment
+        item.transform()
+      }
+
+  someReceiverObject.someLongFunctionName(argumentNumberOne, argumentNumberTwo).forEach { // comment
+    doSomething(it)
+  }
+
+  someReceiverObject.someLongFunctionName(argumentNumberOne).forEach { // a comment that is long
+    doSomething(it)
+  }
+}

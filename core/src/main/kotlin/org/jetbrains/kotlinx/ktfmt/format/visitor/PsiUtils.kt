@@ -21,6 +21,7 @@ import kotlin.contracts.contract
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
+import org.jetbrains.kotlin.com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlin.lexer.KtSingleValueToken
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtAnnotation
@@ -228,6 +229,16 @@ internal val PsiElement?.scopingLambda: ScopingLambda?
         labeledExpression,
         lambdaExpression,
     )
+  }
+
+/** Returns true if this element is followed by a comment on the same line, e.g. `{ // comment`. */
+internal val PsiElement.hasTrailingComment: Boolean
+  get() {
+    var next = PsiTreeUtil.nextLeaf(this)
+    while (next is PsiWhiteSpace && !next.textContains('\n')) {
+      next = PsiTreeUtil.nextLeaf(next)
+    }
+    return next is PsiComment
   }
 
 /**
