@@ -1,0 +1,23 @@
+// MAX_WIDTH 50
+
+class Commented : /* base */ Base(),
+    // first interface
+    First, /* second interface */ Second {
+    fun value() = 1
+}
+
+class Delegated(impl: First) : Base(), First by /* delegate */ impl,
+    // last interface
+    Second
+
+class Commented :
+    /* base */ Base(),
+    // first interface
+    First, /* second interface */ Second {
+    fun value() = 1
+}
+
+class Delegated(impl: First) :
+     Base(), First by /* delegate */ impl,
+    // last interface
+    Second

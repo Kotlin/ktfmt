@@ -1,0 +1,23 @@
+// MAX_WIDTH 30
+
+class Fit : FirstInterfaceName
+
+class Fits :
+    FirstInterfaceName
+
+class Multiple : First,
+    SecondInterface,
+    ThirdInterface
+
+class Long :
+    VeryLongUnbreakableInterfaceName,
+    Second
+
+class OwnLine :
+    FirstInterfaceName, Second
+
+class Outer {
+    class Nested :
+        FirstInterfaceName,
+        Second
+}

@@ -74,6 +74,22 @@ internal fun LayoutBuilder.breakOp(
     optionalTag: Optional<Output.BreakTag> = Optional.empty(),
 ) = breakOp(fillMode, flat, plusIndent.indent, optionalTag)
 
+internal fun LayoutBuilder.breakOp(
+    breakAllowed: Boolean,
+    fillMode: Doc.FillMode = Doc.FillMode.UNIFIED,
+    flat: String = " ",
+    plusIndent: Indentation = ZERO,
+): Output.BreakTag? {
+  var breakTaken: Output.BreakTag? = null
+  if (breakAllowed) {
+    breakTaken = Output.BreakTag()
+    breakOp(fillMode, flat, plusIndent, Optional.of(breakTaken))
+  } else {
+    space()
+  }
+  return breakTaken
+}
+
 internal fun LayoutBuilder.open(plusIndent: Indentation) = open(plusIndent.indent)
 
 internal fun LayoutBuilder.forcedBreak(plusIndent: Indentation) = forcedBreak(plusIndent.indent)
