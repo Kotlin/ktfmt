@@ -9,16 +9,18 @@ val value =
     ?.transform()
 
 val value = records[
-    lookup
-        .resolve(key)
-        .position(),
-]?.transform()
+        lookup
+            .resolve(key)
+            .position(),
+    ]
+    ?.transform()
 
 val value = records[
-    lookup
-        .resolve(key)
-        .position(),
-]?.transform()
+        lookup
+            .resolve(key)
+            .position(),
+    ]
+    ?.transform()
     ?.records[
         lookup
             .resolve(key)

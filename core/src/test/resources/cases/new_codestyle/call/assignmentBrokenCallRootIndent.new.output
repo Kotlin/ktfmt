@@ -23,7 +23,8 @@ val blockRooted =
     .baz()
 
 val blockSameLine = foo {
-    println("a")
-    println("b")
-}.bar()
+        println("a")
+        println("b")
+    }
+    .bar()
     .baz()

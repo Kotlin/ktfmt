@@ -1,10 +1,11 @@
 // MAX_WIDTH 15
 
 fun simple() {
-    val x = Klass
-        .foo()
-        .bar()
-        .baz()
+    val x =
+        Klass
+            .foo()
+            .bar()
+            .baz()
 
     val x =
         Klass

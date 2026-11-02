@@ -23,9 +23,10 @@ val trailingLambda = foo(
 }
 
 val safeChain = foo(
-    1,
-    2,
-)?.bar()
+        1,
+        2,
+    )
+    ?.bar()
 
 val indexed = foo(
     1,

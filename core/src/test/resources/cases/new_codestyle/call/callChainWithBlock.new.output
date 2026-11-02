@@ -2,9 +2,10 @@
 
 fun simple() {
     val x = foo {
-        println("a")
-        println("b")
-    }.bar()
+            println("a")
+            println("b")
+        }
+        .bar()
         .baz()
 
     val x =

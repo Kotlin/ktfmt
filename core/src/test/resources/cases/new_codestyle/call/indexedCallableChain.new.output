@@ -1,7 +1,7 @@
 // MAX_WIDTH 34
 
 val result = operations[
-    "longTransformKey"
-](request)
+        "longTransformKey"
+    ](request)
     .normalize()
     .payload

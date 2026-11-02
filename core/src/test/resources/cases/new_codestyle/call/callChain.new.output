@@ -1,9 +1,10 @@
 // MAX_WIDTH 15
 
 fun simple() {
-    val x = foo()
-        .bar()
-        .baz()
+    val x =
+        foo()
+            .bar()
+            .baz()
 
     val x =
         foo()

@@ -11,8 +11,9 @@ interface FallbackSource {
 class CombinedSource :
     PrimarySource,
     FallbackSource {
-    override fun load() = super<PrimarySource>
-        .load()
-        .trim()
-        .uppercase()
+    override fun load() =
+        super<PrimarySource>
+            .load()
+            .trim()
+            .uppercase()
 }
