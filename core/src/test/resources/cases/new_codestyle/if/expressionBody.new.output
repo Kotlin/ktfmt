@@ -1,0 +1,11 @@
+// MAX_WIDTH 80
+
+fun f(b: Boolean): String {
+    val value = if (b) "true" else "false"
+    val long =
+        if (b) "a string that is long enough to not fit on a single line"
+        else "another string"
+    return if (b)
+        someFunctionCall(argumentNumberOne, argumentNumberTwo, argumentThree)
+    else ""
+}

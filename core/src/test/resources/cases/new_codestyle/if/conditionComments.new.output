@@ -1,0 +1,17 @@
+fun f(x: Int) {
+    if (
+        x > 0 && // must be positive
+            x < 10
+    ) {
+        println(x)
+    }
+    if (
+        // must be positive
+        x > 0
+    ) {
+        println(x)
+    }
+    if (x > 0)
+        // must be positive
+        println(x)
+}

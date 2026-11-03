@@ -13,11 +13,10 @@ class Foo {
                 }
             }
             else -> if (y > 0) print(y)
-            else
-                when (y) {
-                    0 -> print(0)
-                    else -> print(-1)
-                }
+            else when (y) {
+                0 -> print(0)
+                else -> print(-1)
+            }
         }
     }
 }
