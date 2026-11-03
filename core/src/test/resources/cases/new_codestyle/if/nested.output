@@ -1,0 +1,11 @@
+fun f(x: Int, y: Int) {
+  if (x > 0) {
+    if (y > 0) {
+      println("both positive")
+    } else if (y < 0) {
+      println("x positive, y negative")
+    } else {
+      println("x positive, y zero")
+    }
+  } else if (x < 0 && y < 0) println("both negative") else println("other")
+}

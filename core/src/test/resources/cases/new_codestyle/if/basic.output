@@ -1,0 +1,14 @@
+fun f(x: Int) {
+  if (x > 0) {
+    println("positive")
+  }
+  if (x > 0) println("positive") else println("non-positive")
+  if (x == 0) {
+    println("zero")
+  } else if (x > 0) {
+    println("positive")
+  } else {
+    println("negative")
+  }
+  if (x > 0) return
+}

@@ -4,9 +4,13 @@ import com.google.googlejavaformat.Doc
 import com.google.googlejavaformat.OpsBuilder
 import java.util.Optional
 import org.jetbrains.kotlin.psi.KtBlockExpression
+import org.jetbrains.kotlin.psi.KtDoWhileExpression
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtForExpression
+import org.jetbrains.kotlin.psi.KtIfExpression
 import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtWhenExpression
+import org.jetbrains.kotlin.psi.KtWhileExpression
 import org.jetbrains.kotlinx.ktfmt.format.visitor.ControlFlowExpressionFormatterImpl
 import org.jetbrains.kotlinx.ktfmt.format.visitor.FormatterStateHolder
 import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation.Companion.ZERO
@@ -46,7 +50,10 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.token
  * - Wrap keywords and conditions into a single block with [expressionBreakIndent] in
  *   [emitKeywordWithCondition] to correctly handle line comments
  * - A when-entry body that doesn't fit on the `->` line is hugged: it still starts there if its
- *   first line fits, and only moves to the next line if it fits flat there (see [emitWhenBody])
+ *   first line fits, and only moves to the next line if it fits flat there (see [emitBranchBody])
+ *
+ * - An if-else body that doesn't fit on the same line is hugged: it still starts there if its first
+ *   line fits, and only moves to the next line if it fits flat there (see [emitIfElseBranchBody])
  */
 internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpressionFormatterImpl() {
   context(_: FormatterStateHolder)
@@ -112,7 +119,7 @@ internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpress
             builder.space()
           }
           builder.token("->")
-          emitWhenBody(whenEntry.expression!!)
+          emitBranchBody(whenEntry.expression!!)
           builder.guessToken(";")
         }
         builder.forcedBreak()
@@ -122,13 +129,49 @@ internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpress
   }
 
   context(_: FormatterStateHolder)
-  private fun emitWhenBody(body: KtExpression) {
+  override fun formatIfExpression(expression: KtIfExpression) {
+    builder.sync(expression)
+    builder.block {
+      emitKeywordWithCondition("if", expression.condition)
+      emitIfElseBranchBody(expression.then!!)
+
+      if (expression.elseKeyword != null) {
+        if (expression.then is KtBlockExpression) {
+          builder.space()
+        } else {
+          builder.breakOp(Doc.FillMode.UNIFIED, " ", ZERO)
+        }
+
+        builder.token("else")
+        emitIfElseBranchBody(expression.`else`!!)
+      }
+    }
+  }
+
+  context(_: FormatterStateHolder)
+  private fun emitIfElseBranchBody(body: KtExpression) {
+    when (body) {
+      is KtWhileExpression,
+      is KtDoWhileExpression,
+      is KtForExpression -> {
+        builder.breakOp(Doc.FillMode.INDEPENDENT, " ", expressionBreakIndent)
+        builder.block(expressionBreakIndent) { format(body) }
+      }
+
+      else -> {
+        emitBranchBody(body)
+      }
+    }
+  }
+
+  context(_: FormatterStateHolder)
+  private fun emitBranchBody(body: KtExpression) {
     if (body is KtBlockExpression || body is KtLambdaExpression) {
       builder.space()
       format(body)
       return
     }
-    // A line break before the body in the input means the body is not hugged onto the `->` line.
+    // A line break before the body in the input means the body is not hugged onto the current line.
     val hugPoint = if (body.isPrefixedByLineBreak) null else hugPoint(body)
     builder.huggableBlock(
         hugPoint,

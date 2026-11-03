@@ -1,0 +1,19 @@
+// MAX_WIDTH 80
+
+fun f(animal: Animal) {
+  if (
+      animal.isHungry &&
+          animal.hasFoodInBowl &&
+          animal.ownerIsAtHome &&
+          animal.canEatInPeace
+  ) {
+    animal.eat()
+  }
+  if (
+      someVeryLongCondition(animal) ||
+          anotherVeryLongCondition(animal) ||
+          thirdCondition(animal)
+  )
+      return
+  if (animal.isHungry && animal.hasFoodInBowl) animal.eat()
+}

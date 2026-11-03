@@ -1,0 +1,19 @@
+// MAX_WIDTH 80
+
+fun onTouch(event: MotionEvent) {
+  if (event.action == ACTION_DOWN)
+      Toast.makeText(context, "Down!", Toast.LENGTH_SHORT, blablabla).show()
+  if (event.action == ACTION_UP)
+      Toast.makeText(context, "Up!", Toast.LENGTH_SHORT).show()
+  val x =
+      if (event.action == ACTION_MOVE)
+          Toast.makeText(
+                  context,
+                  "Move!",
+                  Toast.LENGTH_SHORT,
+                  blablabla,
+                  blabla,
+              )
+              .show()
+      else 0
+}

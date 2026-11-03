@@ -1,0 +1,13 @@
+// MAX_WIDTH 80
+
+fun classify(x: Int): String {
+    if (x == 0) return "zero"
+    else if (x > 0 && x < 10) return "small"
+    else if (x >= 10 && x < 100) {
+        return "medium"
+    } else if (x >= 100 && x < 1000) {
+        return "large"
+    } else {
+        return "huge"
+    }
+}
