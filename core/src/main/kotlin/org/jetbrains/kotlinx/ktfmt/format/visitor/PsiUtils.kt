@@ -21,6 +21,7 @@ import kotlin.contracts.contract
 import org.jetbrains.kotlin.com.intellij.psi.PsiComment
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.com.intellij.psi.PsiWhiteSpace
+import org.jetbrains.kotlin.com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlin.lexer.KtSingleValueToken
 import org.jetbrains.kotlin.psi.KtAnnotatedExpression
 import org.jetbrains.kotlin.psi.KtAnnotation
@@ -230,6 +231,16 @@ internal val PsiElement?.scopingLambda: ScopingLambda?
     )
   }
 
+/** Returns true if this element is followed by a comment on the same line, e.g. `{ // comment`. */
+internal val PsiElement.hasTrailingComment: Boolean
+  get() {
+    var next = PsiTreeUtil.nextLeaf(this)
+    while (next is PsiWhiteSpace && !next.textContains('\n')) {
+      next = PsiTreeUtil.nextLeaf(next)
+    }
+    return next is PsiComment
+  }
+
 /**
  * Returns whether an expression is a lambda or an initializer expression, in which case we will
  * want to avoid indenting the lambda block
@@ -318,6 +329,16 @@ internal val KtCallElement.trailingLambda: KtLambdaArgument?
     if (lambdas.isEmpty()) return null
     if (lambdas.size == 1) return lambdas.first()
     else throw ParseError("Maximum one trailing lambda is allowed", lambdaArguments[1])
+  }
+
+/** The lambda in `doIt { ... }` or `a.doIt(b) { ... }`, if it is the call's only lambda. */
+internal val KtExpression.trailingLambdaExpression: KtLambdaExpression?
+  get() {
+    var argument = callExpression?.trailingLambda?.getArgumentExpression()
+    if (argument is KtLabeledExpression) {
+      argument = argument.baseExpression
+    }
+    return argument as? KtLambdaExpression
   }
 
 /**

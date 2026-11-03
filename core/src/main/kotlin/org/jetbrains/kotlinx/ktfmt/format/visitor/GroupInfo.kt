@@ -101,9 +101,6 @@ internal fun computeGroupingInfo(
       }
     }
   }
-  if (hasTrailingLambda) {
-    group(0, groupingInfos.lastIndex)
-  }
   return groupingInfos
 }
 
