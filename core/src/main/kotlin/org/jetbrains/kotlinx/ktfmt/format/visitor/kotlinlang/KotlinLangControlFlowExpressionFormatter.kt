@@ -18,6 +18,10 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.kotlinx.ktfmt.format.visitor.forcedBreak
 import org.jetbrains.kotlinx.ktfmt.format.visitor.format
 import org.jetbrains.kotlinx.ktfmt.format.visitor.hasLineBreakingCommentBefore
+import org.jetbrains.kotlinx.ktfmt.format.visitor.hugPoint
+import org.jetbrains.kotlinx.ktfmt.format.visitor.huggableBlock
+import org.jetbrains.kotlinx.ktfmt.format.visitor.isPrefixedByLineBreak
+import org.jetbrains.kotlinx.ktfmt.format.visitor.markHugPoint
 import org.jetbrains.kotlinx.ktfmt.format.visitor.options
 import org.jetbrains.kotlinx.ktfmt.format.visitor.sync
 import org.jetbrains.kotlinx.ktfmt.format.visitor.token
@@ -41,6 +45,8 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.token
  *
  * - Wrap keywords and conditions into a single block with [expressionBreakIndent] in
  *   [emitKeywordWithCondition] to correctly handle line comments
+ * - A when-entry body that doesn't fit on the `->` line is hugged: it still starts there if its
+ *   first line fits, and only moves to the next line if it fits flat there (see [emitWhenBody])
  */
 internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpressionFormatterImpl() {
   context(_: FormatterStateHolder)
@@ -100,27 +106,38 @@ internal class KotlinLangControlFlowExpressionFormatterImpl : ControlFlowExpress
               )
             }
           }
-          val whenExpression = whenEntry.expression
           if (forceMultiline) {
             builder.forcedBreak(expressionBreakIndent)
           } else {
             builder.space()
           }
           builder.token("->")
-          if (whenExpression is KtBlockExpression || whenExpression is KtLambdaExpression) {
-            builder.space()
-            format(whenExpression)
-          } else {
-            builder.block(expressionBreakIndent) {
-              builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO)
-              format(whenExpression)
-            }
-          }
+          emitWhenBody(whenEntry.expression!!)
           builder.guessToken(";")
         }
         builder.forcedBreak()
       }
       builder.token("}")
+    }
+  }
+
+  context(_: FormatterStateHolder)
+  private fun emitWhenBody(body: KtExpression) {
+    if (body is KtBlockExpression || body is KtLambdaExpression) {
+      builder.space()
+      format(body)
+      return
+    }
+    // A line break before the body in the input means the body is not hugged onto the `->` line.
+    val hugPoint = if (body.isPrefixedByLineBreak) null else hugPoint(body)
+    builder.huggableBlock(
+        hugPoint,
+        plusIndent = expressionBreakIndent,
+        fallbackIfFlatOnNextLine = true,
+    ) {
+      builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO)
+      markHugPoint(body)
+      format(body)
     }
   }
 
