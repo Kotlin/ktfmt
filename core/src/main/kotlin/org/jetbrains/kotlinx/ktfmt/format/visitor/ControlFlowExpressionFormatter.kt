@@ -272,14 +272,16 @@ internal open class ControlFlowExpressionFormatterImpl : ControlFlowExpressionFo
 
   context(_: FormatterStateHolder)
   override fun formatTryExpression(expression: KtTryExpression) {
-    builder.sync(expression)
-    builder.token("try")
-    builder.space()
-    format(expression.tryBlock)
-    for (catchClause in expression.catchClauses) {
-      format(catchClause)
+    builder.block {
+      builder.sync(expression)
+      builder.token("try")
+      builder.space()
+      format(expression.tryBlock)
+      for (catchClause in expression.catchClauses) {
+        format(catchClause)
+      }
+      format(expression.finallyBlock)
     }
-    format(expression.finallyBlock)
   }
 
   context(_: FormatterStateHolder)
