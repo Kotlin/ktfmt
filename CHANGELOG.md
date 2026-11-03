@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Changed
 
 - Migrated to the google-java-format 2.0.0 layout engine (`LayoutBuilder` and `LayoutSolver`). ktfmt now requires Java 21 or newer. (https://github.com/Kotlin/ktfmt/pull/716)
+- The IntelliJ plugin now requires IntelliJ 2024.2 or newer, because ktfmt now requires Java 21. (https://github.com/Kotlin/ktfmt/pull/721)
 
 ### Fixed
 

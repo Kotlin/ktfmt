@@ -43,7 +43,7 @@ repositories {
 
 dependencies {
   intellijPlatform {
-    create(IntellijIdeaCommunity, "2022.3")
+    create(IntellijIdeaCommunity, "2024.2")
     pluginVerifier()
     zipSigner()
   }
@@ -58,16 +58,11 @@ intellijPlatform {
   projectName = "ktfmt_idea_plugin"
 
   pluginConfiguration.ideaVersion {
-    sinceBuild = "223.7571.182" // 2022.3
+    sinceBuild = "242" // 2024.2, the first release that runs on Java 21
     untilBuild = provider { null }
   }
 
   publishing { token = System.getenv("JETBRAINS_MARKETPLACE_TOKEN") }
 
   pluginVerification { ides { recommended() } }
-}
-
-intellijPlatformTesting.runIde.register("runIntellij242") {
-  type = IntellijIdeaCommunity
-  version = "2024.2"
 }
