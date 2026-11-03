@@ -14,12 +14,14 @@ import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtWhenExpression
 import org.jetbrains.kotlinx.ktfmt.format.visitor.CallFormatterImpl
 import org.jetbrains.kotlinx.ktfmt.format.visitor.FormatterStateHolder
+import org.jetbrains.kotlinx.ktfmt.format.visitor.GroupInfo
 import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation
 import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation.Companion.ZERO
 import org.jetbrains.kotlinx.ktfmt.format.visitor.assignmentBreaks
 import org.jetbrains.kotlinx.ktfmt.format.visitor.block
 import org.jetbrains.kotlinx.ktfmt.format.visitor.breakOp
 import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
+import org.jetbrains.kotlinx.ktfmt.format.visitor.chainRoot
 import org.jetbrains.kotlinx.ktfmt.format.visitor.computeGroups
 import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.kotlinx.ktfmt.format.visitor.format
@@ -27,6 +29,7 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.formatAssignmentLikeExpression
 import org.jetbrains.kotlinx.ktfmt.format.visitor.formatCommaSeparatedList
 import org.jetbrains.kotlinx.ktfmt.format.visitor.inImport
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isBlockLikeCall
+import org.jetbrains.kotlinx.ktfmt.format.visitor.isBlockLikeChainPart
 import org.jetbrains.kotlinx.ktfmt.format.visitor.open
 import org.jetbrains.kotlinx.ktfmt.format.visitor.options
 import org.jetbrains.kotlinx.ktfmt.format.visitor.sync
@@ -106,10 +109,70 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
   context(_: FormatterStateHolder)
   override fun emitQualifiedExpression(expression: KtExpression) {
     val groupingInfos = expression.computeGroups(expressionBreakIndent)
+    val layout = computeChainLayout(expression)
+
+    /**
+     * If [ChainLayout.hasAssignmentBreakTag] is true, selector breaks are always enabled.
+     * Otherwise, we only enable them after we encountered the first non-block part in the chain.
+     * This allows us to avoid unconventional breaks in the call chains with block-like calls:
+     * ```
+     * val a = listOf(
+     *    10,
+     * ).filter {
+     *    val square = it * it
+     *    square > 99
+     * }.count() // first non-block like call, selector breaks are enabled
+     *    .bar()
+     *    .baz()
+     * ```
+     */
+    var selectorBreaksEnabled = false
+
+    builder.block(layout.chainIndent) {
+      for (group in groupingInfos) {
+        val expression = group.expression
+        emitSelectorBreak(group, selectorBreaksEnabled, layout)
+        if (!expression.isBlockLikeChainPart) {
+          selectorBreaksEnabled = true
+        }
+
+        repeat(group.openingGroups) { builder.open(ZERO) }
+        val deferredCallArguments = emitGroup(group, layout)
+        repeat(group.closingGroups) { builder.close() }
+
+        deferredCallArguments?.let { emitDeferredCallArguments(it, layout.deferredCallIndent) }
+      }
+    }
+  }
+
+  /**
+   * Helper class that stores the layout properties of a qualified expression:
+   *
+   * @property hasAssignmentBreakTag denotes whether this qualified expression chain is a part of an
+   *   assignment-like expression with a line break before it
+   * @property selectorBreakTag stores whether a break was taken after the selector, allows
+   *   adjusting arguments indentation if a break will be made
+   * @property chainIndent indentation level for this qualified expression
+   * @property deferredCallIndent indentation level for the deferred call arguments
+   */
+  private data class ChainLayout(
+      val hasAssignmentBreakTag: Boolean,
+      val selectorBreakTag: BreakTag,
+      val chainIndent: Indentation,
+      val deferredCallIndent: Indentation,
+  )
+
+  context(_: FormatterStateHolder)
+  private fun computeChainLayout(
+      expression: KtExpression,
+  ): ChainLayout {
+    val assignmentLineBreakTag = assignmentBreaks[expression]
+    val inAssignmentWithLineBreak = assignmentLineBreakTag != null
 
     /**
      * If this expression is a call chain RHS of an assignment-like expression, and we already have
-     * a line break after the assignment operator, we don't need to add an extra indent level:
+     * a line break after the assignment operator, a block-like chain root doesn't need an extra
+     * indent level:
      * ```
      * val x =
      *     foo(
@@ -125,67 +188,107 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
      *     )
      * ```
      *
-     * Indent in other cases is
+     * When the expression starts on the same line as the assignment operator, selector breaks
+     * provide the continuation indent instead.
      */
-    val inAssignmentWithLineBreak = assignmentBreaks[expression]
     val chainIndent =
-        when (groupingInfos.first().expression) {
-          is KtCallExpression ->
-              Indentation.If(inAssignmentWithLineBreak, ZERO, expressionBreakIndent)
+        when {
+          !inAssignmentWithLineBreak -> ZERO
+          expression.chainRoot.isBlockLikeChainPart ->
+              Indentation.If(assignmentLineBreakTag, ZERO, expressionBreakIndent)
           else -> expressionBreakIndent
         }
-    builder.block(chainIndent) {
-      // allows adjusting arguments indentation if a break will be made
-      val nameTag = BreakTag()
-      for ((ktExpression, openingGroups, closingGroups, isTrailingLambda, isLast) in
-          groupingInfos) {
-        if (ktExpression is KtQualifiedExpression) {
-          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, Optional.of(nameTag))
-        }
 
-        var deferredCallArguments: DeferredCallArguments? = null
-        repeat(openingGroups) { builder.open(ZERO) }
-        when (ktExpression) {
-          is KtQualifiedExpression if ktExpression.selectorExpression is KtCallExpression -> {
-            builder.token(ktExpression.operationSign.value)
-            val selectorExpression = ktExpression.selectorExpression as KtCallExpression
+    val nameTag = BreakTag()
+    val deferredCallIndent =
+        if (inAssignmentWithLineBreak) ZERO
+        else Indentation.If(nameTag, expressionBreakIndent, ZERO)
+    return ChainLayout(
+        hasAssignmentBreakTag = inAssignmentWithLineBreak,
+        selectorBreakTag = nameTag,
+        chainIndent = chainIndent,
+        deferredCallIndent = deferredCallIndent,
+    )
+  }
 
-            // emit `doIt` from `doIt(1, 2) { it }`
-            format(selectorExpression.calleeExpression)
-            val isLastPartOrBlockLikeCall =
-                isLast || !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
-            val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
-            val lambdaIndentElse = if (isTrailingLambda) -chainIndent else ZERO
+  context(_: FormatterStateHolder)
+  private fun emitSelectorBreak(
+      group: GroupInfo,
+      selectorBreaksEnabled: Boolean,
+      layout: ChainLayout,
+  ) {
+    val expression = group.expression
+    if (expression !is KtQualifiedExpression) return
 
-            // remember to emit `(1, 2) { it }` from `doIt(1, 2) { it }`
-            deferredCallArguments =
-                DeferredCallArguments(
-                    selectorExpression,
-                    Indentation.If(nameTag, expressionBreakIndent, argsIndentElse),
-                    Indentation.If(nameTag, ZERO, lambdaIndentElse),
-                )
-          }
-          is KtQualifiedExpression -> {
-            builder.token(ktExpression.operationSign.value)
-            format(ktExpression.selectorExpression)
-          }
-          is KtArrayAccessExpression -> formatArrayAccessBrackets(ktExpression)
-          is KtPostfixExpression -> builder.token(ktExpression.operationReference.text)
-          else -> format(ktExpression)
-        }
-        repeat(closingGroups) { builder.close() }
+    if (layout.hasAssignmentBreakTag) {
+      builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, Optional.of(layout.selectorBreakTag))
+    } else if (selectorBreaksEnabled) {
+      builder.breakOp(
+          Doc.FillMode.UNIFIED,
+          "",
+          expressionBreakIndent,
+          Optional.of(layout.selectorBreakTag),
+      )
+    }
+  }
 
-        deferredCallArguments?.let { (callee, argumentsIndent, lambdaIndent) ->
-          formatFunctionCall(
-              null,
-              callee.typeArgumentList,
-              callee.valueArgumentList,
-              callee.trailingLambda,
-              argumentsIndent = argumentsIndent,
-              lambdaIndent = lambdaIndent,
-          )
-        }
+  context(_: FormatterStateHolder)
+  private fun emitGroup(group: GroupInfo, layout: ChainLayout): DeferredCallArguments? {
+    when (val ktExpression = group.expression) {
+      is KtQualifiedExpression if ktExpression.selectorExpression is KtCallExpression -> {
+        builder.token(ktExpression.operationSign.value)
+        val selectorExpression = ktExpression.selectorExpression as KtCallExpression
+
+        // emit `doIt` from `doIt(1, 2) { it }`
+        format(selectorExpression.calleeExpression)
+        val isLastPartOrBlockLikeCall =
+            group.isLast || !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
+        val argsIndentElse =
+            if (layout.hasAssignmentBreakTag && isLastPartOrBlockLikeCall) {
+              ZERO
+            } else {
+              expressionBreakIndent
+            }
+        val lambdaIndentElse = if (group.isTrailingLambda) -layout.chainIndent else ZERO
+
+        // remember to emit `(1, 2) { it }` from `doIt(1, 2) { it }`
+        return DeferredCallArguments(
+            selectorExpression,
+            Indentation.If(layout.selectorBreakTag, expressionBreakIndent, argsIndentElse),
+            if (layout.hasAssignmentBreakTag) {
+              Indentation.If(layout.selectorBreakTag, ZERO, lambdaIndentElse)
+            } else {
+              ZERO
+            },
+        )
       }
+      is KtQualifiedExpression -> {
+        builder.token(ktExpression.operationSign.value)
+        format(ktExpression.selectorExpression)
+      }
+      is KtArrayAccessExpression ->
+          builder.block(layout.deferredCallIndent) { formatArrayAccessBrackets(ktExpression) }
+      is KtPostfixExpression -> builder.token(ktExpression.operationReference.text)
+      else -> format(ktExpression)
+    }
+    return null
+  }
+
+  context(_: FormatterStateHolder)
+  private fun emitDeferredCallArguments(
+      deferredCallArguments: DeferredCallArguments,
+      deferredCallIndent: Indentation,
+  ) {
+    val (callee, argumentsIndent, lambdaIndent) = deferredCallArguments
+    builder.block(deferredCallIndent) {
+      formatFunctionCall(
+          null,
+          callee.typeArgumentList,
+          callee.valueArgumentList,
+          callee.trailingLambda,
+          argumentsIndent = argumentsIndent,
+          lambdaIndent = lambdaIndent,
+      )
     }
   }
 
@@ -205,6 +308,20 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
         builder.space()
       }
       builder.token("->")
+    }
+  }
+
+  context(_: FormatterStateHolder)
+  override fun formatArrayAccessBrackets(expression: KtArrayAccessExpression) {
+    builder.block(expressionBreakIndent) {
+      formatCommaSeparatedList(
+          expression.indexExpressions,
+          forceMultiline = expression.trailingComma != null,
+          wrapInBlock = true,
+          prefix = "[",
+          postfix = "]",
+          breakBeforePostfix = true,
+      )
     }
   }
 }

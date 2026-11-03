@@ -1,0 +1,5 @@
+// MAX_WIDTH 38
+
+val normalized = (if (useCache) cache.current() else storage.load()).normalize().finish()
+
+val fallback = (primary()?.value ?: backup.load()).convert().finish()

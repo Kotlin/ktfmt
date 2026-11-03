@@ -1,0 +1,8 @@
+// MAX_WIDTH 44
+
+val summary =
+    records
+        .filter { it.isVisible }
+        .map(Record::toEvent)
+        .sortedBy(Event::timestamp)
+        .joinToString(separator = ", ", prefix = "[", postfix = "]")

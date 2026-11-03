@@ -9,18 +9,16 @@ fun f() {
 
 fun f() {
     foo(
-            1,
-            2,
-        )
-        .bar()
+        1,
+        2,
+    ).bar()
 }
 
 fun f() {
     foo(
-            1,
-            2,
-        )
-        .bar()
+        1,
+        2,
+    ).bar()
 }
 
 val x = foo(
@@ -74,9 +72,8 @@ val x = foo(
 
 val x = foo(
     bar(
-            1,
-            2,
-        )
-        .baz(),
+        1,
+        2,
+    ).baz(),
     3,
 )

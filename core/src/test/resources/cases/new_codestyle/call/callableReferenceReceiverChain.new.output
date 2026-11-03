@@ -1,0 +1,6 @@
+// MAX_WIDTH 34
+
+val propertyName = String::length
+    .name
+    .uppercase()
+    .replace("LENGTH", "SIZE")
