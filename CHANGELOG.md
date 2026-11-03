@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+
+- The IntelliJ plugin now requires IntelliJ 2024.2 or newer, because ktfmt now requires Java 21.
+
 ## [0.65]
 
 ### Added
