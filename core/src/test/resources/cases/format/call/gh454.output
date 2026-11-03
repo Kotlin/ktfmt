@@ -2,10 +2,11 @@ fun f() {
   val input = "abc"
   val example =
       try {
-        input.fakeFunction(a = "aaaaaaaaaaaaaaa", b = "bbbbbbbbbbb", c = "cccccccccccc").map { strng
-          ->
-          strng.replace("a", "b")
-        }
+        input
+            .fakeFunction(a = "aaaaaaaaaaaaaaa", b = "bbbbbbbbbbb", c = "cccccccccccc")
+            .map { strng ->
+              strng.replace("a", "b")
+            }
       } catch (error: Exception) {
         println()
       }

@@ -17,21 +17,25 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation.Companion.ZERO
 import org.jetbrains.kotlinx.ktfmt.format.visitor.block
 import org.jetbrains.kotlinx.ktfmt.format.visitor.breakOp
 import org.jetbrains.kotlinx.ktfmt.format.visitor.builder
+import org.jetbrains.kotlinx.ktfmt.format.visitor.chainParts
 import org.jetbrains.kotlinx.ktfmt.format.visitor.chainRoot
 import org.jetbrains.kotlinx.ktfmt.format.visitor.chainedSelectorsHaveValueArguments
 import org.jetbrains.kotlinx.ktfmt.format.visitor.computeGroups
 import org.jetbrains.kotlinx.ktfmt.format.visitor.expressionBreakIndent
 import org.jetbrains.kotlinx.ktfmt.format.visitor.format
+import org.jetbrains.kotlinx.ktfmt.format.visitor.hugPoint
 import org.jetbrains.kotlinx.ktfmt.format.visitor.inImport
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isBlockLikeCall
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isChainedBlockLikeCall
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isChainedScopingFunction
 import org.jetbrains.kotlinx.ktfmt.format.visitor.isMultilineScopingFunction
 import org.jetbrains.kotlinx.ktfmt.format.visitor.open
+import org.jetbrains.kotlinx.ktfmt.format.visitor.openHuggable
 import org.jetbrains.kotlinx.ktfmt.format.visitor.options
 import org.jetbrains.kotlinx.ktfmt.format.visitor.sync
 import org.jetbrains.kotlinx.ktfmt.format.visitor.token
 import org.jetbrains.kotlinx.ktfmt.format.visitor.trailingLambda
+import org.jetbrains.kotlinx.ktfmt.format.visitor.trailingLambdaExpression
 
 /**
  * Custom call formatter for KotlinLang style that handles indentation of block-like calls with or
@@ -85,7 +89,17 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
   context(_: FormatterStateHolder)
   override fun emitQualifiedExpression(expression: KtExpression) {
     val groupingInfos = expression.computeGroups(expressionBreakIndent)
-    builder.block(expressionBreakIndent) {
+    if (groupingInfos.last().isTrailingLambda) {
+      val trailingLambda = expression.chainParts.last().trailingLambdaExpression!!
+      builder.openHuggable(
+          expressionBreakIndent,
+          expressionBreakIndent,
+          hugPoint(trailingLambda),
+      )
+    } else {
+      builder.open(expressionBreakIndent)
+    }
+    run {
       // allows adjusting arguments indentation if a break will be made
       val nameTag = BreakTag()
       for ((ktExpression, openingGroups, closingGroups, isTrailingLambda, isLast) in
@@ -139,5 +153,6 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
         }
       }
     }
+    builder.close()
   }
 }

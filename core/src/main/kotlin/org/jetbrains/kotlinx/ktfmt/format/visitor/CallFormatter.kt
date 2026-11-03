@@ -242,15 +242,30 @@ internal open class CallFormatterImpl : CallFormatter {
         Indentation.If(brokeBeforeBrace, expressionBreakIndent * 2, expressionBreakIndent)
     val closingBraceIndent = Indentation.If(brokeBeforeBrace, expressionBreakIndent, ZERO)
 
+    // The hug point marks the end of the lambda's header (`{` or `{ params ->`), see
+    // [emitQualifiedExpression]. A trailing line comment is attached to the token before it, so if
+    // there is one, mark the hug point before the header's last token instead, to keep the comment
+    // out of the hugged prefix.
+    val functionLiteral = lambdaExpression.functionLiteral
+    val arrow = functionLiteral.arrow
+    if (arrow == null && functionLiteral.lBrace.hasTrailingComment) {
+      markHugPoint(lambdaExpression)
+    }
     builder.token("{")
 
     if (hasDeclaration) {
       formatLambdaArguments(
-          lambdaExpression.functionLiteral.valueParameterList!!,
+          functionLiteral.valueParameterList!!,
           declarationIndent,
           bodyIndent,
+          beforeArrow = {
+            if (arrow != null && arrow.hasTrailingComment) {
+              markHugPoint(lambdaExpression)
+            }
+          },
       )
     }
+    markHugPoint(lambdaExpression)
 
     if (hasBody) {
       builder.breakOp(Doc.FillMode.UNIFIED, " ", closingBraceIndent)
@@ -273,6 +288,7 @@ internal open class CallFormatterImpl : CallFormatter {
       valueParameterList: KtParameterList,
       valueParametersIndent: Indentation,
       arrowIndent: Indentation,
+      beforeArrow: () -> Unit,
   ) {
     builder.space()
     builder.block(valueParametersIndent) { formatCommaSeparatedList(valueParameterList.parameters) }
@@ -283,6 +299,7 @@ internal open class CallFormatterImpl : CallFormatter {
       } else if (valueParameterList.parameters.isNotEmpty()) {
         builder.breakOp(Doc.FillMode.INDEPENDENT, " ", ZERO)
       }
+      beforeArrow()
       builder.token("->")
     }
   }
@@ -480,11 +497,25 @@ internal open class CallFormatterImpl : CallFormatter {
    * group is opened **before** a corresponding expression is emitted and closed **after**. However,
    * if an expression represents a function call, e.g. `doIt(1, 2) { it }`, the group is closed
    * after `doIt`, and the `(1, 2) { it }` part is emitted after.
+   *
+   * If the chain ends in a trailing lambda, e.g. `a.b(c).d { x -> ... }`, the chain can hug the
+   * lambda's header instead: it stays on one line if everything up to the end of `{ x ->` fits, and
+   * otherwise breaks before each `.`, without the lambda's body forcing those breaks.
    */
   context(_: FormatterStateHolder)
   open fun emitQualifiedExpression(expression: KtExpression) {
     val groupingInfos = expression.computeGroups(expressionBreakIndent)
-    builder.block(expressionBreakIndent) {
+    if (groupingInfos.last().isTrailingLambda) {
+      val trailingLambda = expression.chainParts.last().trailingLambdaExpression!!
+      builder.openHuggable(
+          expressionBreakIndent,
+          expressionBreakIndent,
+          hugPoint(trailingLambda),
+      )
+    } else {
+      builder.open(expressionBreakIndent)
+    }
+    run {
       // allows adjusting arguments indentation if a break will be made
       val nameTag = BreakTag()
       for ((ktExpression, openingGroups, closingGroups, isTrailingLambda, isLast) in
@@ -536,6 +567,7 @@ internal open class CallFormatterImpl : CallFormatter {
         }
       }
     }
+    builder.close()
   }
 
   data class DeferredCallArguments(
