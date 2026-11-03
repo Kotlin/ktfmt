@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+
+- Migrated to the google-java-format 2.0.0 layout engine (`LayoutBuilder` and `LayoutSolver`). ktfmt now requires Java 21 or newer. (https://github.com/Kotlin/ktfmt/pull/716)
+
+### Fixed
+
+- When a call chain ending in a trailing lambda doesn't fit on one line, it now breaks before each `.` instead of breaking before the lambda's `->` or inside the last call's arguments or type arguments. (https://github.com/Kotlin/ktfmt/issues/454, https://github.com/Kotlin/ktfmt/issues/220, https://github.com/Kotlin/ktfmt/issues/257)
+
 ## [0.65]
 
 ### Added
