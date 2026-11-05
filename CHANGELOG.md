@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 ### Fixed
 
 - When a call chain ending in a trailing lambda doesn't fit on one line, it now breaks before each `.` instead of breaking before the lambda's `->` or inside the last call's arguments or type arguments. (https://github.com/Kotlin/ktfmt/issues/454, https://github.com/Kotlin/ktfmt/issues/220, https://github.com/Kotlin/ktfmt/issues/257)
+- KDoc: don't allow a line break right after a tag at the start of the line (https://github.com/Kotlin/ktfmt/issues/711)
 
 ## [0.65]
 
