@@ -1,5 +1,5 @@
 <idea-plugin url="https://github.com/Kotlin/ktfmt/tree/main/ktfmt_idea_plugin">
-    <id>org.jetbrains.ktfmt_idea_plugin</id>
+    <id>com.facebook.ktfmt_idea_plugin</id>
     <!--suppress PluginXmlCapitalization -->
     <name>ktfmt</name>
     <vendor url="https://github.com/Kotlin/ktfmt">JetBrains</vendor>
