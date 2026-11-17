@@ -1,0 +1,4 @@
+class ExampleSpec :
+    FreeSpec({
+        "a test" { foo() }
+    })
