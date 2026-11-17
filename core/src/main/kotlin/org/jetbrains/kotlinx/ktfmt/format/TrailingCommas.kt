@@ -30,8 +30,10 @@ import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtParameterList
 import org.jetbrains.kotlin.psi.KtTypeArgumentList
 import org.jetbrains.kotlin.psi.KtTypeParameterList
+import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.KtWhenEntry
+import org.jetbrains.kotlinx.ktfmt.format.visitor.isUnnamedLambda
 
 /** Detects trailing commas or elements that should have trailing commas. */
 object TrailingCommas {
@@ -102,6 +104,9 @@ object TrailingCommas {
       if (list.items.isEmpty()) {
         return // Never insert commas to empty lists
       }
+      if (list.items.singleOrNull()?.isBlockLike() == true) {
+        return // Never insert commas to a single block-like item lists
+      }
       if (list.trailingComma != null) {
         return // Never insert a comma if there already is one somehow
       }
@@ -158,5 +163,12 @@ object TrailingCommas {
       }
     }
     return this
+  }
+
+  private fun PsiElement.isBlockLike(): Boolean {
+    return when (this) {
+      is KtValueArgument -> this.isUnnamedLambda
+      else -> false
+    }
   }
 }
