@@ -1,6 +1,4 @@
 class ExampleSpec :
-    FreeSpec(
-        {
-            "a test" { foo() }
-        },
-    )
+    FreeSpec({
+        "a test" { foo() }
+    })
