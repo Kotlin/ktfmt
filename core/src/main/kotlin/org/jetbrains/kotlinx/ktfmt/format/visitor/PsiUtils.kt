@@ -383,3 +383,51 @@ internal val PsiElement.isPrefixedByLineBreak: Boolean
     }
     return false
   }
+
+/**
+ * Returns whether this expression is a block-like part of a call chain: a lambda with multiple body
+ * statements, a call with a block-like call shape or a multi-statement lambda argument, or an array
+ * access with a trailing comma or block-like index expression.
+ */
+internal val KtExpression?.isBlockLikeChainPart: Boolean
+  get() =
+      when (this) {
+        is KtExpression if parent is KtArrayAccessExpression ->
+            (parent as? KtArrayAccessExpression)?.isBlockLikeChainPart ?: false
+        is KtCallExpression -> isBlockLikeChainPart
+        is KtLambdaExpression -> isBlockLikeChainPart
+        is KtArrayAccessExpression -> isBlockLikeChainPart
+        is KtQualifiedExpression -> selectorExpression.isBlockLikeChainPart
+        else -> false
+      }
+
+internal val KtLambdaExpression.isBlockLikeChainPart: Boolean
+  get() = hasMultipleBodyStatements
+
+internal val KtArrayAccessExpression.isBlockLikeChainPart: Boolean
+  get() = trailingComma != null || indexExpressions.any { it.isBlockLikeChainPart }
+
+internal val KtCallExpression.isBlockLikeChainPart: Boolean
+  get() =
+      isBlockLikeCall ||
+          lambdaArguments.any {
+            it.getLambdaExpression()?.hasMultipleBodyStatements == true
+          } ||
+          valueArgumentList?.arguments?.any {
+            it.getArgumentExpression().isLambdaWithMultipleBodyStatements
+          } == true
+
+private val KtLambdaExpression.hasMultipleBodyStatements: Boolean
+  get() = (bodyExpression?.statements?.size ?: 0) > 1
+
+/**
+ * Returns whether this expression is a lambda with multiple body statements, unwrapping labeled
+ * expressions. Expressions that are not lambdas (or labeled lambdas) return `false`.
+ */
+private val KtExpression?.isLambdaWithMultipleBodyStatements: Boolean
+  get() =
+      when (this) {
+        is KtLambdaExpression -> hasMultipleBodyStatements
+        is KtLabeledExpression -> baseExpression.isLambdaWithMultipleBodyStatements
+        else -> false
+      }

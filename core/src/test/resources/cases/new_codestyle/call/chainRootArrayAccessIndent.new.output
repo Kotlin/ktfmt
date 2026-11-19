@@ -1,0 +1,21 @@
+// MAX_WIDTH 40
+
+val arrayRooted =
+    alpha.beta[0]
+        .gamma()
+        .delta()
+        .epsilon()
+
+val nameRooted =
+    alpha.beta
+        .gamma()
+        .delta()
+        .epsilon()
+        .zeta()
+
+val postfixRooted =
+    fooBar()!!
+        .gamma()
+        .delta()
+        .epsilon()
+        .zeta()

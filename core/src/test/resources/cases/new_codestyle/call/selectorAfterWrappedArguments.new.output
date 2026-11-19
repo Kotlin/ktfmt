@@ -1,0 +1,20 @@
+// MAX_WIDTH 60
+
+fun f() {
+    foo {
+        a()
+        b()
+    }.bar(
+        argumentNumberOne,
+        argumentNumberTwo,
+        argumentNumberThree,
+    ).baz()
+        .qux()
+
+    foo {
+        a()
+        b()
+    }.bar(argumentNumberOne, argumentNumberTwo)
+        .baz()
+        .quxxxxxxxxxxxxxxxxx()
+}

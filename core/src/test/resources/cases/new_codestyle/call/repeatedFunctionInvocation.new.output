@@ -1,0 +1,6 @@
+// MAX_WIDTH 34
+
+val result = registry.lookup(key)(
+    context,
+)(request)
+    .complete()

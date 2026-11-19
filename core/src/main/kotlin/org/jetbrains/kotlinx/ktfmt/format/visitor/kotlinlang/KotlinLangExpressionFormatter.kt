@@ -7,6 +7,9 @@ import java.util.Optional
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtBinaryExpression
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtParenthesizedExpression
+import org.jetbrains.kotlin.psi.KtPostfixExpression
+import org.jetbrains.kotlin.psi.KtQualifiedExpression
 import org.jetbrains.kotlinx.ktfmt.format.visitor.ExpressionFormatterImpl
 import org.jetbrains.kotlinx.ktfmt.format.visitor.FormatterStateHolder
 import org.jetbrains.kotlinx.ktfmt.format.visitor.Indentation
@@ -32,7 +35,8 @@ import org.jetbrains.kotlinx.ktfmt.format.visitor.token
  *   [ExpressionFormatterImpl.formatAssignmentLikeExpression])
  * - If there is no line break after the assignment operator, the initializer is formatted on the
  *   same line as the assignment operator when its first line fits. Otherwise, it can break after
- *   the operator.
+ *   the operator. Call chains are an exception: they stay on the assignment line and use selector
+ *   breaks to wrap the rest of the chain.
  *
  * ```
  * fun exprBody1() = compute(alpha)
@@ -50,6 +54,17 @@ internal class KotlinLangExpressionFormatterImpl : ExpressionFormatterImpl() {
   override fun formatAssignmentLikeExpression(assignment: KtExpression, assignmentOp: String) {
     builder.token(assignmentOp)
 
+    // if this is a call chain assignment, prefer selector breaks to the assignment breaks
+    // therefore, we don't want to create a huggable block here
+    if (!assignment.isPrefixedByLineBreak && assignment.hasCallChainPrefix) {
+      builder.space()
+      builder.block(ZERO) {
+        builder.fenceComments()
+        format(assignment)
+      }
+      return
+    }
+
     val hugPoint = if (assignment.isPrefixedByLineBreak) null else LayoutBuilder.newHugPoint()
     builder.huggableBlock(hugPoint, ZERO, ZERO) {
       val movedToOwnLine = Output.BreakTag()
@@ -65,6 +80,20 @@ internal class KotlinLangExpressionFormatterImpl : ExpressionFormatterImpl() {
       }
     }
   }
+
+  /**
+   * Returns whether the first line of this expression is owned by a call chain. Such expressions
+   * prefer a selector break to a break after the assignment operator
+   */
+  private val KtExpression?.hasCallChainPrefix: Boolean
+    get() =
+        when (this) {
+          is KtQualifiedExpression -> true
+          is KtBinaryExpression -> left.hasCallChainPrefix
+          is KtPostfixExpression -> baseExpression.hasCallChainPrefix
+          is KtParenthesizedExpression -> expression.hasCallChainPrefix
+          else -> false
+        }
 
   context(_: FormatterStateHolder)
   override fun formatBinaryExpression(expression: KtBinaryExpression) {

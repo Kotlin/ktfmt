@@ -1,0 +1,13 @@
+// MAX_WIDTH 34
+
+fun requireName(
+    user: User?,
+): String {
+    return user
+        ?.profile
+        ?.displayName
+        ?.trim()
+        ?.takeIf(
+            String::isNotEmpty,
+        ) ?: return "anonymous"
+}

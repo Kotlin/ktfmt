@@ -1,6 +1,5 @@
 var foo: Int
     field = runnnnn {
-            bar()
-            baz()
-        }
-        .baz()
+        bar()
+        baz()
+    }.baz()

@@ -1,0 +1,7 @@
+// MAX_WIDTH 38
+
+val result =
+    receiver /* preserve receiver */
+        ?. /* preserve safe selector */load()
+        ?.value
+        ?.normalize() ?: fallback()

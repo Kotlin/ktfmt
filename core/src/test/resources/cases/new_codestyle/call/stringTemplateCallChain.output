@@ -1,0 +1,4 @@
+// MAX_WIDTH 34
+
+val message =
+    "result: ${service.fetch(request).decode().normalize().payload}"

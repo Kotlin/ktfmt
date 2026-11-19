@@ -1,0 +1,5 @@
+val first = receiver.values[0].next()
+val second = receiver.values[0].next
+val third = receiver.values[0][1].next()
+val fourth = createValues()[0].next()
+val fifth = nullableReceiver?.values[0].next()
