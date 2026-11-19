@@ -150,7 +150,7 @@ val KtExpression.chainParts: List<KtExpression>
  * their own line (preceded by whitespace with a newline). Inline block comments like `x /*tag*/ ||`
  * do not force a break and should not trigger INDEPENDENT fill mode.
  */
-val PsiElement.hasLineBreakingCommentBefore: Boolean
+internal val PsiElement?.hasLineBreakingCommentBefore: Boolean
   get() {
     val comment = getPrevSiblingIgnoringWhiteSpace<PsiComment>() ?: return false
 
@@ -383,3 +383,24 @@ internal val KtBinaryExpression.fullChain: List<KtBinaryExpression>
  */
 internal val KtAnnotatedExpression.topLevelAnnotations: List<PsiElement>
   get() = children.filter { it is KtAnnotation || it is KtAnnotationEntry }
+
+/**
+ * Checks if there is a new line before the [PsiElement] in the source code. Leading comments are
+ * skipped.
+ *
+ * ```
+ * val a = /* comment */ value // false
+ *
+ * val b =
+ *     /* comment */ value // true
+ * ```
+ */
+internal val PsiElement.isPrefixedByLineBreak: Boolean
+  get() {
+    var prev: PsiElement? = prevSibling
+    while (prev is PsiWhiteSpace || prev is PsiComment) {
+      if (prev is PsiWhiteSpace && prev.text.contains("\n")) return true
+      prev = prev.prevSibling
+    }
+    return false
+  }

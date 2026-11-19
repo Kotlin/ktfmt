@@ -51,6 +51,30 @@ internal fun LayoutBuilder.block(
   }
 }
 
+/**
+ * Opens a level that can hug the preceding text, emits [block] into it, and closes it.
+ *
+ * If the level doesn't fit on the current line, but its content up to the hug point does, the
+ * level's own breaks stay flat and it is indented by [huggedPlusIndent]. Otherwise it is laid out
+ * normally, indented by [plusIndent]. If [hugPoint] is null, a plain level is opened instead. See
+ * [LayoutBuilder.openHuggable].
+ */
+internal fun LayoutBuilder.huggableBlock(
+    hugPoint: LayoutBuilder.HugPoint?,
+    plusIndent: Indentation = ZERO,
+    huggedPlusIndent: Indentation = ZERO,
+    fallbackIfFlatOnNextLine: Boolean = false,
+    block: () -> Unit,
+) {
+  if (hugPoint != null) {
+    openHuggable(plusIndent.indent, huggedPlusIndent.indent, hugPoint, fallbackIfFlatOnNextLine)
+  } else {
+    open(plusIndent)
+  }
+  block()
+  close()
+}
+
 internal fun LayoutBuilder.breakOp(
     fillMode: Doc.FillMode = Doc.FillMode.UNIFIED,
     flat: String = " ",

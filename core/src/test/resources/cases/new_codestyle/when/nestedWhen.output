@@ -1,0 +1,24 @@
+class Foo {
+  fun f(x: Int, y: Int) {
+    when (x) {
+      1 ->
+          when (y) {
+            1 -> print(11)
+            else -> print(1)
+          }
+      2 -> {
+        when (y) {
+          1 -> print(21)
+          else -> print(2)
+        }
+      }
+      else ->
+          if (y > 0) print(y)
+          else
+              when (y) {
+                0 -> print(0)
+                else -> print(-1)
+              }
+    }
+  }
+}
