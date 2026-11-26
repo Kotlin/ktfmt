@@ -1,18 +1,18 @@
 fun foo() {
-    if ( // foo
+    if ( //foo
         x
     ) {
         bar()
     }
 
-    when ( // foo
+    when ( //foo
         x
     ) {
-        1 if // foo
+        1 if //foo
             baz() -> TODO()
     }
 
-    while ( // foo
+    while ( //foo
         x
     ) {
         bar()
@@ -20,7 +20,7 @@ fun foo() {
 
     do {
         bar()
-    } while ( // foo
+    } while ( //foo
         x
     )
 }
