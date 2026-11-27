@@ -148,57 +148,54 @@ internal class KotlinLangCallFormatterImpl : CallFormatterImpl() {
     } else {
       builder.open(chainIndent)
     }
-    run {
-      // allows adjusting arguments indentation if a break will be made
-      val nameTag = BreakTag()
-      for ((ktExpression, openingGroups, closingGroups, isTrailingLambda, isLast) in
-          groupingInfos) {
-        if (ktExpression is KtQualifiedExpression) {
-          builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, Optional.of(nameTag))
+    // allows adjusting arguments indentation if a break will be made
+    val nameTag = BreakTag()
+    for ((ktExpression, openingGroups, closingGroups, isTrailingLambda, isLast) in groupingInfos) {
+      if (ktExpression is KtQualifiedExpression) {
+        builder.breakOp(Doc.FillMode.UNIFIED, "", ZERO, Optional.of(nameTag))
+      }
+
+      var deferredCallArguments: DeferredCallArguments? = null
+      repeat(openingGroups) { builder.open(ZERO) }
+      when (ktExpression) {
+        is KtQualifiedExpression if ktExpression.selectorExpression is KtCallExpression -> {
+          builder.token(ktExpression.operationSign.value)
+          val selectorExpression = ktExpression.selectorExpression as KtCallExpression
+
+          // emit `doIt` from `doIt(1, 2) { it }`
+          format(selectorExpression.calleeExpression)
+          val isLastPartOrBlockLikeCall =
+              isLast || !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
+          val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
+          val lambdaIndentElse = if (isTrailingLambda) -chainIndent else ZERO
+
+          // remember to emit `(1, 2) { it }` from `doIt(1, 2) { it }`
+          deferredCallArguments =
+              DeferredCallArguments(
+                  selectorExpression,
+                  Indentation.If(nameTag, expressionBreakIndent, argsIndentElse),
+                  Indentation.If(nameTag, ZERO, lambdaIndentElse),
+              )
         }
-
-        var deferredCallArguments: DeferredCallArguments? = null
-        repeat(openingGroups) { builder.open(ZERO) }
-        when (ktExpression) {
-          is KtQualifiedExpression if ktExpression.selectorExpression is KtCallExpression -> {
-            builder.token(ktExpression.operationSign.value)
-            val selectorExpression = ktExpression.selectorExpression as KtCallExpression
-
-            // emit `doIt` from `doIt(1, 2) { it }`
-            format(selectorExpression.calleeExpression)
-            val isLastPartOrBlockLikeCall =
-                isLast || !options.manageTrailingCommas && selectorExpression.isBlockLikeCall
-            val argsIndentElse = if (isLastPartOrBlockLikeCall) ZERO else expressionBreakIndent
-            val lambdaIndentElse = if (isTrailingLambda) -chainIndent else ZERO
-
-            // remember to emit `(1, 2) { it }` from `doIt(1, 2) { it }`
-            deferredCallArguments =
-                DeferredCallArguments(
-                    selectorExpression,
-                    Indentation.If(nameTag, expressionBreakIndent, argsIndentElse),
-                    Indentation.If(nameTag, ZERO, lambdaIndentElse),
-                )
-          }
-          is KtQualifiedExpression -> {
-            builder.token(ktExpression.operationSign.value)
-            format(ktExpression.selectorExpression)
-          }
-          is KtArrayAccessExpression -> formatArrayAccessBrackets(ktExpression)
-          is KtPostfixExpression -> builder.token(ktExpression.operationReference.text)
-          else -> format(ktExpression)
+        is KtQualifiedExpression -> {
+          builder.token(ktExpression.operationSign.value)
+          format(ktExpression.selectorExpression)
         }
-        repeat(closingGroups) { builder.close() }
+        is KtArrayAccessExpression -> formatArrayAccessBrackets(ktExpression)
+        is KtPostfixExpression -> builder.token(ktExpression.operationReference.text)
+        else -> format(ktExpression)
+      }
+      repeat(closingGroups) { builder.close() }
 
-        deferredCallArguments?.let { (callee, argumentsIndent, lambdaIndent) ->
-          formatFunctionCall(
-              null,
-              callee.typeArgumentList,
-              callee.valueArgumentList,
-              callee.trailingLambda,
-              argumentsIndent = argumentsIndent,
-              lambdaIndent = lambdaIndent,
-          )
-        }
+      deferredCallArguments?.let { (callee, argumentsIndent, lambdaIndent) ->
+        formatFunctionCall(
+            null,
+            callee.typeArgumentList,
+            callee.valueArgumentList,
+            callee.trailingLambda,
+            argumentsIndent = argumentsIndent,
+            lambdaIndent = lambdaIndent,
+        )
       }
     }
     builder.close()
